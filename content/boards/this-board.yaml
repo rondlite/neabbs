@@ -1,0 +1,139 @@
+# THIS BOARD — the first thing a new member sees. The iceberg must be felt
+# from minute one: readable welcome + flavor at the bottom, 6-8 redacted
+# high-level stubs above (some subjects tantalizingly visible, some blocked).
+id: this-board
+name: "THIS BOARD"
+area: this
+min_level: 0
+writable: true
+messages:
+  - id: 101
+    author: "beheerder"
+    level: 0
+    date: "03-86"
+    subject: "lees dit eerst"
+    body: |
+      welkom. geen namen, geen adressen, geen heldendaden op schrift.
+      niveau krijg je van het systeem, niet van mij. het systeem let op
+      wat je doet, niet op wat je vraagt.
+
+      de rest van dit board lees je wanneer je het lezen mag.
+  - id: 102
+    author: "route66"
+    level: 0
+    date: "03-86"
+    subject: "voor de nieuwe"
+    body: |
+      iedereen begint op nul. iedereen. ook degene waar je nu tegenop
+      kijkt. verschil zit in wie doorzet.
+  - id: 103
+    author: "de_specht"
+    level: 0
+    date: "03-86"
+    subject: "gereedschap"
+    body: |
+      de oude software doet het nog. begin met rondkijken voor je iets
+      aanraakt: 'scan' laat zien wat er voor jouw niveau te zien is.
+      meer dan dat laat het niet zien, en dat is het hele punt.
+  - id: 104
+    author: "blueboxer"
+    level: 0
+    date: "04-86"
+    subject: "geduld"
+    body: |
+      wie meteen overal aan zit, wordt gezien. wie eerst leest, ziet
+      zelf. de boards onthouden alles. het systeem ook.
+  - id: 105
+    author: "route66"
+    level: 1
+    date: "04-86"
+    subject: "eerste stappen"
+    body: |
+      THIS-1 dus. mooi. onthoud: de meeste deuren hier hebben geen
+      slot maar een vraag. het antwoord slingert bijna altijd ergens
+      rond in een bestand of een bericht. lezen is de echte hack.
+  - id: 106
+    author: "de_specht"
+    level: 1
+    date: "04-86"
+    subject: "de gemeente slaapt"
+    body: |
+      wie bij de gemeente iets zoekt: hun nachtdienst is een wachtwoord
+      dat op een briefje naast de terminal ligt. figuurlijk dan. het
+      briefje bestaat, alleen niet op papier. kijk waar personeel praat.
+  - id: 107
+    author: "phantom"
+    level: 2
+    date: "05-86"
+    subject: "wat de specht bedoelt"
+    body: |
+      personeel praat altijd. in kantines, op boards, in bestanden die
+      "niet belangrijk" heten. de belangrijkste dingen staan in de
+      saaiste bestanden. dat is geen toeval, dat is camouflage.
+  - id: 108
+    author: "beheerder"
+    level: 2
+    date: "05-86"
+    subject: "huishoudelijk"
+    body: |
+      niveau 2 en hoger: jullie zien nu meer. dat betekent niet dat
+      jullie alles moeten aanraken. wie een spoor achterlaat, ruimt
+      het zelf op. wie dat niet kan, leert het hier.
+  - id: 109
+    author: "route66"
+    level: 4
+    date: "06-86"
+    subject: "de modempool van de PTT"
+    body: |
+      [THIS-4 materiaal. als je dit leest weet je waarom we de
+      nummerreeksen nooit opschreven.]
+  - id: 110
+    author: "blueboxer"
+    level: 5
+    date: "06-86"
+    subject: "2600 en de nachtcentrale"
+    body: |
+      [THIS-5 materiaal over de nachtcentrale. oude liefde roest
+      niet.]
+  - id: 111
+    author: "de_specht"
+    level: 6
+    date: "07-86"
+    subject: "wie er nog meer meeluisteren"
+    author_visible: false
+    body: |
+      [THIS-6. de reden dat regel 1 bestaat.]
+  - id: 112
+    author: "phantom"
+    level: 6
+    date: "07-86"
+    subject: "de echte ingang naar node 9"
+    body: |
+      [THIS-6. er is een voordeur en er is een ingang. node 9 heeft
+      alleen het tweede.]
+  - id: 113
+    author: "phantom"
+    level: 7
+    date: "08-86"
+    subject: "dit onderwerp bestaat niet"
+    subject_visible: false
+    author_visible: false
+    body: |
+      [THIS-7. sommige dingen schrijf je zelfs hier niet op. dit is
+      de uitzondering.]
+  - id: 114
+    author: "beheerder"
+    level: 8
+    date: "03-86"
+    subject: "waarom de sectie verzegeld werd"
+    body: |
+      [THIS-8. het verslag van maart '86. wie dit kan lezen weet
+      inmiddels genoeg om het niet door te vertellen.]
+  - id: 115
+    author: "phantom"
+    level: 9
+    date: "03-86"
+    subject: "aan wie na ons komt"
+    hidden: true
+    body: |
+      [THIS-9. de laatste post van de laatste nacht.]

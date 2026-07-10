@@ -290,3 +290,85 @@ func TestBoardPostVisibleToOtherCaller(t *testing.T) {
 	b.send("read 10000\r")
 	b.waitFor("dit is een testbericht")
 }
+
+// TestDiscoveryChainIntoTHIS walks the full public→THIS path: misfiled file
+// → phantom's thread → gated final file → hidden command → THIS mode.
+func TestDiscoveryChainIntoTHIS(t *testing.T) {
+	addr := startServer(t)
+	c := dialBBS(t, addr)
+	c.waitFor("Nieuwe beller")
+	c.send("hacker\r")
+	c.waitFor("HOOFDMENU")
+
+	// Door without flag: identical to gibberish, and the gated file is
+	// absent from the list.
+	c.send("this\r")
+	c.waitFor("Onbekende keuze.")
+	c.send("f")
+	c.waitFor("BESTANDEN")
+	if strings.Contains(c.snapshot(), "herstel-log.txt") {
+		t.Fatal("gated file visible before flag")
+	}
+
+	// Beat 1: the misfiled sysop notes name phantom and band 7.
+	c.send("lees 9\r")
+	c.waitFor("NOTITIES BIJ HET HERSTEL")
+	c.send("terug\r")
+	c.waitFor("HOOFDMENU")
+
+	// Beat 2: phantom's follow-up on ALGEMEEN grants the spoor flag.
+	c.send("b")
+	c.waitFor("Gebruik: board <id>")
+	c.send("algemeen\r")
+	c.waitFor("40 jaar is niks")
+	c.send("read 11\r")
+	c.waitFor("die dit wél leest")
+	c.send("terug\r")
+	c.waitFor("HOOFDMENU")
+
+	// Beat 3: the final file is now listed and grants this_invite.
+	c.send("f")
+	c.waitFor("herstel-log.txt")
+	c.send("lees 12\r")
+	c.waitFor("HERSTEL-LOGBOEK")
+	c.send("terug\r")
+	c.waitFor("HOOFDMENU")
+
+	// The ritual: type the four letters at the main menu.
+	c.send("this\r")
+	c.waitFor("DOORVERBINDEN NAAR: THIS")
+	c.waitFor("VERBINDING OMGELEGD")
+	c.waitFor("THIS-0")
+
+	// THIS boards: iceberg visible from minute one.
+	c.send("boards\r")
+	c.waitFor("this-board")
+	c.send("board this-board\r")
+	c.waitFor("lees dit eerst")
+	c.waitFor("de echte ingang naar node 9") // tantalizing stub subject
+	c.waitFor("[THIS-6]")
+	c.waitFor("verborgen boven jouw niveau")
+	c.send("read 112\r")
+	c.waitFor("TOEGANG GEWEIGERD — THIS-6 vereist.")
+	c.send("read 101\r")
+	c.waitFor("niveau krijg je van het systeem")
+
+	// A second, fresh caller sees nothing: no THIS boards, and the member
+	// inside THIS shows only as a busy line.
+	d := dialBBS(t, addr)
+	d.waitFor("Nieuwe beller")
+	d.send("normaal\r")
+	d.waitFor("HOOFDMENU")
+	d.send("w")
+	d.waitFor("WIE IS ER OP DE LIJNEN")
+	d.waitFor("lijn bezet")
+	if strings.Contains(d.snapshot(), "this-board") {
+		t.Fatal("THIS board leaked to non-member")
+	}
+
+	// Back through the door; the menu now shows the THIS entry.
+	c.send("exit\r")
+	c.waitFor("[T] THIS")
+	c.send("u")
+	c.waitFor("NO CARRIER")
+}

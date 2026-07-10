@@ -53,6 +53,7 @@ const (
 	stateBoards
 	stateFiles
 	stateChat
+	stateThis
 	stateComposeSubject
 	stateComposeBody
 	stateComposeLevel
@@ -76,6 +77,11 @@ const (
 var (
 	amber  = lipgloss.NewStyle().Foreground(lipgloss.Color("214"))
 	dimmed = lipgloss.NewStyle().Foreground(lipgloss.Color("243"))
+
+	// THIS runs "custom terminal software the old hackers built":
+	// green-on-black, full-screen, status bar.
+	green   = lipgloss.NewStyle().Foreground(lipgloss.Color("40"))
+	thisBar = lipgloss.NewStyle().Foreground(lipgloss.Color("0")).Background(lipgloss.Color("40"))
 )
 
 // PraatMsg is a one-line shout delivered to every session.
@@ -90,6 +96,11 @@ type Model struct {
 	printer printer
 	start   time.Time
 	width   int
+	height  int
+
+	// THIS mode: full-screen altscreen with its own scrollback pane.
+	inThis    bool
+	thisLines []string
 
 	// input rate limiting: token bucket
 	tokens     int
@@ -98,11 +109,12 @@ type Model struct {
 	// board context: set while the player is "in" a board
 	boardID string
 
-	// composer state (post/reply)
+	// composer state (post/reply); composeBack is where ESC/submit returns
 	compose struct {
 		replyTo int
 		subject string
 		lines   []string
+		back    state
 	}
 
 	// chat + praat rate limiting (token buckets refilled per minute)
@@ -176,8 +188,28 @@ func (m *Model) playerCPS() int {
 // print pushes a block through the baud-emulated printer.
 func (m *Model) print(s string) tea.Cmd { return m.printer.enqueue(s) }
 
+// out routes a block to the active surface: the THIS pane (instant — their
+// software was better) or the baud-emulated public printer.
+func (m *Model) out(s string) tea.Cmd {
+	if m.inThis {
+		m.thisPrint(s)
+		return nil
+	}
+	return m.print(s)
+}
+
+// thisPrint appends to the THIS scrollback pane.
+func (m *Model) thisPrint(s string) {
+	m.thisLines = append(m.thisLines, strings.Split(strings.TrimRight(s, "\n"), "\n")...)
+	if len(m.thisLines) > 500 {
+		m.thisLines = m.thisLines[len(m.thisLines)-500:]
+	}
+}
+
 func (m *Model) Init() tea.Cmd {
-	return tea.Batch(m.ritual(ritConnect), minuteTick())
+	// promoTick runs for the whole session (one ticker; checkPromotion
+	// always reschedules) so admin promotions land wherever the player is.
+	return tea.Batch(m.ritual(ritConnect), minuteTick(), promoTick())
 }
 
 // ─── ritual ────────────────────────────────────────────────────────────────
@@ -281,6 +313,11 @@ func (m *Model) unreadCounts() []struct {
 	}
 	v := m.viewer()
 	for _, b := range m.deps.Boards.VisibleBoards(v) {
+		// The login scan and quickscan are public-BBS surfaces: THIS boards
+		// never appear there, even for members. THIS reading happens inside.
+		if b.Area != content.AreaPublic {
+			continue
+		}
 		last, err := m.deps.Store.LastRead(ctx, v.Fingerprint, b.ID)
 		if err != nil {
 			continue
@@ -337,6 +374,10 @@ func (m *Model) renderMenu() string {
 	b.WriteString(" [S] Sysop oproepen       [I] Colofon\n")
 	b.WriteString(" [Q] Quickscan nieuwe berichten\n")
 	b.WriteString(" [U] Uitloggen\n")
+	// The door stays discovered once found: members see the THIS entry.
+	if m.deps.Player.ThisMember {
+		b.WriteString(" [T] THIS\n")
+	}
 	b.WriteString(dimmed.Render(" Ook: praat <tekst> — roep iets naar alle lijnen") + "\n")
 	if m.minutesLeft <= 0 {
 		b.WriteString(dimmed.Render(" De sysop tikt op zijn horloge. Uw beltijd is om.") + "\n")
@@ -351,14 +392,12 @@ func (m *Model) menuAction(key string) (tea.Model, tea.Cmd) {
 		m.state = stateBoards
 		m.input.Prompt = "Board> "
 		m.deps.Sess.SetArea("berichtenboards", false)
-		return m, tea.Batch(
-			m.print(renderBoardList(m.deps.Boards.VisibleBoards(m.viewer()))),
-			promoTick())
+		return m, m.print(renderBoardList(m.deps.Boards.VisibleBoards(m.viewer())))
 	case "f", "2":
 		m.state = stateFiles
 		m.input.Prompt = "Bestand> "
 		m.deps.Sess.SetArea("bestanden", false)
-		return m, m.print(renderFileList(m.deps.Content.Files))
+		return m, m.print(renderFileList(m.visibleFiles()))
 	case "w", "3":
 		return m, m.print(m.renderWho())
 	case "c", "4":
@@ -375,6 +414,10 @@ func (m *Model) menuAction(key string) (tea.Model, tea.Cmd) {
 		return m, m.print(m.quickscan())
 	case "u", "8":
 		return m.quit()
+	case "t":
+		if m.deps.Player.ThisMember {
+			return m.enterThis()
+		}
 	}
 	return m, nil
 }
@@ -400,9 +443,71 @@ func (m *Model) menuLine(line string) (tea.Model, tea.Cmd) {
 	case "logout", "uitloggen":
 		return m.quit()
 	}
+
+	// Members walk through the door by name, flag or no flag (the door
+	// stays discovered; admin-promoted members have no chain flags).
+	if m.deps.Player.ThisMember && lower == "this" {
+		return m.enterThis()
+	}
+
+	// Hidden commands from YAML. Without the required flag the response is
+	// the exact same error as gibberish — never confirm existence.
+	for i := range m.deps.Content.HiddenCommands {
+		hc := &m.deps.Content.HiddenCommands[i]
+		if lower != strings.ToLower(hc.Input) {
+			continue
+		}
+		if hc.RequiresFlag != "" && !m.deps.Player.HasFlag(hc.RequiresFlag) {
+			break // fall through to Onbekende keuze.
+		}
+		cmds := []tea.Cmd{}
+		if err := m.applyEffects(hc.Effects); err != nil {
+			return m, m.print("Er knettert iets op de lijn. Probeer later opnieuw.")
+		}
+		if hc.Response != "" {
+			cmds = append(cmds, m.print(hc.Response))
+		}
+		if hc.Effects.SetThisMember {
+			cmds = append(cmds, tea.Tick(1200*time.Millisecond,
+				func(time.Time) tea.Msg { return enterThisMsg{} }))
+		}
+		return m, tea.Batch(cmds...)
+	}
+
 	// Unknown input — identical whether gibberish or a hidden command the
 	// player isn't eligible for. Never confirm existence.
 	return m, m.print("Onbekende keuze.")
+}
+
+// enterThisMsg switches to THIS mode after the doorverbinden beat.
+type enterThisMsg struct{}
+
+// applyEffects mutates the player per a content Effects block and refreshes
+// the in-memory player row.
+func (m *Model) applyEffects(e content.Effects) error {
+	ctx := context.Background()
+	fp := m.deps.Player.Fingerprint
+	if e.SetThisMember {
+		if err := m.deps.Store.SetThisMember(ctx, fp, true); err != nil {
+			return err
+		}
+	}
+	if len(e.GrantFlags) > 0 {
+		if err := m.deps.Store.GrantFlags(ctx, fp, e.GrantFlags...); err != nil {
+			return err
+		}
+	}
+	if e.GrantLevel > m.deps.Player.Level {
+		if err := m.deps.Store.SetLevel(ctx, fp, e.GrantLevel); err != nil {
+			return err
+		}
+	}
+	fresh, err := m.deps.Store.PlayerByFingerprint(ctx, fp)
+	if err != nil {
+		return err
+	}
+	*m.deps.Player = *fresh
+	return nil
 }
 
 // renderWho lists the lines: number, handle, area. Sessions inside THIS
@@ -499,6 +604,7 @@ func (m *Model) quickscan() string {
 			_ = m.deps.Store.SetLastRead(ctx, m.deps.Player.Fingerprint, c.Board.ID, msg.ID)
 			if msg.GrantsFlag != "" {
 				_, _ = m.deps.Boards.Read(ctx, c.Board.ID, msg.ID, m.viewer())
+				m.refreshPlayer()
 			}
 		}
 	}
@@ -528,7 +634,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
+		m.height = msg.Height
 		return m, nil
+	case enterThisMsg:
+		return m.enterThis()
 	case printTickMsg:
 		return m, m.printer.tick()
 	case ritualDelayMsg:
@@ -607,6 +716,12 @@ func (m *Model) key(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		switch r := strings.ToLower(string(msg.Runes[0])); r {
 		case "b", "f", "w", "c", "s", "i", "q", "u":
 			return m.menuAction(r)
+		case "t":
+			// Hotkey only for members; for everyone else 't' buffers so a
+			// typed word starting with t stays possible (and reveals nothing).
+			if m.deps.Player.ThisMember {
+				return m.menuAction(r)
+			}
 		}
 	}
 
@@ -623,8 +738,16 @@ func (m *Model) resetCompose() {
 	m.compose.replyTo = 0
 	m.compose.subject = ""
 	m.compose.lines = nil
-	m.state = stateBoards
-	m.input.Prompt = "Board> "
+	back := m.compose.back
+	if back != stateThis {
+		back = stateBoards
+	}
+	m.state = back
+	if back == stateThis {
+		m.input.Prompt = "> "
+	} else {
+		m.input.Prompt = "Board> "
+	}
 }
 
 func (m *Model) backToMenu() (tea.Model, tea.Cmd) {
@@ -647,6 +770,8 @@ func (m *Model) handleLine(line string) (tea.Model, tea.Cmd) {
 		return m.filesLine(line)
 	case stateChat:
 		return m.chatLine(line)
+	case stateThis:
+		return m.thisLine(line)
 	case stateComposeSubject:
 		return m.composeSubject(line)
 	case stateComposeBody:
@@ -655,6 +780,13 @@ func (m *Model) handleLine(line string) (tea.Model, tea.Cmd) {
 		return m.composeLevel(line)
 	}
 	return m, nil
+}
+
+// refreshPlayer reloads the in-memory player row (after flag grants etc.).
+func (m *Model) refreshPlayer() {
+	if fresh, err := m.deps.Store.PlayerByFingerprint(context.Background(), m.deps.Player.Fingerprint); err == nil {
+		*m.deps.Player = *fresh
+	}
 }
 
 // viewer builds the clearance identity from the current player state.
@@ -672,8 +804,11 @@ func (m *Model) viewer() board.Viewer {
 // while a board is open, repaints the listing live so redacted posts
 // visibly resolve — the game's core dopamine hit.
 func (m *Model) checkPromotion() (tea.Model, tea.Cmd) {
-	if m.state == stateDone || (m.state != stateBoards && !m.composing()) {
+	if m.state == stateDone {
 		return m, nil
+	}
+	if m.state != stateBoards && m.state != stateThis && !m.composing() {
+		return m, promoTick() // keep the single session ticker alive
 	}
 	fresh, err := m.deps.Store.PlayerByFingerprint(context.Background(), m.deps.Player.Fingerprint)
 	if err != nil {
@@ -685,9 +820,13 @@ func (m *Model) checkPromotion() (tea.Model, tea.Cmd) {
 	if !changed || m.boardID == "" {
 		return m, promoTick()
 	}
-	var out []string
+	var lines []string
 	if fresh.Level > oldLevel {
-		out = append(out, amber.Render(fmt.Sprintf("*** PROMOTIE — THIS-%d toegekend ***", fresh.Level)))
+		style := amber
+		if m.inThis {
+			style = green
+		}
+		lines = append(lines, style.Render(fmt.Sprintf("*** PROMOTIE — THIS-%d toegekend ***", fresh.Level)))
 	}
 	l, err := m.deps.Boards.Listing(context.Background(), m.boardID, m.viewer())
 	if err != nil {
@@ -695,8 +834,13 @@ func (m *Model) checkPromotion() (tea.Model, tea.Cmd) {
 		m.boardID = ""
 		return m, promoTick()
 	}
-	out = append(out, renderListing(l))
-	return m, tea.Batch(tea.Println(strings.Join(out, "\n")), promoTick())
+	lines = append(lines, renderListing(l))
+	block := strings.Join(lines, "\n")
+	if m.inThis {
+		m.thisPrint(block)
+		return m, promoTick()
+	}
+	return m, tea.Batch(tea.Println(block), promoTick())
 }
 
 // ─── handle picker ─────────────────────────────────────────────────────────
@@ -768,15 +912,20 @@ func (m *Model) boardsLine(line string) (tea.Model, tea.Cmd) {
 
 func (m *Model) openBoard(id string) (tea.Model, tea.Cmd) {
 	if id == "" {
-		return m, m.print("Gebruik: board <id>")
+		return m, m.out("Gebruik: board <id>")
 	}
 	l, err := m.deps.Boards.Listing(context.Background(), id, m.viewer())
 	if err != nil {
-		return m, m.print("Onbekend board.")
+		return m, m.out("Onbekend board.")
 	}
 	m.boardID = id
-	m.deps.Sess.SetArea("board "+strings.ToUpper(id), l.Board.Area == content.AreaThis)
-	return m, m.print(renderListing(l))
+	if m.inThis {
+		// Inside THIS the public user list never shows more than a busy line.
+		m.deps.Sess.SetArea("", true)
+	} else {
+		m.deps.Sess.SetArea("board "+strings.ToUpper(id), l.Board.Area == content.AreaThis)
+	}
+	return m, m.out(renderListing(l))
 }
 
 func (m *Model) renderStatus() string {
@@ -800,52 +949,56 @@ func (m *Model) renderStatus() string {
 // readMessage handles `read <nr>` in the current board context.
 func (m *Model) readMessage(arg string) (tea.Model, tea.Cmd) {
 	if m.boardID == "" {
-		return m, m.print("Open eerst een board: board <id>")
+		return m, m.out("Open eerst een board: board <id>")
 	}
 	nr, err := strconv.Atoi(arg)
 	if err != nil {
-		return m, m.print("Gebruik: read <nr>")
+		return m, m.out("Gebruik: read <nr>")
 	}
 	msg, err := m.deps.Boards.Read(context.Background(), m.boardID, nr, m.viewer())
 	var ec board.ErrClearance
 	switch {
 	case errors.As(err, &ec):
 		// Locked things respond specifically: name the required clearance.
-		return m, m.print(fmt.Sprintf("TOEGANG GEWEIGERD — THIS-%d vereist.", ec.Need))
+		return m, m.out(fmt.Sprintf("TOEGANG GEWEIGERD — THIS-%d vereist.", ec.Need))
 	case err != nil:
-		return m, m.print("Geen bericht met dat nummer.")
+		return m, m.out("Geen bericht met dat nummer.")
 	}
 	_ = m.deps.Store.SetLastRead(context.Background(), m.deps.Player.Fingerprint, m.boardID, msg.ID)
-	return m, m.print(renderMessage(m.boardID, msg))
+	if msg.GrantsFlag != "" {
+		m.refreshPlayer()
+	}
+	return m, m.out(renderMessage(m.boardID, msg))
 }
 
 // startCompose begins the post/reply composer (ESC cancels).
 func (m *Model) startCompose(replyTo int) (tea.Model, tea.Cmd) {
 	if m.boardID == "" {
-		return m, m.print("Open eerst een board: board <id>")
+		return m, m.out("Open eerst een board: board <id>")
 	}
 	b := m.deps.Boards.VisibleBoardByID(m.boardID, m.viewer())
 	if b == nil {
 		m.boardID = ""
-		return m, m.print("Onbekend board.")
+		return m, m.out("Onbekend board.")
 	}
 	if !b.Writable {
-		return m, m.print("Dit board is alleen-lezen.")
+		return m, m.out("Dit board is alleen-lezen.")
 	}
 	m.compose.replyTo = replyTo
+	m.compose.back = m.state
 	m.state = stateComposeSubject
 	m.input.Prompt = "Onderwerp: "
-	return m, m.print("Nieuw bericht. ESC annuleert.")
+	return m, m.out("Nieuw bericht. ESC annuleert.")
 }
 
 func (m *Model) composeSubject(line string) (tea.Model, tea.Cmd) {
 	if line == "" {
-		return m, m.print("Onderwerp mag niet leeg zijn.")
+		return m, m.out("Onderwerp mag niet leeg zijn.")
 	}
 	m.compose.subject = line
 	m.state = stateComposeBody
 	m.input.Prompt = "| "
-	return m, m.print("Tekst. Sluit af met '.' op een eigen regel (of ctrl-d).")
+	return m, m.out("Tekst. Sluit af met '.' op een eigen regel (of ctrl-d).")
 }
 
 func (m *Model) composeBody(line string) (tea.Model, tea.Cmd) {
@@ -861,7 +1014,7 @@ func (m *Model) composeBody(line string) (tea.Model, tea.Cmd) {
 func (m *Model) finishBody() (tea.Model, tea.Cmd) {
 	if len(m.compose.lines) == 0 {
 		m.resetCompose()
-		return m, m.print("Leeg bericht, geannuleerd.")
+		return m, m.out("Leeg bericht, geannuleerd.")
 	}
 	b := m.deps.Boards.VisibleBoardByID(m.boardID, m.viewer())
 	if b != nil && b.Area == content.AreaThis && m.deps.Player.Level > 0 {
@@ -878,7 +1031,7 @@ func (m *Model) composeLevel(line string) (tea.Model, tea.Cmd) {
 	}
 	lvl, err := strconv.Atoi(line)
 	if err != nil || lvl < 0 || lvl > m.deps.Player.Level {
-		return m, m.print(fmt.Sprintf("Kies een niveau van 0 t/m %d.", m.deps.Player.Level))
+		return m, m.out(fmt.Sprintf("Kies een niveau van 0 t/m %d.", m.deps.Player.Level))
 	}
 	return m.submitPost(lvl)
 }
@@ -889,20 +1042,33 @@ func (m *Model) submitPost(level int) (tea.Model, tea.Cmd) {
 	m.resetCompose()
 	if err != nil {
 		if errors.Is(err, board.ErrNoMessage) {
-			return m, m.print("Geen bericht met dat nummer.")
+			return m, m.out("Geen bericht met dat nummer.")
 		}
-		return m, m.print("Plaatsen mislukt.")
+		return m, m.out("Plaatsen mislukt.")
 	}
 	_ = m.deps.Store.SetLastRead(context.Background(), m.deps.Player.Fingerprint, m.boardID, id)
-	return m, m.print(fmt.Sprintf("Geplaatst als bericht #%d.", id))
+	return m, m.out(fmt.Sprintf("Geplaatst als bericht #%d.", id))
 }
 
 // ─── file area ─────────────────────────────────────────────────────────────
 
+// visibleFiles filters the file area by the player's flags: gated files are
+// absent from the list until their requires_flag is held.
+func (m *Model) visibleFiles() []content.File {
+	var out []content.File
+	for _, f := range m.deps.Content.Files {
+		if f.RequiresFlag == "" || m.deps.Player.HasFlag(f.RequiresFlag) {
+			out = append(out, f)
+		}
+	}
+	return out
+}
+
 func (m *Model) filesLine(line string) (tea.Model, tea.Cmd) {
+	files := m.visibleFiles()
 	fields := strings.Fields(strings.ToLower(line))
 	if len(fields) == 0 {
-		return m, m.print(renderFileList(m.deps.Content.Files))
+		return m, m.print(renderFileList(files))
 	}
 	switch fields[0] {
 	case "terug", "menu":
@@ -912,10 +1078,10 @@ func (m *Model) filesLine(line string) (tea.Model, tea.Cmd) {
 			return m, m.print("Gebruik: lees <nr>")
 		}
 		nr, err := strconv.Atoi(fields[1])
-		if err != nil || nr < 1 || nr > len(m.deps.Content.Files) {
+		if err != nil || nr < 1 || nr > len(files) {
 			return m, m.print("Geen bestand met dat nummer.")
 		}
-		f := &m.deps.Content.Files[nr-1]
+		f := &files[nr-1]
 		if f.GrantsFlag != "" {
 			_ = m.deps.Store.GrantFlags(context.Background(), m.deps.Player.Fingerprint, f.GrantsFlag)
 			if fresh, err := m.deps.Store.PlayerByFingerprint(context.Background(), m.deps.Player.Fingerprint); err == nil {
@@ -970,6 +1136,155 @@ func (m *Model) chatLine(line string) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+// ─── THIS mode ─────────────────────────────────────────────────────────────
+
+// enterThis crosses the threshold: full-screen altscreen, green theme, raw
+// prompt. No baud throttle inside (their software was better).
+func (m *Model) enterThis() (tea.Model, tea.Cmd) {
+	m.state = stateThis
+	m.inThis = true
+	m.boardID = ""
+	m.input.Prompt = "> "
+	m.deps.Sess.SetArea("", true) // public user list shows only "lijn bezet"
+	arrival := m.deps.Content.ThisArrival
+	if arrival == "" {
+		arrival = "THIS\n\ntik 'help'."
+	}
+	m.thisLines = nil
+	m.thisPrint(arrival)
+	return m, tea.EnterAltScreen
+}
+
+// exitThis returns to the public BBS menu.
+func (m *Model) exitThis() (tea.Model, tea.Cmd) {
+	m.inThis = false
+	m.boardID = ""
+	m.state = stateMenu
+	m.input.Prompt = "Keuze: "
+	m.deps.Sess.SetArea("hoofdmenu", false)
+	return m, tea.Sequence(tea.ExitAltScreen, m.print(m.renderMenu()))
+}
+
+// thisHelp is deliberately incomplete: advanced commands are discovered in
+// files and posts, not documented.
+const thisHelp = `THIS commando's (onvolledig — vraag niet waarom):
+
+  help          dit overzicht
+  boards        beschikbare boards
+  board <id>    open een board
+  read <nr>     lees een bericht
+  status        wie je bent, wat je mag
+  exit          terug naar de babbelaars`
+
+// thisSnark returns a period-appropriate error for unknown THIS commands.
+func thisSnark(cmd string) string {
+	snark := []string{
+		"?SYNTAX ERROR",
+		"onbekend commando. nog wel.",
+		"dat doet hier niks. tik 'help' als je durft.",
+		"nee.",
+	}
+	h := 0
+	for _, r := range cmd {
+		h = (h*31 + int(r)) % len(snark)
+	}
+	return snark[h]
+}
+
+// thisLine dispatches a THIS-prompt command. Case-insensitive.
+func (m *Model) thisLine(line string) (tea.Model, tea.Cmd) {
+	fields := strings.Fields(line)
+	if len(fields) == 0 {
+		return m, nil
+	}
+	cmd := strings.ToLower(fields[0])
+	arg := ""
+	if len(fields) > 1 {
+		arg = strings.ToLower(fields[1])
+	}
+	switch cmd {
+	case "help", "?":
+		return m, m.out(thisHelp)
+	case "boards":
+		return m, m.out(m.renderThisBoards())
+	case "board":
+		return m.openBoard(arg)
+	case "read", "lees":
+		return m.readMessage(arg)
+	case "post":
+		return m.startCompose(0)
+	case "reply":
+		nr, err := strconv.Atoi(arg)
+		if err != nil {
+			return m, m.out("gebruik: reply <nr>")
+		}
+		return m.startCompose(nr)
+	case "status":
+		return m, m.out(m.renderStatus())
+	case "exit", "terug":
+		return m.exitThis()
+	case "logout":
+		return m.quit()
+	}
+	return m, m.out(thisSnark(cmd))
+}
+
+// renderThisBoards lists only THIS-area boards (the public boards live on
+// the other side of the door).
+func (m *Model) renderThisBoards() string {
+	var b strings.Builder
+	b.WriteString("BOARDS\n")
+	n := 0
+	for _, bd := range m.deps.Boards.VisibleBoards(m.viewer()) {
+		if bd.Area != content.AreaThis {
+			continue
+		}
+		b.WriteString(fmt.Sprintf("  %-14s %s\n", bd.ID, bd.Name))
+		n++
+	}
+	if n == 0 {
+		b.WriteString("  (niets — dat zegt genoeg)\n")
+	}
+	b.WriteString("gebruik: board <id>")
+	return b.String()
+}
+
+// thisView renders the full-screen THIS surface: status bar, pane, input.
+func (m *Model) thisView() string {
+	w := m.width
+	if w <= 0 {
+		w = 80
+	}
+	h := m.height
+	if h <= 0 {
+		h = 24
+	}
+	level := fmt.Sprintf("THIS-%d", m.deps.Player.Level)
+	left := " NEABBS//THIS "
+	right := fmt.Sprintf(" %s · %s ", m.deps.Player.Handle, level)
+	pad := w - lipgloss.Width(left) - lipgloss.Width(right)
+	if pad < 0 {
+		pad = 0
+	}
+	bar := thisBar.Render(left + strings.Repeat(" ", pad) + right)
+
+	paneH := h - 2
+	if paneH < 1 {
+		paneH = 1
+	}
+	lines := m.thisLines
+	if len(lines) > paneH {
+		lines = lines[len(lines)-paneH:]
+	}
+	pane := make([]string, paneH)
+	for i := range pane {
+		if i < len(lines) {
+			pane[i] = green.Render(lines[i])
+		}
+	}
+	return bar + "\n" + strings.Join(pane, "\n") + "\n" + green.Render(m.input.View())
+}
+
 // ─── misc ──────────────────────────────────────────────────────────────────
 
 func lineLabel(n int) string {
@@ -983,17 +1298,26 @@ func (m *Model) quit() (tea.Model, tea.Cmd) {
 	if m.state == stateChat {
 		m.deps.Chat.Leave(m.deps.Sess)
 	}
+	wasThis := m.inThis
+	m.inThis = false
 	m.state = stateDone
 	bye := m.deps.Content.Goodbye
 	if bye == "" {
 		bye = "Tot ziens. NEABBS wacht wel weer 40 jaar."
 	}
-	return m, tea.Sequence(tea.Println("\n"+strings.TrimRight(bye, "\n")+"\n\nNO CARRIER"), tea.Quit)
+	goodbye := tea.Sequence(tea.Println("\n"+strings.TrimRight(bye, "\n")+"\n\nNO CARRIER"), tea.Quit)
+	if wasThis {
+		return m, tea.Sequence(tea.ExitAltScreen, goodbye)
+	}
+	return m, goodbye
 }
 
 func (m *Model) View() string {
 	if m.state == stateDone {
 		return ""
+	}
+	if m.inThis {
+		return m.thisView()
 	}
 	if pv := m.printer.view(); pv != "" {
 		return pv

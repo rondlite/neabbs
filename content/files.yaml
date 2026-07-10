@@ -147,6 +147,24 @@ files:
       * Een cassette die niet laadt: volume op 7, toon op maximaal,
         en bidden tot de god van de magneetkoppen.
 
+  # ── discovery chain, beat 1: a file clearly not meant to be public ──
+  - name: "sysop-notities.txt"
+    date: "02-05-26"
+    size: "1K"
+    desc: "(verkeerd gearchiveerd?)"
+    body: |
+      NOTITIES BIJ HET HERSTEL — NIET PUBLICEREN
+
+      - banden 1 t/m 6: leesbaar. boards en bestanden terug.
+      - band 7: de oude sectie. NIET aangesloten. na wat er in
+        maart '86 gebeurd is blijft die verzegeld. geen discussie.
+      - wachtwoordbestand: waardeloos (goed zo).
+      - phantom belde in de laatste nacht nog. als die naam ooit
+        weer op een board verschijnt wil ik het WETEN.
+
+      todo: dit bestand NIET in de publieke lijst zetten
+      todo: koffie
+
   - name: "sysop-dagboek-1.txt"
     date: "10-05-26"
     size: "2K"
@@ -186,3 +204,22 @@ files:
 
       [red.: wie in 2026 dit leest mag de winnaar aanwijzen op het
        board ALGEMEEN]
+
+  # ── discovery chain, beat 3: appears once phantom's spoor is gevolgd ──
+  - name: "herstel-log.txt"
+    date: "12-05-26"
+    size: "1K"
+    desc: "logboek band 7 (fragment)"
+    requires_flag: "phantom_spoor"
+    grants_flag: "this_invite"
+    body: |
+      HERSTEL-LOGBOEK — BAND 7 (fragment, niet gearchiveerd)
+
+      03:41  band 7 gemonteerd. label: "T.H.I.S."
+      03:44  index leesbaar. sectie reageert op de oude aanroep.
+      03:46  aanroep werkt nog vanaf het HOOFDMENU. gewoon de
+             naam van de sectie intikken. vier letters. meer
+             was het nooit.
+      03:52  verzegeld zoals afgesproken. wie de aanroep kent
+             én weet wat hij zoekt, vindt de deur toch wel.
+      03:53  einde dienst. de nacht is van hen.

@@ -1,0 +1,15 @@
+# Main-menu area definition. hidden_commands are the door: typing one
+# without the required flag returns the exact same "Onbekende keuze." as
+# any gibberish — existence is never confirmed.
+hidden_commands:
+  - input: "this"
+    requires_flag: "this_invite"
+    effects:
+      set_this_member: true
+      grant_flags: ["entered_this"]
+    response: |
+      ... even geduld ...
+
+      ... lijn wordt omgelegd ...
+
+      DOORVERBINDEN NAAR: THIS

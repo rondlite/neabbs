@@ -55,12 +55,30 @@ func (m *Message) AuthorShown() bool { return m.AuthorVisible == nil || *m.Autho
 
 // File is one entry in the public file area (bestanden).
 type File struct {
-	Name       string `yaml:"name"`
-	Date       string `yaml:"date"` // display date, freeform period text
-	Size       string `yaml:"size"` // display size, freeform ("12K")
-	Desc       string `yaml:"desc"`
-	Body       string `yaml:"body"`
-	GrantsFlag string `yaml:"grants_flag"` // reading the file sets this flag
+	Name         string `yaml:"name"`
+	Date         string `yaml:"date"` // display date, freeform period text
+	Size         string `yaml:"size"` // display size, freeform ("12K")
+	Desc         string `yaml:"desc"`
+	Body         string `yaml:"body"`
+	GrantsFlag   string `yaml:"grants_flag"`   // reading the file sets this flag
+	RequiresFlag string `yaml:"requires_flag"` // without it: absent from the list
+}
+
+// Effects is what a hidden command (later: a host event) does to a player.
+type Effects struct {
+	SetThisMember bool     `yaml:"set_this_member"`
+	GrantFlags    []string `yaml:"grant_flags"`
+	GrantLevel    int      `yaml:"grant_level"` // 0 = no promotion
+}
+
+// HiddenCommand is a secret input at the main menu. Typing it without the
+// required flag yields the exact same error as gibberish — never confirm
+// existence.
+type HiddenCommand struct {
+	Input        string  `yaml:"input"`
+	RequiresFlag string  `yaml:"requires_flag"`
+	Effects      Effects `yaml:"effects"`
+	Response     string  `yaml:"response"`
 }
 
 // SeedCaller is one fictional entry padding the "laatste bellers" list.
@@ -77,12 +95,14 @@ type Bulletin struct {
 
 // Set is all loaded content.
 type Set struct {
-	Boards      []Board // sorted: public first, then by min_level, then id
-	Files       []File
-	SeedCallers []SeedCaller
-	Bulletins   []Bulletin // sorted by filename
-	Colofon     string
-	Goodbye     string
+	Boards         []Board // sorted: public first, then by min_level, then id
+	Files          []File
+	SeedCallers    []SeedCaller
+	Bulletins      []Bulletin // sorted by filename
+	Colofon        string
+	Goodbye        string
+	HiddenCommands []HiddenCommand // content/areas/main.yaml
+	ThisArrival    string          // content/this-arrival.txt
 }
 
 // BoardByID returns the board or nil.
@@ -165,6 +185,19 @@ func Load(dir string) (*Set, error) {
 		return nil, err
 	}
 
+	// Main-menu area definition (hidden commands).
+	if buf, err := os.ReadFile(filepath.Join(dir, "areas", "main.yaml")); err == nil {
+		var wrapper struct {
+			HiddenCommands []HiddenCommand `yaml:"hidden_commands"`
+		}
+		if err := yaml.Unmarshal(buf, &wrapper); err != nil {
+			return nil, fmt.Errorf("areas/main.yaml: %w", err)
+		}
+		set.HiddenCommands = wrapper.HiddenCommands
+	} else if !os.IsNotExist(err) {
+		return nil, err
+	}
+
 	// Single-text screens.
 	for _, t := range []struct {
 		file string
@@ -172,6 +205,7 @@ func Load(dir string) (*Set, error) {
 	}{
 		{"colofon.txt", &set.Colofon},
 		{"goodbye.txt", &set.Goodbye},
+		{"this-arrival.txt", &set.ThisArrival},
 	} {
 		if buf, err := os.ReadFile(filepath.Join(dir, t.file)); err == nil {
 			*t.dst = string(buf)
@@ -274,6 +308,44 @@ func Lint(s *Set) error {
 			}
 		}
 	}
+	// Flag reachability: every required flag must be grantable somewhere
+	// (a file read, a board message read, or a hidden command's effects).
+	grantable := map[string]bool{}
+	for i := range s.Files {
+		if f := s.Files[i].GrantsFlag; f != "" {
+			grantable[f] = true
+		}
+	}
+	for i := range s.Boards {
+		for j := range s.Boards[i].Messages {
+			if f := s.Boards[i].Messages[j].GrantsFlag; f != "" {
+				grantable[f] = true
+			}
+		}
+	}
+	for i := range s.HiddenCommands {
+		for _, f := range s.HiddenCommands[i].Effects.GrantFlags {
+			grantable[f] = true
+		}
+	}
+	for i := range s.Files {
+		if f := s.Files[i].RequiresFlag; f != "" && !grantable[f] {
+			fail("files.yaml %s: requires_flag %q is unreachable (nothing grants it)", s.Files[i].Name, f)
+		}
+	}
+	for i := range s.HiddenCommands {
+		hc := &s.HiddenCommands[i]
+		if hc.Input == "" {
+			fail("areas/main.yaml hidden_command #%d: missing input", i)
+		}
+		if f := hc.RequiresFlag; f != "" && !grantable[f] {
+			fail("areas/main.yaml %q: requires_flag %q is unreachable (this_invite chain broken?)", hc.Input, f)
+		}
+		if lvl := hc.Effects.GrantLevel; lvl < 0 || lvl > 9 {
+			fail("areas/main.yaml %q: grant_level %d out of range", hc.Input, lvl)
+		}
+	}
+
 	if len(errs) > 0 {
 		return fmt.Errorf("content lint:\n  %s", strings.Join(errs, "\n  "))
 	}

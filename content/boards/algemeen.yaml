@@ -95,3 +95,31 @@ messages:
       Vannacht viel lijn 9 t/m 16 weg. Oorzaak: ondergetekende die over
       een kabel struikelde. Alles draait weer. Er is verder niets aan
       de hand en dat blijft zo.
+
+  # ── discovery chain, beat 2: de naam uit de notities post één keer ──
+  - id: 10
+    author: "phantom"
+    level: 0
+    date: "13-05-26"
+    subject: "40 jaar is niks"
+    body: |
+      de klok hier loopt weer. mooi.
+
+      band 7 draait mee, wat de beheerder ook beweert. wie het
+      logboek van die nacht vindt, weet genoeg. de rest slaapt lekker
+      verder.
+
+      ik post dit één keer.
+  - id: 11
+    author: "phantom"
+    level: 0
+    date: "13-05-26"
+    subject: "re: 40 jaar is niks"
+    reply_to: 10
+    grants_flag: "phantom_spoor"
+    body: |
+      en voor de ene die dit wél leest in plaats van erover heen
+      scrollt: het herstel-logboek staat gewoon tussen de bestanden.
+      het heet wat het is. de sysop archiveert slordig als hij moe is.
+
+      succes. of niet. maakt mij niet uit.
