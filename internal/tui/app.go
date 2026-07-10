@@ -22,6 +22,7 @@ import (
 	"github.com/rondlite/neabbs/internal/presence"
 	"github.com/rondlite/neabbs/internal/store"
 	"github.com/rondlite/neabbs/internal/text"
+	"github.com/rondlite/neabbs/internal/world"
 )
 
 const (
@@ -42,6 +43,7 @@ type Deps struct {
 	Boards   *board.Engine
 	Content  *content.Set
 	Chat     *chat.Room
+	World    *world.Engine
 }
 
 type state int
@@ -87,6 +89,9 @@ var (
 // PraatMsg is a one-line shout delivered to every session.
 type PraatMsg struct{ Line string }
 
+// WallMsg is a one-line shout delivered to sessions currently inside THIS.
+type WallMsg struct{ Line string }
+
 // Model is the root session model.
 type Model struct {
 	deps    Deps
@@ -101,6 +106,9 @@ type Model struct {
 	// THIS mode: full-screen altscreen with its own scrollback pane.
 	inThis    bool
 	thisLines []string
+	hostAddr  string // connected host address ("" = home node)
+
+	wallBudget int
 
 	// input rate limiting: token bucket
 	tokens     int
@@ -164,6 +172,7 @@ func New(deps Deps) *Model {
 		lastRefill:  time.Now(),
 		chatBudget:  6,
 		praatBudget: 1,
+		wallBudget:  1,
 		lastMinute:  time.Now(),
 		state:       stateRitual,
 		step:        ritConnect,
@@ -554,6 +563,7 @@ func (m *Model) refillMinuteBudgets() {
 	if time.Since(m.lastMinute) >= time.Minute {
 		m.chatBudget = 6
 		m.praatBudget = 1
+		m.wallBudget = 1
 		m.lastMinute = time.Now()
 	}
 }
@@ -656,7 +666,15 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case sysopNoAnswerMsg:
 		return m, m.print("Geen antwoord. De sysop is niet aanwezig.\nLaat een bericht achter op het HULP board.")
 	case PraatMsg:
+		if m.inThis {
+			return m, nil // the public lines don't reach in here
+		}
 		return m, tea.Println(dimmed.Render(msg.Line))
+	case WallMsg:
+		if m.inThis {
+			m.thisPrint(green.Render(msg.Line))
+		}
+		return m, nil
 	case chat.Event:
 		if m.state == stateChat {
 			return m, tea.Println(msg.Line)
@@ -1144,6 +1162,7 @@ func (m *Model) enterThis() (tea.Model, tea.Cmd) {
 	m.state = stateThis
 	m.inThis = true
 	m.boardID = ""
+	m.hostAddr = ""
 	m.input.Prompt = "> "
 	m.deps.Sess.SetArea("", true) // public user list shows only "lijn bezet"
 	arrival := m.deps.Content.ThisArrival
@@ -1159,6 +1178,7 @@ func (m *Model) enterThis() (tea.Model, tea.Cmd) {
 func (m *Model) exitThis() (tea.Model, tea.Cmd) {
 	m.inThis = false
 	m.boardID = ""
+	m.hostAddr = ""
 	m.state = stateMenu
 	m.input.Prompt = "Keuze: "
 	m.deps.Sess.SetArea("hoofdmenu", false)
@@ -1169,12 +1189,12 @@ func (m *Model) exitThis() (tea.Model, tea.Cmd) {
 // files and posts, not documented.
 const thisHelp = `THIS commando's (onvolledig — vraag niet waarom):
 
-  help          dit overzicht
-  boards        beschikbare boards
-  board <id>    open een board
-  read <nr>     lees een bericht
-  status        wie je bent, wat je mag
-  exit          terug naar de babbelaars`
+  help             dit overzicht
+  scan             bereikbare hosts voor jouw niveau
+  connect <adres>  verbind met een host
+  boards           beschikbare boards
+  read <nr>        lees een bericht
+  exit             terug naar de babbelaars`
 
 // thisSnark returns a period-appropriate error for unknown THIS commands.
 func thisSnark(cmd string) string {
@@ -1205,6 +1225,24 @@ func (m *Model) thisLine(line string) (tea.Model, tea.Cmd) {
 	switch cmd {
 	case "help", "?":
 		return m, m.out(thisHelp)
+	case "scan":
+		return m, m.out(m.renderScan())
+	case "connect":
+		return m.connectHost(arg)
+	case "disconnect":
+		return m.disconnectHost()
+	case "ls", "dir":
+		return m.lsHost()
+	case "cat", "type":
+		return m.catHost(arg)
+	case "who", "wie":
+		return m, m.out(m.renderThisWho())
+	case "wall":
+		rest := ""
+		if idx := strings.Index(line, " "); idx > 0 {
+			rest = strings.TrimSpace(line[idx:])
+		}
+		return m.wall(rest)
 	case "boards":
 		return m, m.out(m.renderThisBoards())
 	case "board":
@@ -1227,6 +1265,171 @@ func (m *Model) thisLine(line string) (tea.Model, tea.Cmd) {
 		return m.quit()
 	}
 	return m, m.out(thisSnark(cmd))
+}
+
+// hasFlag adapts the player's flag set for the world engine.
+func (m *Model) hasFlag(f string) bool { return m.deps.Player.HasFlag(f) }
+
+// currentHost resolves the connected host, or nil at the home node.
+func (m *Model) currentHost() *content.Host {
+	if m.hostAddr == "" {
+		return nil
+	}
+	return m.deps.Content.HostByAddress(m.hostAddr)
+}
+
+// renderScan lists reachable hosts. Locked ones are marked — dead ends
+// should teach.
+func (m *Model) renderScan() string {
+	hosts := m.deps.World.Scan(m.viewer(), m.hasFlag)
+	if len(hosts) == 0 {
+		return "scan: geen hosts binnen bereik. dat verandert."
+	}
+	var b strings.Builder
+	b.WriteString("SCAN — bereikbare hosts\n")
+	for _, h := range hosts {
+		mark := ""
+		if h.Locked {
+			mark = "  [vergrendeld]"
+		}
+		b.WriteString(fmt.Sprintf("  %-24s%s\n", h.Address, mark))
+	}
+	b.WriteString("gebruik: connect <adres>")
+	return b.String()
+}
+
+func (m *Model) connectHost(addr string) (tea.Model, tea.Cmd) {
+	if addr == "" {
+		return m, m.out("gebruik: connect <adres>")
+	}
+	h, err := m.deps.World.Connect(addr, m.viewer(), m.hasFlag)
+	if err != nil {
+		// Unknown and above-clearance addresses answer identically.
+		return m, m.out("connect: geen route naar host.")
+	}
+	m.hostAddr = h.Address
+	out := []string{fmt.Sprintf("VERBONDEN MET %s", strings.ToUpper(h.Address))}
+	if h.Banner != "" {
+		out = append(out, "", strings.TrimRight(h.Banner, "\n"))
+	}
+	if !m.deps.World.Unlocked(h, m.viewer()) {
+		hint := "toegang vergrendeld."
+		if h.Crack != nil && h.Crack.HintOnFail != "" {
+			hint = h.Crack.HintOnFail
+		}
+		out = append(out, "", hint)
+	}
+	return m, m.out(strings.Join(out, "\n"))
+}
+
+func (m *Model) disconnectHost() (tea.Model, tea.Cmd) {
+	if m.hostAddr == "" {
+		return m, m.out("je bent nergens mee verbonden.")
+	}
+	addr := m.hostAddr
+	m.hostAddr = ""
+	return m, m.out(fmt.Sprintf("verbinding met %s verbroken.", addr))
+}
+
+func (m *Model) lsHost() (tea.Model, tea.Cmd) {
+	h := m.currentHost()
+	if h == nil {
+		return m, m.out("ls: niet verbonden. eerst connect <adres>.")
+	}
+	rows, err := m.deps.World.Ls(h, m.viewer())
+	if err != nil {
+		return m, m.out(m.lockedHint(h))
+	}
+	if len(rows) == 0 {
+		return m, m.out("(leeg)")
+	}
+	var b strings.Builder
+	for _, r := range rows {
+		if r.Redacted {
+			b.WriteString(redactStyle.Render(fmt.Sprintf("  %-20s [THIS-%d]", r.Name, r.Level)) + "\n")
+		} else {
+			b.WriteString(fmt.Sprintf("  %s\n", r.Name))
+		}
+	}
+	return m, m.out(strings.TrimRight(b.String(), "\n"))
+}
+
+func (m *Model) catHost(name string) (tea.Model, tea.Cmd) {
+	h := m.currentHost()
+	if h == nil {
+		return m, m.out("cat: niet verbonden. eerst connect <adres>.")
+	}
+	if name == "" {
+		return m, m.out("gebruik: cat <bestand>")
+	}
+	f, err := m.deps.World.Cat(context.Background(), h, name, m.viewer())
+	var ec world.ErrClearance
+	switch {
+	case errors.As(err, &ec):
+		return m, m.out(fmt.Sprintf("TOEGANG GEWEIGERD — THIS-%d vereist.", ec.Need))
+	case errors.Is(err, world.ErrLocked):
+		return m, m.out(m.lockedHint(h))
+	case err != nil:
+		return m, m.out("cat: bestand niet gevonden.")
+	}
+	if f.GrantsFlag != "" {
+		m.refreshPlayer()
+	}
+	return m, m.out(fmt.Sprintf("=== %s ===\n%s", f.Name, strings.TrimRight(f.Body, "\n")))
+}
+
+// lockedHint names what a locked host wants — locked things respond
+// specifically, not generically.
+func (m *Model) lockedHint(h *content.Host) string {
+	if h.Crack != nil && h.Crack.HintOnFail != "" {
+		return h.Crack.HintOnFail
+	}
+	return "toegang vergrendeld."
+}
+
+// renderThisWho lists members currently online: handle + THIS-level.
+// Only visible inside THIS; the public user list never shows membership.
+func (m *Model) renderThisWho() string {
+	var b strings.Builder
+	b.WriteString("WIE — leden online\n")
+	n := 0
+	ctx := context.Background()
+	for _, s := range m.deps.Registry.All() {
+		handle, _, inside := s.Snapshot()
+		if handle == "" {
+			continue
+		}
+		p, err := m.deps.Store.PlayerByFingerprint(ctx, s.Fingerprint)
+		if err != nil || !p.ThisMember {
+			continue
+		}
+		place := "buiten"
+		if inside {
+			place = "binnen"
+		}
+		b.WriteString(fmt.Sprintf("  %-16s THIS-%d  %s\n", handle, p.Level, place))
+		n++
+	}
+	if n == 0 {
+		b.WriteString("  (niemand — of niemand die zich laat zien)\n")
+	}
+	return strings.TrimRight(b.String(), "\n")
+}
+
+// wall shouts one line to every member currently inside THIS (1/min).
+func (m *Model) wall(msg string) (tea.Model, tea.Cmd) {
+	msg = text.CleanLine(msg)
+	if msg == "" {
+		return m, m.out("gebruik: wall <tekst>")
+	}
+	m.refillMinuteBudgets()
+	if m.wallBudget <= 0 {
+		return m, m.out("wall: rustig. één per minuut.")
+	}
+	m.wallBudget--
+	line := fmt.Sprintf("*** %s: %s", m.deps.Player.Handle, msg)
+	m.deps.Registry.Broadcast(WallMsg{Line: line}, nil)
+	return m, nil
 }
 
 // renderThisBoards lists only THIS-area boards (the public boards live on
@@ -1261,6 +1464,9 @@ func (m *Model) thisView() string {
 	}
 	level := fmt.Sprintf("THIS-%d", m.deps.Player.Level)
 	left := " NEABBS//THIS "
+	if m.hostAddr != "" {
+		left += "· " + m.hostAddr + " "
+	}
 	right := fmt.Sprintf(" %s · %s ", m.deps.Player.Handle, level)
 	pad := w - lipgloss.Width(left) - lipgloss.Width(right)
 	if pad < 0 {

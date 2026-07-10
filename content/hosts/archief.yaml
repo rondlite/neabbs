@@ -1,0 +1,56 @@
+# Tutorial host: open, teaches ls/cat, and drops the word 'crack' —
+# advanced commands are discovered, not documented.
+id: this-archief
+address: "archief.this.nl"
+min_level: 0
+locked: false
+banner: |
+  THIS ARCHIEF — bewaarmachine
+  laatste schrijfactie: 03-86
+
+  onbekende terminal. tik 'ls' voor de inhoud.
+files:
+  - name: "readme.1st"
+    min_level: 0
+    body: |
+      dit is de bewaarmachine. hier staat wat te heet was om op
+      een board te zetten en te waardevol om weg te gooien.
+
+      lezen doe je met: cat <bestandsnaam>
+
+      hogere niveaus zien hier meer staan. zo hoort dat.
+
+      voor wie verder wil: niet elke machine laat je zomaar
+      binnen. wat op slot zit maak je open met 'crack'. maar
+      een slot kraken zonder te weten wat erachter zit, dat is
+      hoe je opvalt. eerst lezen, dan pas breken.
+  - name: "wie-was-wie.txt"
+    min_level: 0
+    body: |
+      WIE WAS WIE (onvolledig, met opzet)
+
+      beheerder   - bouwde THIS. humeurig. eerlijk.
+      phantom     - vond alles het eerst. praatte het minst.
+      route66     - kende elke lijn tussen hier en amerika.
+      de_specht   - tikte overal net zo lang op tot het openging.
+      blueboxer   - hoorde tonen die er niet horen te zijn.
+
+      de rest is niveau. verdien het.
+  - name: "modemlijst-oud.dat"
+    min_level: 2
+    body: |
+      MODEMLIJST 1985/86 — GEDEELTELIJK HERSTELD
+
+      020-5551200   universiteit, nachtvenster 01:00-05:00
+      020-5551986   gemeente, "tijdelijk" testnummer sinds '84
+      070-5550023   [doorgestreept: NIET MEER BELLEN]
+
+      de rest van de band is beschadigd. de nummers doen er ook
+      niet meer toe. waar het om gaat: testnummers blijven
+      eeuwig bestaan. onthoud dat principe.
+  - name: "naslag-3.txt"
+    min_level: 3
+    body: |
+      [THIS-3 naslagwerk. als je dit leest is de kelder open
+      en weet je waar de volgende deur zit.]
+effects: {}

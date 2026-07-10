@@ -20,6 +20,7 @@ import (
 	"github.com/rondlite/neabbs/internal/content"
 	"github.com/rondlite/neabbs/internal/presence"
 	"github.com/rondlite/neabbs/internal/store/sqlitestore"
+	"github.com/rondlite/neabbs/internal/world"
 )
 
 // startServer boots the full Wish server on a random port.
@@ -44,7 +45,7 @@ func startServer(t *testing.T) string {
 		t.Fatal(err)
 	}
 	registry := presence.NewRegistry()
-	srv, err := newServer(cfg, st, registry, board.NewEngine(cset, st), cset, chat.NewRoom())
+	srv, err := newServer(cfg, st, registry, board.NewEngine(cset, st), cset, chat.NewRoom(), world.NewEngine(cset, st))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -365,6 +366,44 @@ func TestDiscoveryChainIntoTHIS(t *testing.T) {
 	if strings.Contains(d.snapshot(), "this-board") {
 		t.Fatal("THIS board leaked to non-member")
 	}
+
+	// The world: scan lists the open host and the locked teaser only.
+	c.send("scan\r")
+	c.waitFor("archief.this.nl")
+	c.waitFor("nacht.centrale.ptt.nl")
+	c.waitFor("[vergrendeld]")
+
+	// Tutorial host: connect → banner, ls shows redacted rows, cat works,
+	// above-level cat names the clearance.
+	c.send("connect archief.this.nl\r")
+	c.waitFor("THIS ARCHIEF")
+	c.send("ls\r")
+	c.waitFor("readme.1st")
+	c.waitFor("[THIS-2]")
+	c.send("cat readme.1st\r")
+	c.waitFor("crack") // the word is discovered here
+	c.send("cat modemlijst-oud.dat\r")
+	c.waitFor("TOEGANG GEWEIGERD — THIS-2 vereist.")
+
+	// Locked teaser responds specifically, naming its clearance.
+	c.send("connect nacht.centrale.ptt.nl\r")
+	c.waitFor("NACHTCENTRALE")
+	c.waitFor("THIS-5 sleutels")
+	c.send("ls\r")
+	c.waitFor("THIS-5 sleutels") // ls refused with the same specific hint
+	c.send("disconnect\r")
+	c.waitFor("verbroken")
+
+	// Unknown vs. above-clearance address: identical no-route error.
+	c.send("connect bestaat.niet.nl\r")
+	c.waitFor("geen route naar host.")
+
+	// who shows members with levels; wall reaches THIS members.
+	c.send("who\r")
+	c.waitFor("hacker")
+	c.waitFor("THIS-0")
+	c.send("wall test van de muur\r")
+	c.waitFor("*** hacker: test van de muur")
 
 	// Back through the door; the menu now shows the THIS entry.
 	c.send("exit\r")

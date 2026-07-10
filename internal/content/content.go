@@ -64,11 +64,45 @@ type File struct {
 	RequiresFlag string `yaml:"requires_flag"` // without it: absent from the list
 }
 
-// Effects is what a hidden command (later: a host event) does to a player.
+// Effects is what a hidden command or host event does to a player.
 type Effects struct {
 	SetThisMember bool     `yaml:"set_this_member"`
 	GrantFlags    []string `yaml:"grant_flags"`
 	GrantLevel    int      `yaml:"grant_level"` // 0 = no promotion
+	Broadcast     string   `yaml:"broadcast"`   // {handle} substituted; THIS members only
+}
+
+// Host is one node in the THIS world graph (content/hosts/*.yaml).
+// Nothing is actually hackable — a host is a content tree dressed as a system.
+type Host struct {
+	ID           string     `yaml:"id"`
+	Address      string     `yaml:"address"` // what the player types after `connect`
+	MinLevel     int        `yaml:"min_level"`
+	RequiresFlag string     `yaml:"requires_flag"` // set: flag gates visibility instead of level
+	Banner       string     `yaml:"banner"`
+	Locked       bool       `yaml:"locked"` // requires a successful `crack`
+	Crack        *CrackSpec `yaml:"crack"`
+	Files        []HostFile `yaml:"files"`
+	Effects      struct {
+		OnFirstCrack *Effects `yaml:"on_first_crack"`
+	} `yaml:"effects"`
+}
+
+// CrackSpec describes how a locked host opens.
+type CrackSpec struct {
+	Method       string `yaml:"method"`        // password | wordlist | none
+	PasswordFlag string `yaml:"password_flag"` // crack succeeds iff player holds this flag
+	MinLevel     int    `yaml:"min_level"`     // below this: crack refused, names the clearance
+	HintOnFail   string `yaml:"hint_on_fail"`
+	TraceSeconds int    `yaml:"trace_seconds"` // trace timer starts on successful crack
+}
+
+// HostFile is one readable file on a host, level-filtered like messages.
+type HostFile struct {
+	Name       string `yaml:"name"`
+	MinLevel   int    `yaml:"min_level"`
+	GrantsFlag string `yaml:"grants_flag"`
+	Body       string `yaml:"body"`
 }
 
 // HiddenCommand is a secret input at the main menu. Typing it without the
@@ -103,6 +137,18 @@ type Set struct {
 	Goodbye        string
 	HiddenCommands []HiddenCommand // content/areas/main.yaml
 	ThisArrival    string          // content/this-arrival.txt
+	Hosts          []Host          // content/hosts/*.yaml, sorted by min_level then id
+}
+
+// HostByAddress returns the host with the given address (case-insensitive),
+// or nil.
+func (s *Set) HostByAddress(addr string) *Host {
+	for i := range s.Hosts {
+		if strings.EqualFold(s.Hosts[i].Address, addr) {
+			return &s.Hosts[i]
+		}
+	}
+	return nil
 }
 
 // BoardByID returns the board or nil.
@@ -181,6 +227,34 @@ func Load(dir string) (*Set, error) {
 			}
 			set.Bulletins = append(set.Bulletins, Bulletin{Name: n, Body: string(buf)})
 		}
+	} else if !os.IsNotExist(err) {
+		return nil, err
+	}
+
+	// Hosts: content/hosts/*.yaml, one host per file.
+	hostsDir := filepath.Join(dir, "hosts")
+	if entries, err := os.ReadDir(hostsDir); err == nil {
+		for _, e := range entries {
+			if e.IsDir() || (!strings.HasSuffix(e.Name(), ".yaml") && !strings.HasSuffix(e.Name(), ".yml")) {
+				continue
+			}
+			path := filepath.Join(hostsDir, e.Name())
+			buf, err := os.ReadFile(path)
+			if err != nil {
+				return nil, err
+			}
+			var h Host
+			if err := yaml.Unmarshal(buf, &h); err != nil {
+				return nil, fmt.Errorf("%s: %w", path, err)
+			}
+			set.Hosts = append(set.Hosts, h)
+		}
+		sort.Slice(set.Hosts, func(i, j int) bool {
+			if set.Hosts[i].MinLevel != set.Hosts[j].MinLevel {
+				return set.Hosts[i].MinLevel < set.Hosts[j].MinLevel
+			}
+			return set.Hosts[i].ID < set.Hosts[j].ID
+		})
 	} else if !os.IsNotExist(err) {
 		return nil, err
 	}
@@ -308,8 +382,89 @@ func Lint(s *Set) error {
 			}
 		}
 	}
+	// Hosts: unique ids/addresses, sane levels, valid crack specs.
+	hostIDs := map[string]bool{}
+	hostAddrs := map[string]bool{}
+	for i := range s.Hosts {
+		h := &s.Hosts[i]
+		if h.ID == "" || h.Address == "" {
+			fail("host #%d: missing id or address", i)
+			continue
+		}
+		if hostIDs[h.ID] {
+			fail("host %s: duplicate id", h.ID)
+		}
+		hostIDs[h.ID] = true
+		addr := strings.ToLower(h.Address)
+		if hostAddrs[addr] {
+			fail("host %s: duplicate address %q", h.ID, h.Address)
+		}
+		hostAddrs[addr] = true
+		if h.MinLevel < 0 || h.MinLevel > 9 {
+			fail("host %s: min_level %d out of range", h.ID, h.MinLevel)
+		}
+		if h.Locked && h.Crack == nil {
+			fail("host %s: locked without a crack spec (permanently dead content)", h.ID)
+		}
+		if h.Crack != nil {
+			switch h.Crack.Method {
+			case "password", "wordlist", "none":
+			default:
+				fail("host %s: crack method %q (want password|wordlist|none)", h.ID, h.Crack.Method)
+			}
+			if h.Crack.Method == "password" && h.Crack.PasswordFlag == "" {
+				fail("host %s: password crack without password_flag", h.ID)
+			}
+			if h.Crack.MinLevel < 0 || h.Crack.MinLevel > 9 {
+				fail("host %s: crack min_level %d out of range", h.ID, h.Crack.MinLevel)
+			}
+		}
+		fileNames := map[string]bool{}
+		for j := range h.Files {
+			f := &h.Files[j]
+			if f.Name == "" {
+				fail("host %s file #%d: missing name", h.ID, j)
+				continue
+			}
+			if fileNames[f.Name] {
+				fail("host %s: duplicate file %q", h.ID, f.Name)
+			}
+			fileNames[f.Name] = true
+			if f.MinLevel < 0 || f.MinLevel > 9 {
+				fail("host %s file %s: min_level %d out of range", h.ID, f.Name, f.MinLevel)
+			}
+		}
+	}
+
+	// Public content must never reference THIS hosts by id or address.
+	for i := range s.Boards {
+		b := &s.Boards[i]
+		if b.Area != AreaPublic {
+			continue
+		}
+		for j := range b.Messages {
+			lower := strings.ToLower(b.Messages[j].Subject + "\n" + b.Messages[j].Body)
+			for k := range s.Hosts {
+				if strings.Contains(lower, strings.ToLower(s.Hosts[k].ID)) ||
+					strings.Contains(lower, strings.ToLower(s.Hosts[k].Address)) {
+					fail("board %s msg %d: public content references THIS host %q", b.ID, b.Messages[j].ID, s.Hosts[k].ID)
+				}
+			}
+		}
+	}
+	for i := range s.Files {
+		lower := strings.ToLower(s.Files[i].Desc + "\n" + s.Files[i].Body)
+		for k := range s.Hosts {
+			if strings.Contains(lower, strings.ToLower(s.Hosts[k].ID)) ||
+				strings.Contains(lower, strings.ToLower(s.Hosts[k].Address)) {
+				fail("files.yaml %s: public file references THIS host %q", s.Files[i].Name, s.Hosts[k].ID)
+			}
+		}
+	}
+
 	// Flag reachability: every required flag must be grantable somewhere
-	// (a file read, a board message read, or a hidden command's effects).
+	// (a file read, a board message read, a host file read, a crack effect,
+	// or a hidden command's effects).
 	grantable := map[string]bool{}
 	for i := range s.Files {
 		if f := s.Files[i].GrantsFlag; f != "" {
@@ -328,6 +483,18 @@ func Lint(s *Set) error {
 			grantable[f] = true
 		}
 	}
+	for i := range s.Hosts {
+		for j := range s.Hosts[i].Files {
+			if f := s.Hosts[i].Files[j].GrantsFlag; f != "" {
+				grantable[f] = true
+			}
+		}
+		if fc := s.Hosts[i].Effects.OnFirstCrack; fc != nil {
+			for _, f := range fc.GrantFlags {
+				grantable[f] = true
+			}
+		}
+	}
 	for i := range s.Files {
 		if f := s.Files[i].RequiresFlag; f != "" && !grantable[f] {
 			fail("files.yaml %s: requires_flag %q is unreachable (nothing grants it)", s.Files[i].Name, f)
@@ -343,6 +510,18 @@ func Lint(s *Set) error {
 		}
 		if lvl := hc.Effects.GrantLevel; lvl < 0 || lvl > 9 {
 			fail("areas/main.yaml %q: grant_level %d out of range", hc.Input, lvl)
+		}
+	}
+	for i := range s.Hosts {
+		h := &s.Hosts[i]
+		if f := h.RequiresFlag; f != "" && !grantable[f] {
+			fail("host %s: requires_flag %q is unreachable", h.ID, f)
+		}
+		if h.Crack != nil && h.Crack.PasswordFlag != "" && !grantable[h.Crack.PasswordFlag] {
+			fail("host %s: password_flag %q is dangling (nothing grants it)", h.ID, h.Crack.PasswordFlag)
+		}
+		if fc := h.Effects.OnFirstCrack; fc != nil && (fc.GrantLevel < 0 || fc.GrantLevel > 9) {
+			fail("host %s: on_first_crack grant_level %d out of range", h.ID, fc.GrantLevel)
 		}
 	}
 

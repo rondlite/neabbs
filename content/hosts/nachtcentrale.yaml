@@ -1,0 +1,17 @@
+# The visible-but-uncrackable teaser: names its clearance so the dead end
+# teaches instead of frustrating.
+id: ptt-nachtcentrale
+address: "nacht.centrale.ptt.nl"
+min_level: 0
+locked: true
+banner: |
+  PTT TELECOMMUNICATIE — NACHTCENTRALE
+  Onbevoegd gebruik is strafbaar (art. 138a WvS).
+
+  == systeem in nachtdienst ==
+crack:
+  method: none
+  min_level: 5
+  hint_on_fail: "TOEGANG GEWEIGERD — nachtcentrale accepteert alleen THIS-5 sleutels. kom terug als je zover bent."
+files: []
+effects: {}

@@ -25,6 +25,7 @@ import (
 	"github.com/rondlite/neabbs/internal/store"
 	"github.com/rondlite/neabbs/internal/store/sqlitestore"
 	"github.com/rondlite/neabbs/internal/tui"
+	"github.com/rondlite/neabbs/internal/world"
 )
 
 func main() {
@@ -60,7 +61,7 @@ func run(args []string) error {
 	slog.Info("content loaded", "boards", len(cset.Boards))
 
 	registry := presence.NewRegistry()
-	srv, err := newServer(cfg, st, registry, board.NewEngine(cset, st), cset, chat.NewRoom())
+	srv, err := newServer(cfg, st, registry, board.NewEngine(cset, st), cset, chat.NewRoom(), world.NewEngine(cset, st))
 	if err != nil {
 		return err
 	}
@@ -89,7 +90,7 @@ const (
 	ctxPlayer  ctxKey = "neabbs-player"
 )
 
-func newServer(cfg config.Config, st store.Store, registry *presence.Registry, engine *board.Engine, cset *content.Set, room *chat.Room) (*ssh.Server, error) {
+func newServer(cfg config.Config, st store.Store, registry *presence.Registry, engine *board.Engine, cset *content.Set, room *chat.Room, w *world.Engine) (*ssh.Server, error) {
 	teaMW := bm.MiddlewareWithProgramHandler(func(s ssh.Session) *tea.Program {
 		sess, _ := s.Context().Value(ctxSession).(*presence.Session)
 		player, _ := s.Context().Value(ctxPlayer).(*store.Player)
@@ -105,6 +106,7 @@ func newServer(cfg config.Config, st store.Store, registry *presence.Registry, e
 			Boards:   engine,
 			Content:  cset,
 			Chat:     room,
+			World:    w,
 		})
 		p := tea.NewProgram(m, append(bm.MakeOptions(s), tea.WithoutSignalHandler())...)
 		sess.SetSend(func(msg any) { p.Send(msg) })
