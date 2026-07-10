@@ -16,7 +16,9 @@ import (
 	bm "github.com/charmbracelet/wish/bubbletea"
 	"github.com/muesli/termenv"
 
+	"github.com/rondlite/neabbs/internal/board"
 	"github.com/rondlite/neabbs/internal/config"
+	"github.com/rondlite/neabbs/internal/content"
 	"github.com/rondlite/neabbs/internal/presence"
 	"github.com/rondlite/neabbs/internal/sshd"
 	"github.com/rondlite/neabbs/internal/store"
@@ -32,8 +34,15 @@ func main() {
 }
 
 func run(args []string) error {
-	if len(args) > 0 && args[0] != "serve" {
-		return fmt.Errorf("unknown subcommand %q", args[0])
+	if len(args) > 0 {
+		switch args[0] {
+		case "serve":
+			// fall through to the daemon
+		case "admin":
+			return runAdmin(args[1:])
+		default:
+			return fmt.Errorf("unknown subcommand %q (want serve or admin)", args[0])
+		}
 	}
 	cfg := config.FromEnv()
 
@@ -43,8 +52,14 @@ func run(args []string) error {
 	}
 	defer st.Close()
 
+	cset, err := content.Load(cfg.ContentDir)
+	if err != nil {
+		return fmt.Errorf("load content: %w", err)
+	}
+	slog.Info("content loaded", "boards", len(cset.Boards))
+
 	registry := presence.NewRegistry()
-	srv, err := newServer(cfg, st, registry)
+	srv, err := newServer(cfg, st, registry, board.NewEngine(cset, st))
 	if err != nil {
 		return err
 	}
@@ -73,7 +88,7 @@ const (
 	ctxPlayer  ctxKey = "neabbs-player"
 )
 
-func newServer(cfg config.Config, st store.Store, registry *presence.Registry) (*ssh.Server, error) {
+func newServer(cfg config.Config, st store.Store, registry *presence.Registry, engine *board.Engine) (*ssh.Server, error) {
 	teaMW := bm.MiddlewareWithProgramHandler(func(s ssh.Session) *tea.Program {
 		sess, _ := s.Context().Value(ctxSession).(*presence.Session)
 		player, _ := s.Context().Value(ctxPlayer).(*store.Player)
@@ -86,6 +101,7 @@ func newServer(cfg config.Config, st store.Store, registry *presence.Registry) (
 			Registry: registry,
 			Sess:     sess,
 			Player:   player,
+			Boards:   engine,
 		})
 		p := tea.NewProgram(m, append(bm.MakeOptions(s), tea.WithoutSignalHandler())...)
 		sess.SetSend(func(msg any) { p.Send(msg) })

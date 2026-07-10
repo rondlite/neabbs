@@ -1,0 +1,16 @@
+# Public welcome board. Full seed content lands with the v0 BBS (phase 3);
+# this placeholder makes the public layer usable during development.
+id: algemeen
+name: "ALGEMEEN"
+area: public
+min_level: 0
+writable: true
+messages:
+  - id: 1
+    author: "sysop"
+    level: 0
+    date: "12-05-26"
+    subject: "NEABBS is terug"
+    body: |
+      Na 40 jaar stilte draait de oude bak weer. Gedraag je een
+      beetje, dan blijft het gezellig. -- sysop
