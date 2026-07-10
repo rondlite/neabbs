@@ -1,0 +1,6 @@
+bin/
+neabbs.db*
+hostkey
+hostkey.pub
+*.Zone.Identifier
+.codegraph/
