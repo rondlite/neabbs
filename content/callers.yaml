@@ -1,0 +1,13 @@
+# Seeded "laatste bellers" — the 40-year gap must be visible in the
+# timestamps. These pad the list below any real (2026) callers.
+callers:
+  - { handle: "phantom",     date: "12-03-86 04:12" }
+  - { handle: "route66",     date: "12-03-86 03:58" }
+  - { handle: "de_specht",   date: "12-03-86 02:47" }
+  - { handle: "wodan",       date: "11-03-86 23:41" }
+  - { handle: "turbo_ted",   date: "11-03-86 22:15" }
+  - { handle: "mainframe",   date: "11-03-86 21:03" }
+  - { handle: "blueboxer",   date: "10-03-86 04:44" }
+  - { handle: "de_krab",     date: "10-03-86 01:30" }
+  - { handle: "zilvervis",   date: "09-03-86 23:59" }
+  - { handle: "kermit",      date: "09-03-86 22:22" }

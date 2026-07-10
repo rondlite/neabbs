@@ -1,0 +1,68 @@
+id: markt
+name: "MARKT — vraag en aanbod"
+area: public
+min_level: 0
+writable: true
+messages:
+  - id: 1
+    author: "sysop"
+    level: 0
+    date: "02-05-26"
+    subject: "marktregels"
+    body: |
+      Bied aan, vraag, ruil. Prijzen in euro's (ja ja, ik weet het,
+      guldens waren mooier). Geen gezeur achteraf, de sysop is geen
+      geschillencommissie.
+  - id: 2
+    author: "msx_marco"
+    level: 0
+    date: "04-05-26"
+    subject: "AANGEBODEN: MSX-2 Philips NMS 8250"
+    body: |
+      Z.g.a.n. (voor een machine van 40 jaar). Met monitor, twee
+      joysticks en een doos disks. Werkt allemaal. Weg wegens
+      echtgenote. Bieden vanaf 150.
+  - id: 3
+    author: "soldeerbout"
+    level: 0
+    date: "05-05-26"
+    subject: "GEVRAAGD: 1200/75 baud modems, defect mag"
+    body: |
+      Voor de hobby. Hoe kapotter hoe leuker. Ook interesse in oude
+      PTT-goedgekeurde exemplaren met dat groene stickertje.
+  - id: 4
+    author: "wodan_86"
+    level: 0
+    date: "06-05-26"
+    subject: "AANGEBODEN: doos Elektuur jaargangen 82-88"
+    body: |
+      Compleet, wel wat koffiekringen. Ophalen in Amersfoort of ik
+      neem ze mee naar de eerstvolgende retro-beurs. Gratis voor wie
+      er echt wat mee doet.
+  - id: 5
+    author: "mieke"
+    level: 0
+    date: "08-05-26"
+    subject: "GEVRAAGD: acoustic coupler"
+    body: |
+      Voor een schoolproject over computergeschiedenis. Zo'n ding
+      waar je de telefoonhoorn in legde. Mag stuk zijn, gaat om het
+      laten zien.
+  - id: 6
+    author: "cpm_fan"
+    level: 0
+    date: "10-05-26"
+    subject: "AANGEBODEN: Osborne 1, 'draagbaar'"
+    body: |
+      Elf kilo optimisme uit 1982. Scherm van 5 inch, werkt. Inclusief
+      originele tas met gescheurd handvat (logisch). 200 euro of ruilen
+      tegen iets met een Z80 erin.
+  - id: 7
+    author: "basicode"
+    level: 0
+    date: "11-05-26"
+    subject: "RUILEN: cassettes met software"
+    body: |
+      Doos vol C-60 cassettes, labels als "SPELLEN 3" en "NUTTIG?".
+      Inhoud onbekend, avontuur gegarandeerd. Ruil tegen lege disks
+      of een goed verhaal.

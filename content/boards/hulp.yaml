@@ -1,0 +1,72 @@
+id: hulp
+name: "HULP — vragen over het systeem"
+area: public
+min_level: 0
+writable: true
+messages:
+  - id: 1
+    author: "sysop"
+    level: 0
+    date: "02-05-26"
+    subject: "hoe werkt dit allemaal"
+    body: |
+      Hoofdmenu: druk op de letter tussen de haken. Cijfers werken
+      ook (met Enter). In de boards tikt u commando's: board <naam>,
+      read <nr>, post, reply <nr>, terug.
+
+      Lange teksten pauzeren met -- Meer? --. J of Enter gaat verder,
+      N kapt af. Een toets indrukken terwijl de tekst binnenkomt slaat
+      het getik over — net als vroeger.
+  - id: 2
+    author: "mieke"
+    level: 0
+    date: "04-05-26"
+    subject: "hoe verstuur ik een berichtje naar iedereen?"
+    body: |
+      Ik zag iemand iets roepen dat op alle lijnen verscheen. Hoe doe
+      je dat?
+  - id: 3
+    author: "sysop"
+    level: 0
+    date: "04-05-26"
+    subject: "re: hoe verstuur ik een berichtje naar iedereen?"
+    reply_to: 2
+    body: |
+      Tik in het hoofdmenu: praat gevolgd door uw tekst. Eén per
+      minuut, want vroeger kostte bellen geld en tegenwoordig kost
+      aandacht geld.
+  - id: 4
+    author: "nachtuil"
+    level: 0
+    date: "06-05-26"
+    subject: "beltijd op?"
+    body: |
+      Er staat dat ik nog 0 minuten heb vandaag, maar ik kan gewoon
+      doorgaan. Is dat de bedoeling?
+  - id: 5
+    author: "sysop"
+    level: 0
+    date: "06-05-26"
+    subject: "re: beltijd op?"
+    reply_to: 4
+    body: |
+      De teller is echt, de consequenties zijn dat voorlopig niet.
+      Vroeger gooide het systeem u er keihard af. Ik ben milder
+      geworden. Voorlopig.
+  - id: 6
+    author: "cpm_fan"
+    level: 0
+    date: "09-05-26"
+    subject: "mijn naam is bezet"
+    body: |
+      Wilde mijn oude handle terug maar die is al in gebruik. Kan de
+      sysop daar iets aan doen?
+  - id: 7
+    author: "sysop"
+    level: 0
+    date: "09-05-26"
+    subject: "re: mijn naam is bezet"
+    reply_to: 6
+    body: |
+      Nee. Wie het eerst belt, die het eerst maalt. Dat was in 1985 zo
+      en dat is nu zo.

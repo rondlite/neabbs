@@ -1,0 +1,79 @@
+id: computers
+name: "COMPUTERS & TECHNIEK"
+area: public
+min_level: 0
+writable: true
+messages:
+  - id: 1
+    author: "sysop"
+    level: 0
+    date: "02-05-26"
+    subject: "welkom op het techniekboard"
+    body: |
+      Hier praten we over ijzer en software. MSX, Commodore, Atari,
+      CP/M, en dat nieuwerwetse MS-DOS. Moderne apparaten mag ook,
+      maar verwacht meewarige blikken.
+  - id: 2
+    author: "cpm_fan"
+    level: 0
+    date: "03-05-26"
+    subject: "WordStar-vingers"
+    body: |
+      Betrapte mezelf erop dat ik in een modern programma ctrl-K ctrl-D
+      intikte om op te slaan. Sommige dingen gaan nooit weg. Wie kent
+      nog meer van die reflexen?
+  - id: 3
+    author: "soldeerbout"
+    level: 0
+    date: "04-05-26"
+    subject: "modem repareren, iemand schema's?"
+    body: |
+      Heb een oude 1200 baud modem van zolder. Voeding doet niks meer.
+      Iemand nog documentatie of schema's? Er staat "Tulip Computers"
+      op de behuizing maar dat zegt vast niks.
+  - id: 4
+    author: "msx_marco"
+    level: 0
+    date: "05-05-26"
+    subject: "re: modem repareren, iemand schema's?"
+    reply_to: 3
+    body: |
+      Kijk in de bestandensectie, daar heeft de sysop handleidingen
+      neergezet. Condensator C4 is bij die dingen altijd de boosdoener.
+  - id: 5
+    author: "basicode"
+    level: 0
+    date: "06-05-26"
+    subject: "BASICODE nostalgie"
+    body: |
+      Wie nam er vroeger BASICODE op van de radio? Cassetterecorder
+      klaar, wachten op de piep van Hobbyscoop... En dan drie keer
+      opnieuw omdat de buurman de stofzuiger aanzette.
+  - id: 6
+    author: "nachtuil"
+    level: 0
+    date: "08-05-26"
+    subject: "snelheid van dit systeem"
+    body: |
+      Mooi dat de sysop de lijnsnelheid authentiek heeft gehouden.
+      1200 baud, net als vroeger. Al gaan er geruchten dat er ooit
+      een upgrade-programma bestond voor vaste bellers.
+  - id: 7
+    author: "soldeerbout"
+    level: 0
+    date: "10-05-26"
+    subject: "re: snelheid van dit systeem"
+    reply_to: 6
+    body: |
+      Klopt, dat bestond echt. Je moest een modemcode intikken in het
+      hoofdmenu. Welke weet ik niet meer — het was gewoon de naam van
+      de snelheid die je wilde, als ik het goed heb.
+  - id: 8
+    author: "msx_marco"
+    level: 0
+    date: "11-05-26"
+    subject: "MSX-2 diskdrive maakt herrie"
+    body: |
+      Mijn NMS 8250 klinkt als een koffiemolen bij het opstarten.
+      Riempje vervangen helpt maar tijdelijk. Tips welkom. Niet zeggen
+      dat ik hem weg moet doen, dat gebeurt niet.

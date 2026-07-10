@@ -161,19 +161,18 @@ func (r *Registry) All() []*Session {
 }
 
 // Broadcast sends msg to every live session (with a non-nil Send),
-// optionally excluding one session.
+// optionally excluding one session. Delivery happens on a fresh goroutine:
+// Program.Send blocks when called from inside the sending session's own
+// Update loop, so broadcasts must never run synchronously there.
 func (r *Registry) Broadcast(msg any, except *Session) {
-	for _, s := range r.All() {
-		if s == except {
-			continue
+	sessions := r.All()
+	go func() {
+		for _, s := range sessions {
+			if s != except {
+				s.SendMsg(msg)
+			}
 		}
-		s.mu.Lock()
-		send := s.Send
-		s.mu.Unlock()
-		if send != nil {
-			send(msg)
-		}
-	}
+	}()
 }
 
 // SetSend installs the Bubble Tea bridge for a session.
@@ -181,4 +180,15 @@ func (s *Session) SetSend(f func(any)) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.Send = f
+}
+
+// SendMsg delivers a message into the session's Bubble Tea program, if the
+// bridge is installed.
+func (s *Session) SendMsg(msg any) {
+	s.mu.Lock()
+	f := s.Send
+	s.mu.Unlock()
+	if f != nil {
+		f(msg)
+	}
 }

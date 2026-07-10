@@ -53,6 +53,33 @@ func renderListing(l *board.Listing) string {
 	return b.String()
 }
 
+// renderFileList formats the public file area (bestanden).
+func renderFileList(files []content.File) string {
+	var b strings.Builder
+	b.WriteString("BESTANDEN\n")
+	b.WriteString(strings.Repeat("-", 70) + "\n")
+	if len(files) == 0 {
+		b.WriteString("(leeg — de sysop is nog aan het inpakken)\n")
+	}
+	for i, f := range files {
+		size := f.Size
+		if size == "" {
+			size = fmt.Sprintf("%dK", max(1, len(f.Body)/1024))
+		}
+		b.WriteString(fmt.Sprintf("%3d  %-20.20s %6s  %-8s %s\n", i+1, f.Name, size, f.Date, f.Desc))
+	}
+	b.WriteString("\nGebruik: lees <nr>, terug")
+	return b.String()
+}
+
+// renderFile formats one file for the pager.
+func renderFile(f *content.File) string {
+	var b strings.Builder
+	b.WriteString(fmt.Sprintf("=== %s ===\n\n", f.Name))
+	b.WriteString(strings.TrimRight(f.Body, "\n"))
+	return b.String()
+}
+
 // renderMessage formats one readable message.
 func renderMessage(boardID string, m *board.Msg) string {
 	var b strings.Builder

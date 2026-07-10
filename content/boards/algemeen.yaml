@@ -1,7 +1,5 @@
-# Public welcome board. Full seed content lands with the v0 BBS (phase 3);
-# this placeholder makes the public layer usable during development.
 id: algemeen
-name: "ALGEMEEN"
+name: "ALGEMEEN — praatjes en mededelingen"
 area: public
 min_level: 0
 writable: true
@@ -9,8 +7,91 @@ messages:
   - id: 1
     author: "sysop"
     level: 0
-    date: "12-05-26"
+    date: "02-05-26"
     subject: "NEABBS is terug"
     body: |
-      Na 40 jaar stilte draait de oude bak weer. Gedraag je een
-      beetje, dan blijft het gezellig. -- sysop
+      Beste bellers,
+
+      Na veertig jaar stilte draait de oude bak weer. Het heeft me drie
+      maanden gekost om de banden leesbaar te krijgen en een "modem-
+      emulatie" aan de praat te krijgen op dat moderne internet van
+      jullie, maar: NEABBS leeft.
+
+      Alles wat u ziet is zo gelaten als het in 1986 was, waar dat kon.
+      Gedraag u een beetje, dan blijft het gezellig.
+
+      -- de sysop
+  - id: 2
+    author: "sysop"
+    level: 0
+    date: "02-05-26"
+    subject: "huisregels (lees dit even)"
+    body: |
+      1. Geen geschreeuw (HOOFDLETTERS) op de boards.
+      2. Handel op MARKT, niet hier.
+      3. De sysop leest mee. De sysop leest ALTIJD mee.
+      4. Wat u hier niet vindt, bestaat niet. Vragen ernaar helpt niet.
+  - id: 3
+    author: "wodan_86"
+    level: 0
+    date: "03-05-26"
+    subject: "ben ik nou gek..."
+    body: |
+      In 1985 belde ik hier elke nacht in. Nu vind ik dit via via terug
+      en het WERKT nog. Zelfde trage letters en alles. Wie is hier nog
+      meer van de oude garde?
+  - id: 4
+    author: "mieke"
+    level: 0
+    date: "04-05-26"
+    subject: "re: ben ik nou gek..."
+    reply_to: 3
+    body: |
+      Mijn vader had het altijd over "de nacht-bbs met de 24 lijnen".
+      Hij gelooft me niet dat het weer bestaat. Groeten van de tweede
+      generatie.
+  - id: 5
+    author: "cpm_fan"
+    level: 0
+    date: "05-05-26"
+    subject: "de wachtwoord-vraag doet niks?"
+    body: |
+      Valt het iemand op dat je bij het inloggen alles kan intikken bij
+      "Wachtwoord"? Typisch sysop-houtje-touwtje werk :-)
+  - id: 6
+    author: "sysop"
+    level: 0
+    date: "05-05-26"
+    subject: "re: de wachtwoord-vraag doet niks?"
+    reply_to: 5
+    body: |
+      Uw sleutel is uw wachtwoord, meneer de kritische beller. Dat ding
+      dat uw computer aan de lijn laat zien voordat u ook maar iets
+      intikt. De vraag staat er voor de sfeer. Sfeer is belangrijk.
+  - id: 7
+    author: "nachtuil"
+    level: 0
+    date: "07-05-26"
+    subject: "wie zit er om 03:00 nog op?"
+    body: |
+      Vroeger was de nacht de enige tijd dat je erbij kwam. Oude
+      gewoontes slijten niet. Meld u in de babbelbox als u dit leest
+      terwijl normale mensen slapen.
+  - id: 8
+    author: "wodan_86"
+    level: 0
+    date: "09-05-26"
+    subject: "gevonden: mijn oude logboek"
+    body: |
+      Zolder opgeruimd. Doos gevonden: "NEABBS 1985". Uitdraaien van
+      boards die ik blijkbaar belangrijk vond, en een schriftje met
+      telefoonnummers. De helft doorgestreept. Wat een tijd.
+  - id: 9
+    author: "sysop"
+    level: 0
+    date: "12-05-26"
+    subject: "storing verholpen"
+    body: |
+      Vannacht viel lijn 9 t/m 16 weg. Oorzaak: ondergetekende die over
+      een kabel struikelde. Alles draait weer. Er is verder niets aan
+      de hand en dat blijft zo.

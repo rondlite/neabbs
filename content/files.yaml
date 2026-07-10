@@ -1,0 +1,188 @@
+files:
+  - name: "welkom.txt"
+    date: "02-05-26"
+    size: "1K"
+    desc: "Lees mij eerst"
+    body: |
+      Welkom in de bestandensectie van NEABBS.
+
+      Vroeger stonden hier programma's die u met XMODEM binnenhaalde
+      en waar u vervolgens een avond mee bezig was omdat de laatste
+      blokken corrupt waren. Tegenwoordig staan hier teksten. Lezen
+      gaat sneller dan downloaden. Vooruitgang bestaat.
+
+      -- de sysop
+
+  - name: "modem-abc.txt"
+    date: "03-05-26"
+    size: "4K"
+    desc: "Modemhandleiding voor beginners (1984)"
+    body: |
+      HET MODEM-ABC (herdruk uit 1984)
+
+      Een modem (MOdulator-DEModulator) zet computersignalen om in
+      piepjes die door de telefoonlijn passen, en andersom.
+
+      Snelheden anno 1984:
+        300 baud   - rustig meelezen
+        1200 baud  - de standaard, 120 tekens per seconde
+        1200/75    - viewdata; snel heen, traag terug
+        2400 baud  - het nieuwste van het nieuwste, voor wie het
+                     durft aan te vragen bij zijn favoriete systeem
+
+      Tip van de redactie: sommige systemen accepteren een
+      snelheids-verzoek gewoon als commando in het hoofdmenu. Gewoon
+      de gewenste snelheid intikken. Brutalen hebben de halve wereld.
+
+      Vergeet niet uw modem 's nachts uit te zetten. Uw telefoon-
+      rekening dankt u.
+
+  - name: "hayes-codes.txt"
+    date: "03-05-26"
+    size: "2K"
+    desc: "AT-commando's spiekbrief"
+    body: |
+      HAYES AT-COMMANDO'S — SPIEKBRIEF
+
+      ATDT 020-......   toon-kiezen (moderne centrales)
+      ATDP 020-......   puls-kiezen (voor de oude wijken)
+      ATA               opnemen
+      ATH               ophangen (de vriendelijke manier)
+      ATZ               reset (de wanhopige manier)
+      +++               ontsnappen als alles vastzit
+
+      NO CARRIER        het verdrietigste bericht dat bestaat
+
+  - name: "netiquette.txt"
+    date: "04-05-26"
+    size: "2K"
+    desc: "Omgangsvormen op de lijnen (1985)"
+    body: |
+      NETIQUETTE VOOR BBS-GEBRUIKERS (1985)
+
+      1. HOOFDLETTERS IS SCHREEUWEN. Doe het niet.
+      2. Quote spaarzaam. Wij weten wat er hierboven stond.
+      3. Een smiley :-) voorkomt tandartsbezoek.
+      4. De sysop is een mens. Meestal.
+      5. Bezet de lijn niet langer dan nodig; er wachten anderen.
+         (Regel 5 is in 2026 minder urgent, maar principes zijn
+         principes.)
+
+  - name: "ascii-schatkist.txt"
+    date: "05-05-26"
+    size: "3K"
+    desc: "ASCII-kunst uit de oude doos"
+    body: |
+      ASCII-SCHATKIST — bewaard gebleven werk van onze huisartiesten
+
+          |\_/|        ____________________
+          (o o)       |  MIAUW. IK BEWAAK  |
+         =(Y)=        |  DEZE BESTANDEN.   |
+          |_|_|        --------------------
+
+           _________
+          / ======= \
+         / __________\      DE DRAAGBARE COMPUTER:
+        | ___________ |     ALLES ONDER DE 15 KILO
+        | | NEABBS  | |     TELT.
+        | |_________| |
+        \=____________/
+
+      (Inzendingen voor de schatkist: post op ALGEMEEN.)
+
+  - name: "zine-fragment.txt"
+    date: "06-05-26"
+    size: "3K"
+    desc: "Fragment uit 'De Draadloze' nr. 7 (1985)"
+    body: |
+      [fragment uit "De Draadloze", een elektronisch tijdschrift dat
+       tussen 1984 en 1986 op verschillende systemen circuleerde.
+       De rest van nummer 7 is verloren gegaan.]
+
+      ...en dat is precies waarom een bulletin board meer is dan een
+      antwoordapparaat met pretenties. Het is een PLEK. Wie inbelt,
+      komt ergens BINNEN. De goede systemen voelen als een stamkroeg:
+      je kent de stemmen, je kent de stamgasten, je weet welke kruk
+      wiebelt.
+
+      En zoals elke goede kroeg heeft elk goed systeem een achterkamer
+      waar de kastelein zijn betere flessen bewaart. Maar daarover
+      een andere keer, als de redactie durft...
+
+  - name: "ptt-brief.txt"
+    date: "07-05-26"
+    size: "1K"
+    desc: "Brief van de PTT (1985, ingelijst)"
+    body: |
+      [afschrift, origineel hangt ingelijst boven de machine]
+
+      's-Gravenhage, 14 augustus 1985
+
+      Geachte heer,
+
+      Naar aanleiding van uw aanvraag betreffende uitbreiding van het
+      aantal telefoonaansluitingen op uw adres delen wij u mede dat
+      levering van 8 (acht) additionele lijnen is voorzien in het
+      vierde kwartaal. Wij vertrouwen erop u hiermede voldoende te
+      hebben geinformeerd.
+
+      Hoogachtend,
+      Staatsbedrijf der PTT
+
+      [aantekening in balpen: "beloofd is beloofd. nog steeds niks.
+       - okt '85"]
+
+  - name: "msx-tips.txt"
+    date: "08-05-26"
+    size: "2K"
+    desc: "MSX-tips van marco"
+    body: |
+      MSX-TIPS — verzameld door msx_marco
+
+      * POKE-1,170 op een MSX-2: niet doen. U bent gewaarschuwd.
+      * Diskdrive-riempjes: elastiekjes van de groenteboer werken
+        precies drie weken.
+      * CALL SYSTEM brengt u terug naar DOS, CTRL+STOP redt u uit
+        bijna alles. Bijna.
+      * Een cassette die niet laadt: volume op 7, toon op maximaal,
+        en bidden tot de god van de magneetkoppen.
+
+  - name: "sysop-dagboek-1.txt"
+    date: "10-05-26"
+    size: "2K"
+    desc: "Uit het dagboek van de sysop (deel 1)"
+    body: |
+      UIT HET DAGBOEK VAN DE SYSOP — DEEL 1
+
+      november 1984. De machine staat in de kelder, naast de cv.
+      Warm in de winter, zegt mijn vrouw. Brandgevaar, zegt mijn
+      broer. Allebei waar.
+
+      Vier lijnen vol, elke avond. Wachtrijen vanaf acht uur. Ik
+      overweeg een tweede kastje, de PTT lacht me uit aan de
+      telefoon.
+
+      Er hangt een sfeer op de boards die ik nergens anders ken.
+      Mensen die elkaar nooit gezien hebben, maken hier ruzie en
+      leggen het weer bij, allemaal op 120 tekens per seconde.
+
+      (deel 2 volgt als ik de juiste band terugvind)
+
+  - name: "toekomst-1986.txt"
+    date: "11-05-26"
+    size: "2K"
+    desc: "Voorspellingen over 'de toekomst' (1986)"
+    body: |
+      HOE ZIET 2026 ERUIT? — voorspellingen van onze bellers (1986)
+
+      turbo_ted:  "Modems van 9600 baud. Schrijf het op."
+      mainframe:  "Iedereen een computer in zijn broekzak, en
+                   niemand meer die weet hoe het werkt."
+      zilvervis:  "De PTT bestaat niet meer. Iets moet die lijnen
+                   toch opgeleverd hebben."
+      kermit:     "BBS'en zijn dan musea. Mensen betalen om te
+                   kijken hoe wij nu leven."
+      de_krab:    "Alles wordt sneller en niemand wordt geduldiger."
+
+      [red.: wie in 2026 dit leest mag de winnaar aanwijzen op het
+       board ALGEMEEN]

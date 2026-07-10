@@ -53,9 +53,36 @@ func (m *Message) SubjectShown() bool { return m.SubjectVisible == nil || *m.Sub
 // AuthorShown reports whether the author may appear in a redacted stub.
 func (m *Message) AuthorShown() bool { return m.AuthorVisible == nil || *m.AuthorVisible }
 
+// File is one entry in the public file area (bestanden).
+type File struct {
+	Name       string `yaml:"name"`
+	Date       string `yaml:"date"` // display date, freeform period text
+	Size       string `yaml:"size"` // display size, freeform ("12K")
+	Desc       string `yaml:"desc"`
+	Body       string `yaml:"body"`
+	GrantsFlag string `yaml:"grants_flag"` // reading the file sets this flag
+}
+
+// SeedCaller is one fictional entry padding the "laatste bellers" list.
+type SeedCaller struct {
+	Handle string `yaml:"handle"`
+	Date   string `yaml:"date"` // display string, e.g. "03-11-86 23:41"
+}
+
+// Bulletin is one login news screen.
+type Bulletin struct {
+	Name string
+	Body string
+}
+
 // Set is all loaded content.
 type Set struct {
-	Boards []Board // sorted: public first, then by min_level, then id
+	Boards      []Board // sorted: public first, then by min_level, then id
+	Files       []File
+	SeedCallers []SeedCaller
+	Bulletins   []Bulletin // sorted by filename
+	Colofon     string
+	Goodbye     string
 }
 
 // BoardByID returns the board or nil.
@@ -91,6 +118,68 @@ func Load(dir string) (*Set, error) {
 		}
 		set.Boards = append(set.Boards, b)
 	}
+	// File area.
+	if buf, err := os.ReadFile(filepath.Join(dir, "files.yaml")); err == nil {
+		var wrapper struct {
+			Files []File `yaml:"files"`
+		}
+		if err := yaml.Unmarshal(buf, &wrapper); err != nil {
+			return nil, fmt.Errorf("files.yaml: %w", err)
+		}
+		set.Files = wrapper.Files
+	} else if !os.IsNotExist(err) {
+		return nil, err
+	}
+
+	// Seeded "laatste bellers".
+	if buf, err := os.ReadFile(filepath.Join(dir, "callers.yaml")); err == nil {
+		var wrapper struct {
+			Callers []SeedCaller `yaml:"callers"`
+		}
+		if err := yaml.Unmarshal(buf, &wrapper); err != nil {
+			return nil, fmt.Errorf("callers.yaml: %w", err)
+		}
+		set.SeedCallers = wrapper.Callers
+	} else if !os.IsNotExist(err) {
+		return nil, err
+	}
+
+	// Bulletins: content/bulletins/*.txt in filename order.
+	bulletinsDir := filepath.Join(dir, "bulletins")
+	if entries, err := os.ReadDir(bulletinsDir); err == nil {
+		names := []string{}
+		for _, e := range entries {
+			if !e.IsDir() && strings.HasSuffix(e.Name(), ".txt") {
+				names = append(names, e.Name())
+			}
+		}
+		sort.Strings(names)
+		for _, n := range names {
+			buf, err := os.ReadFile(filepath.Join(bulletinsDir, n))
+			if err != nil {
+				return nil, err
+			}
+			set.Bulletins = append(set.Bulletins, Bulletin{Name: n, Body: string(buf)})
+		}
+	} else if !os.IsNotExist(err) {
+		return nil, err
+	}
+
+	// Single-text screens.
+	for _, t := range []struct {
+		file string
+		dst  *string
+	}{
+		{"colofon.txt", &set.Colofon},
+		{"goodbye.txt", &set.Goodbye},
+	} {
+		if buf, err := os.ReadFile(filepath.Join(dir, t.file)); err == nil {
+			*t.dst = string(buf)
+		} else if !os.IsNotExist(err) {
+			return nil, err
+		}
+	}
+
 	sort.Slice(set.Boards, func(i, j int) bool {
 		a, b := &set.Boards[i], &set.Boards[j]
 		if a.Area != b.Area {
@@ -162,6 +251,26 @@ func Lint(s *Set) error {
 						fail("board %s msg %d: public content references THIS board id %q", b.ID, m.ID, other.ID)
 					}
 				}
+			}
+		}
+	}
+	// File area: names must be present and unique; public files must not
+	// reference THIS boards by id.
+	fileNames := map[string]bool{}
+	for i := range s.Files {
+		f := &s.Files[i]
+		if f.Name == "" {
+			fail("files.yaml entry #%d: missing name", i)
+			continue
+		}
+		if fileNames[f.Name] {
+			fail("files.yaml: duplicate file name %q", f.Name)
+		}
+		fileNames[f.Name] = true
+		lower := strings.ToLower(f.Desc + "\n" + f.Body)
+		for _, b := range s.Boards {
+			if b.Area == AreaThis && strings.Contains(lower, strings.ToLower(b.ID)) {
+				fail("files.yaml %s: public file references THIS board id %q", f.Name, b.ID)
 			}
 		}
 	}

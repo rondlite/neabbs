@@ -17,6 +17,7 @@ import (
 	"github.com/muesli/termenv"
 
 	"github.com/rondlite/neabbs/internal/board"
+	"github.com/rondlite/neabbs/internal/chat"
 	"github.com/rondlite/neabbs/internal/config"
 	"github.com/rondlite/neabbs/internal/content"
 	"github.com/rondlite/neabbs/internal/presence"
@@ -59,7 +60,7 @@ func run(args []string) error {
 	slog.Info("content loaded", "boards", len(cset.Boards))
 
 	registry := presence.NewRegistry()
-	srv, err := newServer(cfg, st, registry, board.NewEngine(cset, st))
+	srv, err := newServer(cfg, st, registry, board.NewEngine(cset, st), cset, chat.NewRoom())
 	if err != nil {
 		return err
 	}
@@ -88,7 +89,7 @@ const (
 	ctxPlayer  ctxKey = "neabbs-player"
 )
 
-func newServer(cfg config.Config, st store.Store, registry *presence.Registry, engine *board.Engine) (*ssh.Server, error) {
+func newServer(cfg config.Config, st store.Store, registry *presence.Registry, engine *board.Engine, cset *content.Set, room *chat.Room) (*ssh.Server, error) {
 	teaMW := bm.MiddlewareWithProgramHandler(func(s ssh.Session) *tea.Program {
 		sess, _ := s.Context().Value(ctxSession).(*presence.Session)
 		player, _ := s.Context().Value(ctxPlayer).(*store.Player)
@@ -102,19 +103,21 @@ func newServer(cfg config.Config, st store.Store, registry *presence.Registry, e
 			Sess:     sess,
 			Player:   player,
 			Boards:   engine,
+			Content:  cset,
+			Chat:     room,
 		})
 		p := tea.NewProgram(m, append(bm.MakeOptions(s), tea.WithoutSignalHandler())...)
 		sess.SetSend(func(msg any) { p.Send(msg) })
 		return p
 	}, termenv.ANSI256)
 
-	return sshd.New(cfg, teaMW, lifecycleMiddleware(st, registry))
+	return sshd.New(cfg, teaMW, lifecycleMiddleware(st, registry, room))
 }
 
 // lifecycleMiddleware enforces session caps, loads/creates the player row
 // (the pubkey fingerprint IS the identity), refuses banned players, and
 // guarantees registry cleanup when the session ends.
-func lifecycleMiddleware(st store.Store, registry *presence.Registry) func(next ssh.Handler) ssh.Handler {
+func lifecycleMiddleware(st store.Store, registry *presence.Registry, room *chat.Room) func(next ssh.Handler) ssh.Handler {
 	return func(next ssh.Handler) ssh.Handler {
 		return func(s ssh.Session) {
 			fp := sshd.Fingerprint(s.PublicKey())
@@ -132,7 +135,10 @@ func lifecycleMiddleware(st store.Store, registry *presence.Registry) func(next 
 				_ = s.Exit(1)
 				return
 			}
+			// Abrupt disconnects must always free the line and leave the
+			// chat room, whatever state the UI was in.
 			defer registry.Remove(sess)
+			defer room.Leave(sess)
 
 			player, err := st.PlayerByFingerprint(ctx, fp)
 			if errors.Is(err, store.ErrNotFound) {

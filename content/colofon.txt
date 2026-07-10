@@ -1,0 +1,19 @@
+COLOFON
+
+NEABBS (2026) is een eerbetoon aan de Nederlandse bulletin-board-
+cultuur van de jaren tachtig, en in het bijzonder aan de systemen
+die met tientallen lijnen tegelijk een hele generatie leerden dat
+een computer een plék kan zijn.
+
+Dit systeem heeft geen enkele band met, en pretendeert niet het
+origineel te zijn van, welk historisch systeem dan ook. Namen,
+handles en gebeurtenissen op de boards zijn fictie. Overeenkomsten
+met werkelijke personen berusten op heimwee.
+
+Techniek: één programma, geschreven in Go, bereikbaar via SSH.
+Geen shell, geen bestandssysteem, alleen dit. Uw sleutel is uw
+identiteit; er worden geen wachtwoorden bewaard omdat er geen
+wachtwoorden zíjn.
+
+Post uw herinneringen op ALGEMEEN. De sysop leest mee.
+De sysop leest altijd mee.
