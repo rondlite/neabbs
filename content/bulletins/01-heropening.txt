@@ -2,16 +2,20 @@
 │  BULLETIN 1/2                                    02-05-2026  │
 └──────────────────────────────────────────────────────────────┘
 
-  NEABBS IS HEROPEND
+  NEABBS IS TERUG
 
-  Op 12 maart 1986, 04:12 uur, viel hier de laatste verbinding
-  weg. Niemand heeft toen opgehangen; de lijn viel gewoon weg.
-  Veertig jaar later heb ik de machine van zolder gehaald, het
-  stof eraf geblazen en de boel weer aan het net gehangen.
+  Ergens aan het eind van de jaren '80 viel hier de laatste
+  verbinding weg. Niemand hing op; de lijn viel gewoon stil.
+  Bijna veertig jaar bleef het donker.
 
-  Alles is zoals het was. De boards, de bestanden, de babbelbox,
-  de 24 lijnen. Uw ogen wennen vanzelf weer aan het tempo.
+  De oprichter en sysop van het eerste uur is er niet meer.
+  Deze heruitgave is met zorg samengesteld uit bewaard gebleven
+  banden — als eerbetoon aan wie NEABBS begon, en aan iedereen
+  die hier ooit een nacht doorhaalde.
+
+  Alles is zo veel mogelijk gelaten zoals het was. De boards, de
+  bestanden, de babbelbox, de 24 lijnen.
 
   Welkom terug. Of gewoon: welkom.
 
-                                              -- de sysop
+                                   -- de beheerders van de heruitgave

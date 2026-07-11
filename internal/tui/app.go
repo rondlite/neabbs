@@ -254,7 +254,7 @@ func (m *Model) ritual(step ritualStep) tea.Cmd {
 		banner := fmt.Sprintf("%s\n\n%s\n%s\n\n%s",
 			amber.Render(fmt.Sprintf("CONNECT %d", speed)),
 			m.logo(),
-			dimmed.Render("        heropend na 40 jaar stilte · Amsterdam · sinds 1984"),
+			dimmed.Render("        heropend na bijna 40 jaar stilte · Amsterdam · sinds 1984"),
 			amberBright.Render(lineBar))
 		return tea.Batch(m.print(banner), delay(700*time.Millisecond, ritUsername))
 	case ritUsername:
@@ -1807,7 +1807,7 @@ func (m *Model) quit() (tea.Model, tea.Cmd) {
 	m.state = stateDone
 	bye := m.deps.Content.Goodbye
 	if bye == "" {
-		bye = "Tot ziens. NEABBS wacht wel weer 40 jaar."
+		bye = "Tot ziens. NEABBS wacht wel weer even."
 	}
 	goodbye := tea.Sequence(tea.Println("\n"+strings.TrimRight(bye, "\n")+"\n\nNO CARRIER"), tea.Quit)
 	if wasThis {

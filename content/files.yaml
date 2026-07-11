@@ -165,26 +165,25 @@ files:
       todo: dit bestand NIET in de publieke lijst zetten
       todo: koffie
 
-  - name: "sysop-dagboek-1.txt"
+  - name: "kroniek-1.txt"
     date: "10-05-26"
     size: "2K"
-    desc: "Uit het dagboek van de sysop (deel 1)"
+    desc: "Kroniek van NEABBS (deel 1, uit de banden)"
     body: |
-      UIT HET DAGBOEK VAN DE SYSOP — DEEL 1
+      KRONIEK VAN NEABBS — DEEL 1 (gereconstrueerd uit de banden)
 
-      november 1984. De machine staat in de kelder, naast de cv.
-      Warm in de winter, zegt mijn vrouw. Brandgevaar, zegt mijn
-      broer. Allebei waar.
+      november 1984. De machine draaide in een kelder, naast de cv.
+      Vier lijnen, elke avond vol. Wachtrijen vanaf acht uur.
 
-      Vier lijnen vol, elke avond. Wachtrijen vanaf acht uur. Ik
-      overweeg een tweede kastje, de PTT lacht me uit aan de
-      telefoon.
+      Het bleef niet bij vier lijnen. De PTT beloofde uitbreiding en
+      liet op zich wachten; het board groeide toch, lijn na lijn, tot
+      de vierentwintig waar het om bekend werd.
 
-      Er hangt een sfeer op de boards die ik nergens anders ken.
-      Mensen die elkaar nooit gezien hebben, maken hier ruzie en
-      leggen het weer bij, allemaal op 120 tekens per seconde.
+      Wat bleef hangen was de sfeer op de boards. Mensen die elkaar
+      nooit gezien hadden maakten hier ruzie en legden het weer bij,
+      allemaal op 120 tekens per seconde.
 
-      (deel 2 volgt als ik de juiste band terugvind)
+      (deel 2 volgt zodra de volgende band leesbaar is)
 
   - name: "toekomst-1986.txt"
     date: "11-05-26"
