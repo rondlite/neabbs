@@ -1,6 +1,6 @@
 # Multi-stage build: static Go binary into distroless, runs as nonroot
 # with a read-only rootfs. Only the data volume is writable.
-FROM golang:1.23 AS build
+FROM golang:1.25 AS build
 WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
