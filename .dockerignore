@@ -1,0 +1,13 @@
+.git
+.gitignore
+bin/
+neabbs.db
+neabbs.db-wal
+neabbs.db-shm
+hostkey
+hostkey.pub
+*.Zone.Identifier
+.codegraph/
+.github/
+README.md
+NEABBS-SPEC.md

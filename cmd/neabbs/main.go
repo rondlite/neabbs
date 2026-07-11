@@ -59,7 +59,7 @@ func run(args []string) error {
 
 	st, err := sqlitestore.Open(cfg.DBPath)
 	if err != nil {
-		return fmt.Errorf("open db: %w", err)
+		return fmt.Errorf("open db %q (is the directory writable by this user?): %w", cfg.DBPath, err)
 	}
 	defer st.Close()
 
