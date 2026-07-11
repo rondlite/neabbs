@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS players (
 	minutes_day  TEXT    NOT NULL DEFAULT '',
 	npc_turns    INTEGER NOT NULL DEFAULT 0,
 	npc_day      TEXT    NOT NULL DEFAULT '',
+	admin        INTEGER NOT NULL DEFAULT 0,
 	created_at   INTEGER NOT NULL,
 	last_seen    INTEGER NOT NULL
 );
@@ -85,6 +86,17 @@ func Open(path string) (*Store, error) {
 		db.Close()
 		return nil, fmt.Errorf("apply schema: %w", err)
 	}
+	// Idempotent column migrations for DBs created before the column existed.
+	// CREATE TABLE IF NOT EXISTS never alters an existing table, so add new
+	// columns explicitly and swallow the "duplicate column" error.
+	for _, mig := range []string{
+		`ALTER TABLE players ADD COLUMN admin INTEGER NOT NULL DEFAULT 0`,
+	} {
+		if _, err := db.Exec(mig); err != nil && !strings.Contains(err.Error(), "duplicate column") {
+			db.Close()
+			return nil, fmt.Errorf("migrate (%s): %w", mig, err)
+		}
+	}
 	// Player post IDs start at 10000 so they can never collide with
 	// YAML-seeded message IDs (content lint caps those below 10000).
 	if _, err := db.Exec(`INSERT INTO sqlite_sequence (name, seq) SELECT 'posts', 9999
@@ -97,7 +109,7 @@ func Open(path string) (*Store, error) {
 
 func (s *Store) Close() error { return s.db.Close() }
 
-const playerCols = "fingerprint, handle, this_member, level, flags, banned, speed, minutes_used, minutes_day, created_at, last_seen"
+const playerCols = "fingerprint, handle, this_member, level, flags, banned, speed, minutes_used, minutes_day, admin, created_at, last_seen"
 
 func scanPlayer(row interface{ Scan(...any) error }) (*store.Player, error) {
 	var p store.Player
@@ -105,7 +117,7 @@ func scanPlayer(row interface{ Scan(...any) error }) (*store.Player, error) {
 	var flagsJSON string
 	var created, seen int64
 	err := row.Scan(&p.Fingerprint, &handle, &p.ThisMember, &p.Level, &flagsJSON,
-		&p.Banned, &p.Speed, &p.MinutesUsed, &p.MinutesDay, &created, &seen)
+		&p.Banned, &p.Speed, &p.MinutesUsed, &p.MinutesDay, &p.Admin, &created, &seen)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, store.ErrNotFound
 	}
@@ -161,6 +173,11 @@ func (s *Store) TouchLastSeen(ctx context.Context, fp string) error {
 
 func (s *Store) SetBanned(ctx context.Context, fp string, banned bool) error {
 	_, err := s.db.ExecContext(ctx, "UPDATE players SET banned = ? WHERE fingerprint = ?", banned, fp)
+	return err
+}
+
+func (s *Store) SetAdmin(ctx context.Context, fp string, admin bool) error {
+	_, err := s.db.ExecContext(ctx, "UPDATE players SET admin = ? WHERE fingerprint = ?", admin, fp)
 	return err
 }
 
@@ -307,6 +324,15 @@ func (s *Store) PostsForBoard(ctx context.Context, boardID string) ([]store.Save
 		out = append(out, m)
 	}
 	return out, rows.Err()
+}
+
+func (s *Store) DeletePost(ctx context.Context, boardID string, id int) (bool, error) {
+	res, err := s.db.ExecContext(ctx, "DELETE FROM posts WHERE board_id = ? AND id = ?", boardID, id)
+	if err != nil {
+		return false, err
+	}
+	n, err := res.RowsAffected()
+	return n > 0, err
 }
 
 func (s *Store) HostState(ctx context.Context, fp, hostID string) (store.HostState, error) {

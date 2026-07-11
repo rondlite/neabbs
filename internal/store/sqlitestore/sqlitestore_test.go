@@ -142,3 +142,55 @@ func TestPostsIDSpace(t *testing.T) {
 		t.Fatalf("PostsForBoard: %v %+v", err, posts)
 	}
 }
+
+func TestAdminBit(t *testing.T) {
+	s := open(t)
+	ctx := context.Background()
+	if _, err := s.CreatePlayer(ctx, "fp1"); err != nil {
+		t.Fatal(err)
+	}
+	p, _ := s.PlayerByFingerprint(ctx, "fp1")
+	if p.Admin {
+		t.Fatal("new player must not be sysop")
+	}
+	if err := s.SetAdmin(ctx, "fp1", true); err != nil {
+		t.Fatal(err)
+	}
+	p, _ = s.PlayerByFingerprint(ctx, "fp1")
+	if !p.Admin {
+		t.Fatal("SetAdmin(true) did not stick")
+	}
+	if err := s.SetAdmin(ctx, "fp1", false); err != nil {
+		t.Fatal(err)
+	}
+	p, _ = s.PlayerByFingerprint(ctx, "fp1")
+	if p.Admin {
+		t.Fatal("SetAdmin(false) did not stick")
+	}
+}
+
+func TestDeletePost(t *testing.T) {
+	s := open(t)
+	ctx := context.Background()
+	id, err := s.SavePost(ctx, &store.SavedMessage{
+		BoardID: "algemeen", Author: "wodan", Subject: "weg", Body: "x", PostedAt: time.Now(),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Immutable content id (< 10000) is never in the posts table.
+	if ok, err := s.DeletePost(ctx, "algemeen", 5); err != nil || ok {
+		t.Fatalf("delete of content id should be no-op: ok=%v err=%v", ok, err)
+	}
+	// A real player post deletes once, then reports gone.
+	if ok, err := s.DeletePost(ctx, "algemeen", id); err != nil || !ok {
+		t.Fatalf("first delete should succeed: ok=%v err=%v", ok, err)
+	}
+	if ok, err := s.DeletePost(ctx, "algemeen", id); err != nil || ok {
+		t.Fatalf("second delete should be no-op: ok=%v err=%v", ok, err)
+	}
+	posts, err := s.PostsForBoard(ctx, "algemeen")
+	if err != nil || len(posts) != 0 {
+		t.Fatalf("board should be empty after delete: %v %+v", err, posts)
+	}
+}

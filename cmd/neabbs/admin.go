@@ -21,6 +21,7 @@ commands:
   member <handle> on|off    flip THIS membership
   ban <handle>              ban a player
   unban <handle>            lift a ban
+  sysop <handle> on|off     grant/revoke sysop (in-game moderation)
   flag <handle> <flag>      grant a flag
 `
 
@@ -58,8 +59,8 @@ func runAdmin(args []string) error {
 				flags = append(flags, f)
 			}
 			sort.Strings(flags)
-			fmt.Printf("handle      : %s\nfingerprint : %s\nthis_member : %v\nlevel       : %d\nbanned      : %v\nspeed       : %d\ncreated     : %s\nlast_seen   : %s\nflags       : %v\n",
-				p.Handle, p.Fingerprint, p.ThisMember, p.Level, p.Banned, p.Speed,
+			fmt.Printf("handle      : %s\nfingerprint : %s\nthis_member : %v\nlevel       : %d\nbanned      : %v\nsysop       : %v\nspeed       : %d\ncreated     : %s\nlast_seen   : %s\nflags       : %v\n",
+				p.Handle, p.Fingerprint, p.ThisMember, p.Level, p.Banned, p.Admin, p.Speed,
 				p.CreatedAt.Format("2006-01-02 15:04"), p.LastSeen.Format("2006-01-02 15:04"), flags)
 			return nil
 		}
@@ -125,6 +126,20 @@ func runAdmin(args []string) error {
 			return err
 		}
 		fmt.Printf("%s banned=%v\n", p.Handle, cmd == "ban")
+		return nil
+
+	case "sysop":
+		if len(args) != 3 || (args[2] != "on" && args[2] != "off") {
+			return fmt.Errorf("usage: neabbs admin sysop <handle> on|off")
+		}
+		p, err := byHandle(args[1])
+		if err != nil {
+			return err
+		}
+		if err := st.SetAdmin(ctx, p.Fingerprint, args[2] == "on"); err != nil {
+			return err
+		}
+		fmt.Printf("%s sysop=%s (reconnect to take effect in-game)\n", p.Handle, args[2])
 		return nil
 
 	case "flag":

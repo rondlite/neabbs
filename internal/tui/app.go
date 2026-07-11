@@ -95,6 +95,10 @@ type PraatMsg struct{ Line string }
 // WallMsg is a one-line shout delivered to sessions currently inside THIS.
 type WallMsg struct{ Line string }
 
+// SysopMsg is a sysop announcement delivered to every session (public and
+// THIS alike), rendered prominently.
+type SysopMsg struct{ Line string }
+
 // Model is the root session model.
 type Model struct {
 	deps    Deps
@@ -742,6 +746,13 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.thisPrint(green.Render(msg.Line))
 		}
 		return m, nil
+	case SysopMsg:
+		// A sysop announcement reaches everyone, in either surface.
+		if m.inThis {
+			m.thisPrint(green.Render(msg.Line))
+			return m, nil
+		}
+		return m, tea.Println(amberBright.Render(msg.Line))
 	case chat.Event:
 		if m.state == stateChat {
 			return m, tea.Println(msg.Line)
@@ -852,6 +863,14 @@ func (m *Model) backToMenu() (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) handleLine(line string) (tea.Model, tea.Cmd) {
+	// Sysop commands are available from any command surface (menu, boards,
+	// files, THIS) but never during composing/handle-pick where the line is
+	// content. Non-sysops fall through so the word reveals nothing.
+	if m.deps.Player.Admin && m.sysopSurface() {
+		if fields := strings.Fields(line); len(fields) > 0 && strings.ToLower(fields[0]) == "sysop" {
+			return m.sysopCmd(line, fields)
+		}
+	}
 	switch m.state {
 	case stateHandle:
 		return m.pickHandle(line)

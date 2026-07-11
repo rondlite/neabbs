@@ -23,6 +23,7 @@ type Player struct {
 	Level       int // 0-9, meaningful only when ThisMember
 	Flags       map[string]bool
 	Banned      bool
+	Admin       bool // sysop: may moderate (delete posts, elevated who/broadcast)
 	Speed       int    // baud emulation chars/sec class: 1200 or 2400
 	MinutesUsed int    // minutes used today (time-limit theater)
 	MinutesDay  string // YYYY-MM-DD the MinutesUsed counter belongs to
@@ -51,6 +52,8 @@ type Store interface {
 	TouchLastSeen(ctx context.Context, fp string) error
 	// SetBanned flips the ban bit.
 	SetBanned(ctx context.Context, fp string, banned bool) error
+	// SetAdmin flips the sysop bit.
+	SetAdmin(ctx context.Context, fp string, admin bool) error
 	// GrantFlags adds flags to the player's flag set.
 	GrantFlags(ctx context.Context, fp string, flags ...string) error
 	// SetLevel sets the THIS clearance level (0-9).
@@ -77,6 +80,10 @@ type Store interface {
 	SavePost(ctx context.Context, m *SavedMessage) (int, error)
 	// PostsForBoard returns player-authored messages for a board, ID order.
 	PostsForBoard(ctx context.Context, boardID string) ([]SavedMessage, error)
+	// DeletePost removes a player-authored post by board and ID. It reports
+	// whether a row was actually deleted (false = no such player post; the ID
+	// may be a YAML-seeded message, which is immutable).
+	DeletePost(ctx context.Context, boardID string, id int) (bool, error)
 
 	// HostState returns per-player host state: cracked now, whether the
 	// first-crack effects ever fired, and any lockout deadline.

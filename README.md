@@ -56,10 +56,37 @@ make docker       # distroless image, nonroot, read-only rootfs
 Admin-CLI (tegen het DB-bestand, server mag draaien):
 
 ```sh
-./bin/neabbs admin inspect
-./bin/neabbs admin promote <handle> <0-9>
-./bin/neabbs admin ban <handle>
+./bin/neabbs admin inspect                 # alle spelers, of: inspect <handle>
+./bin/neabbs admin promote <handle> <0-9>  # THIS-niveau (impliceert lidmaatschap)
+./bin/neabbs admin member <handle> on|off
+./bin/neabbs admin ban <handle>            # / unban <handle>
+./bin/neabbs admin sysop <handle> on|off   # in-game moderatie aan/uit
+./bin/neabbs admin flag <handle> <flag>
 ```
+
+In Docker draai je de CLI in de container, als de doel-uid, tegen dezelfde DB:
+
+```sh
+docker exec -u 65532 neabbs /neabbs admin inspect
+docker exec -u 65532 neabbs /neabbs admin sysop <jouw-handle> on
+```
+
+### Sysop-commando's in de BBS zelf
+
+`admin sysop <handle> on` geeft een speler de sysop-vlag. Na opnieuw inloggen
+heeft die speler extra commando's, bruikbaar vanaf elk menu (publiek én THIS);
+voor niet-sysops bestaan ze niet (geen enkel spoor):
+
+```
+sysop who          alle lijnen: handle, vingerafdruk, en THIS-aanwezigheid
+sysop zeg <tekst>  omroep naar iedereen (publiek én THIS)
+sysop wis <nr>     verwijder bericht <nr> in het huidige board
+sysop help
+```
+
+`sysop wis` verwijdert alleen door bellers geplaatste berichten (id ≥ 10000);
+YAML-content is vast en blijft staan. Live sessie-info (`who`, omroep) komt uit
+de draaiende daemon, niet de CLI — daarom zijn dit in-game commando's.
 
 Content is data: boards in `content/boards/*.yaml`, bulletins in
 `content/bulletins/*.txt`, bestandensectie in `content/files.yaml`, hosts in
