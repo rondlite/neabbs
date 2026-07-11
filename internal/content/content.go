@@ -83,10 +83,29 @@ type Host struct {
 	Locked       bool       `yaml:"locked"` // requires a successful `crack`
 	Crack        *CrackSpec `yaml:"crack"`
 	Files        []HostFile `yaml:"files"`
+	Mail         []MailMsg  `yaml:"mail"`    // spool read with `mail`
+	Netstat      *HostView  `yaml:"netstat"` // connections revealed by `netstat`
 	NPC          *NPC       `yaml:"npc"`
 	Effects      struct {
 		OnFirstCrack *Effects `yaml:"on_first_crack"`
 	} `yaml:"effects"`
+}
+
+// MailMsg is one message in a host's spool, level-filtered like files.
+type MailMsg struct {
+	From       string `yaml:"from"`
+	Subject    string `yaml:"subject"`
+	Body       string `yaml:"body"`
+	MinLevel   int    `yaml:"min_level"`
+	GrantsFlag string `yaml:"grants_flag"` // reading it sets this flag
+}
+
+// HostView is a cracked-only readout (e.g. `netstat`): a body plus an
+// optional flag it grants, which can make new hosts visible (dynamic graph).
+type HostView struct {
+	MinLevel   int    `yaml:"min_level"`
+	GrantsFlag string `yaml:"grants_flag"`
+	Body       string `yaml:"body"`
 }
 
 // NPC is an optional LLM-backed character on a host, reachable via `talk`.
@@ -102,11 +121,12 @@ type NPC struct {
 
 // CrackSpec describes how a locked host opens.
 type CrackSpec struct {
-	Method       string `yaml:"method"`        // password | wordlist | none
-	PasswordFlag string `yaml:"password_flag"` // crack succeeds iff player holds this flag
-	MinLevel     int    `yaml:"min_level"`     // below this: crack refused, names the clearance
-	HintOnFail   string `yaml:"hint_on_fail"`
-	TraceSeconds int    `yaml:"trace_seconds"` // trace timer starts on successful crack
+	Method        string   `yaml:"method"`         // password | wordlist | none
+	PasswordFlag  string   `yaml:"password_flag"`  // crack succeeds iff player holds this flag
+	RequiresFlags []string `yaml:"requires_flags"` // multi-stage: ALL must be held too
+	MinLevel      int      `yaml:"min_level"`      // below this: crack refused, names the clearance
+	HintOnFail    string   `yaml:"hint_on_fail"`
+	TraceSeconds  int      `yaml:"trace_seconds"` // trace timer starts on successful crack
 }
 
 // HostFile is one readable file on a host, level-filtered like messages.
@@ -469,6 +489,14 @@ func Lint(s *Set) error {
 				fail("host %s file %s: min_level %d out of range", h.ID, f.Name, f.MinLevel)
 			}
 		}
+		for j := range h.Mail {
+			if h.Mail[j].MinLevel < 0 || h.Mail[j].MinLevel > 9 {
+				fail("host %s mail #%d: min_level %d out of range", h.ID, j, h.Mail[j].MinLevel)
+			}
+		}
+		if ns := h.Netstat; ns != nil && (ns.MinLevel < 0 || ns.MinLevel > 9) {
+			fail("host %s netstat: min_level %d out of range", h.ID, ns.MinLevel)
+		}
 	}
 
 	// Public content must never reference THIS hosts by id or address.
@@ -524,6 +552,14 @@ func Lint(s *Set) error {
 				grantable[f] = true
 			}
 		}
+		for j := range s.Hosts[i].Mail {
+			if f := s.Hosts[i].Mail[j].GrantsFlag; f != "" {
+				grantable[f] = true
+			}
+		}
+		if ns := s.Hosts[i].Netstat; ns != nil && ns.GrantsFlag != "" {
+			grantable[ns.GrantsFlag] = true
+		}
 		if fc := s.Hosts[i].Effects.OnFirstCrack; fc != nil {
 			for _, f := range fc.GrantFlags {
 				grantable[f] = true
@@ -554,6 +590,13 @@ func Lint(s *Set) error {
 		}
 		if h.Crack != nil && h.Crack.PasswordFlag != "" && !grantable[h.Crack.PasswordFlag] {
 			fail("host %s: password_flag %q is dangling (nothing grants it)", h.ID, h.Crack.PasswordFlag)
+		}
+		if h.Crack != nil {
+			for _, f := range h.Crack.RequiresFlags {
+				if !grantable[f] {
+					fail("host %s: crack requires_flags %q is dangling (nothing grants it)", h.ID, f)
+				}
+			}
 		}
 		if fc := h.Effects.OnFirstCrack; fc != nil && (fc.GrantLevel < 0 || fc.GrantLevel > 9) {
 			fail("host %s: on_first_crack grant_level %d out of range", h.ID, fc.GrantLevel)

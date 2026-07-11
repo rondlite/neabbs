@@ -121,6 +121,7 @@ type Model struct {
 	// trace timer: runs after cracking a traced host, until disconnect
 	traceHost  string // host id being traced ("" = no trace)
 	traceUntil time.Time
+	routeVia   string // address of a cracked host laundering the trace ("" = direct)
 
 	// NPC talk session state
 	talk struct {
@@ -1283,6 +1284,7 @@ func (m *Model) enterThis() (tea.Model, tea.Cmd) {
 	m.hostAddr = ""
 	m.traceHost = ""
 	m.traceUntil = time.Time{}
+	m.routeVia = ""
 	m.input.Prompt = "> "
 	m.deps.Sess.SetArea("", true) // public user list shows only "lijn bezet"
 	arrival := m.deps.Content.ThisArrival
@@ -1355,9 +1357,19 @@ func (m *Model) thisLine(line string) (tea.Model, tea.Cmd) {
 	case "disconnect":
 		return m.disconnectHost()
 	case "ls", "dir":
-		return m.lsHost()
+		flags := ""
+		if len(fields) > 1 && strings.HasPrefix(fields[1], "-") {
+			flags = fields[1]
+		}
+		return m.lsHost(strings.Contains(flags, "a"), strings.Contains(flags, "l"))
 	case "cat", "type":
 		return m.catHost(arg)
+	case "mail", "spool":
+		return m.mailHost(arg)
+	case "netstat", "ps":
+		return m.netstatHost()
+	case "route", "bounce":
+		return m.routeHost(arg)
 	case "crack", "kraak":
 		return m.crackHost()
 	case "wipe", "wis":
@@ -1504,9 +1516,18 @@ func (m *Model) runCrack(h *content.Host) (tea.Model, tea.Cmd) {
 	}
 	var cmd tea.Cmd
 	if res.TraceSeconds > 0 {
+		secs := res.TraceSeconds
+		routed := m.routeVia != "" && m.routeVia != h.Address
+		if routed {
+			secs *= 2 // laundering through an owned host buys time
+		}
 		m.traceHost = h.ID
-		m.traceUntil = time.Now().Add(time.Duration(res.TraceSeconds) * time.Second)
-		out = append(out, fmt.Sprintf("waarschuwing: traceerpoging gestart. je hebt %d seconden. 'disconnect' verbreekt schoon, 'wipe' wist ook je sporen.", res.TraceSeconds))
+		m.traceUntil = time.Now().Add(time.Duration(secs) * time.Second)
+		warn := fmt.Sprintf("waarschuwing: traceerpoging gestart. je hebt %d seconden. 'disconnect' verbreekt schoon, 'wipe' wist ook je sporen.", secs)
+		if routed {
+			warn += "\n(trace loopt om via " + m.routeVia + ".)"
+		}
+		out = append(out, warn)
 		cmd = traceTick()
 	}
 	out = append(out, "tik 'ls' voor de inhoud.")
@@ -1583,7 +1604,7 @@ func (m *Model) wipeTracks() (tea.Model, tea.Cmd) {
 	return m, m.out(out)
 }
 
-func (m *Model) lsHost() (tea.Model, tea.Cmd) {
+func (m *Model) lsHost(showHidden, long bool) (tea.Model, tea.Cmd) {
 	h := m.currentHost()
 	if h == nil {
 		return m, m.out("ls: niet verbonden. eerst connect <adres>.")
@@ -1592,18 +1613,126 @@ func (m *Model) lsHost() (tea.Model, tea.Cmd) {
 	if err != nil {
 		return m, m.out(m.lockedHint(h))
 	}
-	if len(rows) == 0 {
-		return m, m.out("(leeg)")
-	}
 	var b strings.Builder
+	shown := 0
 	for _, r := range rows {
-		if r.Redacted {
+		if r.Hidden && !showHidden {
+			continue
+		}
+		shown++
+		switch {
+		case r.Redacted:
 			b.WriteString(redactStyle.Render(fmt.Sprintf("  %-20s [THIS-%d]", r.Name, r.Level)) + "\n")
-		} else {
+		case long:
+			b.WriteString(fmt.Sprintf("  -rw-------  THIS-%d  %s\n", r.Level, r.Name))
+		default:
 			b.WriteString(fmt.Sprintf("  %s\n", r.Name))
 		}
 	}
+	if shown == 0 {
+		b.WriteString("(leeg)\n")
+	}
+	// Diegetic discovery: a cracked host advertises its other readouts.
+	if len(h.Mail) > 0 {
+		b.WriteString(dimmed.Render("  (er staat post — 'mail')") + "\n")
+	}
+	if h.Netstat != nil {
+		b.WriteString(dimmed.Render("  (actieve verbindingen — 'netstat')") + "\n")
+	}
 	return m, m.out(strings.TrimRight(b.String(), "\n"))
+}
+
+// mailHost lists a host's spool, or reads message <n>.
+func (m *Model) mailHost(arg string) (tea.Model, tea.Cmd) {
+	h := m.currentHost()
+	if h == nil {
+		return m, m.out("mail: niet verbonden.")
+	}
+	if arg != "" {
+		idx, err := strconv.Atoi(arg)
+		if err != nil {
+			return m, m.out("gebruik: mail <nr>")
+		}
+		msg, err := m.deps.World.ReadMail(context.Background(), h, idx, m.viewer())
+		var ec world.ErrClearance
+		switch {
+		case errors.As(err, &ec):
+			return m, m.out(fmt.Sprintf("TOEGANG GEWEIGERD — THIS-%d vereist.", ec.Need))
+		case errors.Is(err, world.ErrLocked):
+			return m, m.out(m.lockedHint(h))
+		case err != nil:
+			return m, m.out("mail: geen bericht met dat nummer.")
+		}
+		if msg.GrantsFlag != "" {
+			m.refreshPlayer()
+		}
+		return m, m.out(fmt.Sprintf("Van      : %s\nOnderwerp: %s\n%s\n%s",
+			msg.From, msg.Subject, strings.Repeat("-", 40), strings.TrimRight(msg.Body, "\n")))
+	}
+	rows, err := m.deps.World.Mail(context.Background(), h, m.viewer())
+	if err != nil {
+		return m, m.out(m.lockedHint(h))
+	}
+	if len(rows) == 0 {
+		return m, m.out("geen post.")
+	}
+	var b strings.Builder
+	b.WriteString("SPOEL — post op deze host\n")
+	for _, r := range rows {
+		if r.Redacted {
+			b.WriteString(redactStyle.Render(fmt.Sprintf("  %2d  %-14s [THIS-%d]", r.Index, r.From, r.Level)) + "\n")
+		} else {
+			b.WriteString(fmt.Sprintf("  %2d  %-14s %s\n", r.Index, r.From, r.Subject))
+		}
+	}
+	b.WriteString("gebruik: mail <nr>")
+	return m, m.out(b.String())
+}
+
+// netstatHost prints a cracked host's connection readout.
+func (m *Model) netstatHost() (tea.Model, tea.Cmd) {
+	h := m.currentHost()
+	if h == nil {
+		return m, m.out("netstat: niet verbonden.")
+	}
+	view, err := m.deps.World.Netstat(context.Background(), h, m.viewer())
+	var ec world.ErrClearance
+	switch {
+	case errors.As(err, &ec):
+		return m, m.out(fmt.Sprintf("TOEGANG GEWEIGERD — THIS-%d vereist.", ec.Need))
+	case errors.Is(err, world.ErrLocked):
+		return m, m.out(m.lockedHint(h))
+	case err != nil:
+		return m, m.out("netstat: geen actieve verbindingen.")
+	}
+	if view.GrantsFlag != "" {
+		m.refreshPlayer()
+	}
+	return m, m.out("ACTIEVE VERBINDINGEN\n" + strings.Repeat("-", 40) + "\n" + strings.TrimRight(view.Body, "\n"))
+}
+
+// routeHost launders the next crack's trace through a host you already own,
+// buying more time on the timer. One hop; `route uit` clears it.
+func (m *Model) routeHost(arg string) (tea.Model, tea.Cmd) {
+	switch arg {
+	case "":
+		if m.routeVia == "" {
+			return m, m.out("route: direct (geen omweg). gebruik: route <adres van een gekraakte host>")
+		}
+		return m, m.out("route: via " + m.routeVia)
+	case "uit", "off", "direct":
+		m.routeVia = ""
+		return m, m.out("route: direct.")
+	}
+	h, err := m.deps.World.Connect(arg, m.viewer(), m.hasFlag)
+	if err != nil {
+		return m, m.out("route: geen route naar host.")
+	}
+	if ok, _ := m.deps.World.Unlocked(context.Background(), h, m.deps.Player.Fingerprint); !ok {
+		return m, m.out("route: die host is nog niet van jou. kraak hem eerst.")
+	}
+	m.routeVia = h.Address
+	return m, m.out("route: verkeer loopt nu via " + h.Address + ". traces krijgen het moeilijker.")
 }
 
 func (m *Model) catHost(name string) (tea.Model, tea.Cmd) {

@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/rondlite/neabbs/internal/board"
@@ -33,6 +34,16 @@ func (e ErrClearance) Error() string { return fmt.Sprintf("world: THIS-%d requir
 // redacted rows with the required clearance (level-filtered like messages).
 type FileRow struct {
 	Name     string
+	Level    int
+	Redacted bool
+	Hidden   bool // dotfile: only shown by `ls -a`
+}
+
+// MailRow is one spool line for `mail`.
+type MailRow struct {
+	Index    int // 1-based
+	From     string
+	Subject  string
 	Level    int
 	Redacted bool
 }
@@ -148,6 +159,13 @@ func (e *Engine) Crack(ctx context.Context, h *content.Host, v board.Viewer, has
 	default:
 		return fail(), nil
 	}
+	// Multi-stage: every additional prerequisite must be held too (e.g. the
+	// captured hash AND the wordlist that breaks it).
+	for _, f := range spec.RequiresFlags {
+		if !has(f) {
+			return fail(), nil
+		}
+	}
 	first, err := e.store.SetHostCracked(ctx, v.Fingerprint, h.ID, true)
 	if err != nil {
 		return CrackResult{}, err
@@ -184,9 +202,75 @@ func (e *Engine) Ls(ctx context.Context, h *content.Host, v board.Viewer) ([]Fil
 			Name:     f.Name,
 			Level:    f.MinLevel,
 			Redacted: f.MinLevel > v.Level,
+			Hidden:   strings.HasPrefix(f.Name, "."),
 		})
 	}
 	return rows, nil
+}
+
+// Mail lists a host's spool for the viewer (cracked-gated, level-filtered).
+func (e *Engine) Mail(ctx context.Context, h *content.Host, v board.Viewer) ([]MailRow, error) {
+	if ok, err := e.Unlocked(ctx, h, v.Fingerprint); err != nil {
+		return nil, err
+	} else if !ok {
+		return nil, ErrLocked
+	}
+	rows := make([]MailRow, 0, len(h.Mail))
+	for i := range h.Mail {
+		msg := &h.Mail[i]
+		rows = append(rows, MailRow{
+			Index:    i + 1,
+			From:     msg.From,
+			Subject:  msg.Subject,
+			Level:    msg.MinLevel,
+			Redacted: msg.MinLevel > v.Level,
+		})
+	}
+	return rows, nil
+}
+
+// ReadMail returns one spool message (1-based), applying its grants_flag.
+func (e *Engine) ReadMail(ctx context.Context, h *content.Host, idx int, v board.Viewer) (*content.MailMsg, error) {
+	if ok, err := e.Unlocked(ctx, h, v.Fingerprint); err != nil {
+		return nil, err
+	} else if !ok {
+		return nil, ErrLocked
+	}
+	if idx < 1 || idx > len(h.Mail) {
+		return nil, ErrNoFile
+	}
+	msg := &h.Mail[idx-1]
+	if msg.MinLevel > v.Level {
+		return nil, ErrClearance{Need: msg.MinLevel}
+	}
+	if msg.GrantsFlag != "" {
+		if err := e.store.GrantFlags(ctx, v.Fingerprint, msg.GrantsFlag); err != nil {
+			return nil, err
+		}
+	}
+	return msg, nil
+}
+
+// Netstat returns a host's connection readout (cracked-gated), applying its
+// grants_flag — which can make new hosts visible (the graph grows).
+func (e *Engine) Netstat(ctx context.Context, h *content.Host, v board.Viewer) (*content.HostView, error) {
+	if ok, err := e.Unlocked(ctx, h, v.Fingerprint); err != nil {
+		return nil, err
+	} else if !ok {
+		return nil, ErrLocked
+	}
+	if h.Netstat == nil {
+		return nil, ErrNoFile
+	}
+	if h.Netstat.MinLevel > v.Level {
+		return nil, ErrClearance{Need: h.Netstat.MinLevel}
+	}
+	if h.Netstat.GrantsFlag != "" {
+		if err := e.store.GrantFlags(ctx, v.Fingerprint, h.Netstat.GrantsFlag); err != nil {
+			return nil, err
+		}
+	}
+	return h.Netstat, nil
 }
 
 // Cat returns a file body, applying its grants_flag as a side effect.

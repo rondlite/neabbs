@@ -35,6 +35,19 @@ func testSet() *content.Set {
 			{ID: "vip", Address: "vip.this.nl", MinLevel: 9, RequiresFlag: "vip_pas"},
 			{ID: "dicht", Address: "dicht.this.nl", MinLevel: 0, Locked: true,
 				Crack: &content.CrackSpec{Method: "none", MinLevel: 5, HintOnFail: "THIS-5 vereist"}},
+			{ID: "sys", Address: "sys.this.nl", MinLevel: 0,
+				Files: []content.HostFile{
+					{Name: "motd", MinLevel: 0},
+					{Name: ".secret", MinLevel: 0, GrantsFlag: "saw_secret"},
+				},
+				Mail: []content.MailMsg{
+					{From: "root", Subject: "hallo", MinLevel: 0},
+					{From: "chef", Subject: "geheim", MinLevel: 3, GrantsFlag: "mail_flag"},
+				},
+				Netstat: &content.HostView{MinLevel: 0, GrantsFlag: "net_flag", Body: "conn"}},
+			{ID: "multi", Address: "multi.this.nl", MinLevel: 0, Locked: true,
+				Crack: &content.CrackSpec{Method: "password", PasswordFlag: "pw",
+					RequiresFlags: []string{"hash", "wordlist"}, HintOnFail: "meer nodig"}},
 			*pw,
 		},
 	}
@@ -133,6 +146,82 @@ func TestLsAndCat(t *testing.T) {
 	d, _ := e.Connect("dicht.this.nl", v, has)
 	if _, err := e.Ls(ctx, d, v); !errors.Is(err, ErrLocked) {
 		t.Fatalf("ls on locked: %v", err)
+	}
+}
+
+func TestHiddenFilesAndReadouts(t *testing.T) {
+	e := newEngine(t)
+	ctx := context.Background()
+	if _, err := e.store.CreatePlayer(ctx, "fp"); err != nil {
+		t.Fatal(err)
+	}
+	v, has := viewer(0)
+	h, _ := e.Connect("sys.this.nl", v, has)
+
+	rows, err := e.Ls(ctx, h, v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var motd, secret *FileRow
+	for i := range rows {
+		switch rows[i].Name {
+		case "motd":
+			motd = &rows[i]
+		case ".secret":
+			secret = &rows[i]
+		}
+	}
+	if motd == nil || motd.Hidden {
+		t.Fatalf("motd should be visible: %+v", motd)
+	}
+	if secret == nil || !secret.Hidden {
+		t.Fatalf(".secret should be marked hidden: %+v", secret)
+	}
+
+	// Mail: level-filtered, indexed, grants on read.
+	mrows, err := e.Mail(ctx, h, v)
+	if err != nil || len(mrows) != 2 || mrows[0].Redacted || !mrows[1].Redacted {
+		t.Fatalf("mail rows: %v %+v", err, mrows)
+	}
+	if _, err := e.ReadMail(ctx, h, 1, v); err != nil {
+		t.Fatalf("read mail 1: %v", err)
+	}
+	var ec ErrClearance
+	if _, err := e.ReadMail(ctx, h, 2, v); !errors.As(err, &ec) || ec.Need != 3 {
+		t.Fatalf("read above-level mail: %v", err)
+	}
+	if _, err := e.ReadMail(ctx, h, 9, v); !errors.Is(err, ErrNoFile) {
+		t.Fatalf("read missing mail: %v", err)
+	}
+
+	// Netstat readout present; a host without one returns ErrNoFile.
+	if _, err := e.Netstat(ctx, h, v); err != nil {
+		t.Fatalf("netstat: %v", err)
+	}
+	open, _ := e.Connect("open.this.nl", v, has)
+	if _, err := e.Netstat(ctx, open, v); !errors.Is(err, ErrNoFile) {
+		t.Fatalf("netstat on host without one: %v", err)
+	}
+}
+
+func TestMultiStageCrack(t *testing.T) {
+	e := newEngine(t)
+	ctx := context.Background()
+	h := e.content.HostByAddress("multi.this.nl")
+
+	// Password flag alone is not enough — every requires_flags must be held.
+	for _, flags := range [][]string{{"pw"}, {"pw", "hash"}} {
+		v, has := viewer(0, flags...)
+		res, err := e.Crack(ctx, h, v, has)
+		if err != nil || res.Success {
+			t.Fatalf("crack with %v should fail: success=%v err=%v", flags, res.Success, err)
+		}
+	}
+	// All prerequisites held → open.
+	v, has := viewer(0, "pw", "hash", "wordlist")
+	res, err := e.Crack(ctx, h, v, has)
+	if err != nil || !res.Success {
+		t.Fatalf("full-stack crack should succeed: %+v err=%v", res, err)
 	}
 }
 
