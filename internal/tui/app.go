@@ -99,6 +99,9 @@ type WallMsg struct{ Line string }
 // THIS alike), rendered prominently.
 type SysopMsg struct{ Line string }
 
+// KickMsg forces a session to disconnect (a sysop ban of a live caller).
+type KickMsg struct{ Reason string }
+
 // Model is the root session model.
 type Model struct {
 	deps    Deps
@@ -753,6 +756,12 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		return m, tea.Println(amberBright.Render(msg.Line))
+	case KickMsg:
+		reason := msg.Reason
+		if reason == "" {
+			reason = "TOEGANG INGETROKKEN."
+		}
+		return m, tea.Sequence(tea.Println(reason), tea.Quit)
 	case chat.Event:
 		if m.state == stateChat {
 			return m, tea.Println(msg.Line)

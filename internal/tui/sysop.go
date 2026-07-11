@@ -24,6 +24,8 @@ const sysopHelp = `SYSOP — moderatie
   sysop who              alle lijnen, met vingerafdruk en THIS-aanwezigheid
   sysop zeg <tekst>      omroep naar iedereen (publiek én THIS)
   sysop wis <nr>         verwijder bericht <nr> in het huidige board
+  sysop ban <handle>     verban een speler (verbreekt live sessies direct)
+  sysop unban <handle>   hef een verbanning op
   sysop help             deze lijst`
 
 // sysopCmd dispatches the sysop-only verbs. It is only reached for players
@@ -52,6 +54,12 @@ func (m *Model) sysopCmd(line string, fields []string) (tea.Model, tea.Cmd) {
 			arg = fields[2]
 		}
 		return m.sysopDelete(arg)
+	case "ban", "unban":
+		arg := ""
+		if len(fields) > 2 {
+			arg = fields[2]
+		}
+		return m.sysopBan(arg, sub == "ban")
 	}
 	return m, m.out("Onbekend sysop-commando. Probeer: sysop help")
 }
@@ -99,6 +107,38 @@ func (m *Model) sysopBroadcast(msg string) (tea.Model, tea.Cmd) {
 	line := "*** SYSOP: " + msg
 	m.deps.Registry.Broadcast(SysopMsg{Line: line}, nil)
 	return m, m.out("Omgeroepen naar alle lijnen.")
+}
+
+// sysopBan bans or unbans a player by handle. A ban takes the ban bit (so
+// they cannot reconnect) and immediately kicks any live sessions on that
+// fingerprint. Identity is the SSH pubkey, so a determined banned caller can
+// still return with a fresh key — this is a speed bump, not a wall.
+func (m *Model) sysopBan(handle string, ban bool) (tea.Model, tea.Cmd) {
+	if handle == "" {
+		return m, m.out("Gebruik: sysop ban <handle>")
+	}
+	target, err := m.deps.Store.PlayerByHandle(context.Background(), handle)
+	if err != nil {
+		return m, m.out("Geen speler met die naam.")
+	}
+	if ban && target.Fingerprint == m.deps.Player.Fingerprint {
+		return m, m.out("Je kunt jezelf niet bannen.")
+	}
+	if err := m.deps.Store.SetBanned(context.Background(), target.Fingerprint, ban); err != nil {
+		return m, m.out("Actie mislukt.")
+	}
+	if !ban {
+		return m, m.out(fmt.Sprintf("%s is niet langer verbannen.", target.Handle))
+	}
+	// Drop any live sessions on that fingerprint.
+	kicked := 0
+	for _, s := range m.deps.Registry.All() {
+		if s.Fingerprint == target.Fingerprint {
+			s.SendMsg(KickMsg{Reason: "TOEGANG INGETROKKEN DOOR DE SYSOP."})
+			kicked++
+		}
+	}
+	return m, m.out(fmt.Sprintf("%s verbannen. %d live sessie(s) verbroken.", target.Handle, kicked))
 }
 
 // sysopDelete removes a player-authored post in the current board. YAML-seeded
