@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/rondlite/neabbs/internal/board"
 	"github.com/rondlite/neabbs/internal/content"
@@ -80,16 +81,100 @@ func (e *Engine) Connect(addr string, v board.Viewer, has func(string) bool) (*c
 	return h, nil
 }
 
-// Unlocked reports whether the viewer may read files on the host now.
-// Until the crack loop lands, locked hosts stay locked.
-func (e *Engine) Unlocked(h *content.Host, v board.Viewer) bool {
-	return !h.Locked
+// Unlocked reports whether the viewer may read files on the host now:
+// open hosts always, locked hosts only while cracked (a trace kick clears
+// the cracked bit again).
+func (e *Engine) Unlocked(ctx context.Context, h *content.Host, fp string) (bool, error) {
+	if !h.Locked {
+		return true, nil
+	}
+	hs, err := e.store.HostState(ctx, fp, h.ID)
+	if err != nil {
+		return false, err
+	}
+	return hs.Cracked, nil
+}
+
+// CrackResult is the outcome of a crack attempt.
+type CrackResult struct {
+	Success      bool
+	First        bool   // first successful crack ever → effects fired
+	Msg          string // refusal hint or flavor; specific, never generic
+	TraceSeconds int    // >0: the trace timer starts now
+	Effects      *content.Effects
+}
+
+// Crack attempts to unlock the current host. The "lookup wearing a ski
+// mask" mechanic: password cracks succeed iff the player already holds the
+// password_flag — acquiring that flag elsewhere IS the puzzle.
+func (e *Engine) Crack(ctx context.Context, h *content.Host, v board.Viewer, has func(string) bool) (CrackResult, error) {
+	if !h.Locked {
+		return CrackResult{Msg: "crack: dit systeem staat gewoon open."}, nil
+	}
+	hs, err := e.store.HostState(ctx, v.Fingerprint, h.ID)
+	if err != nil {
+		return CrackResult{}, err
+	}
+	if hs.Cracked {
+		return CrackResult{Msg: "crack: al open. rustig maar."}, nil
+	}
+	if until := hs.CooldownUntil; !until.IsZero() && time.Now().Before(until) {
+		rem := time.Until(until).Round(time.Minute)
+		if rem < time.Minute {
+			rem = time.Minute
+		}
+		return CrackResult{Msg: fmt.Sprintf("crack: dit systeem herkent je nog van daarnet. probeer het over %s weer.", rem)}, nil
+	}
+	spec := h.Crack
+	if spec == nil {
+		return CrackResult{Msg: "crack: geen bekende ingang."}, nil
+	}
+	fail := func() CrackResult {
+		if spec.HintOnFail != "" {
+			return CrackResult{Msg: spec.HintOnFail}
+		}
+		return CrackResult{Msg: "TOEGANG GEWEIGERD."}
+	}
+	if v.Level < spec.MinLevel {
+		return fail(), nil
+	}
+	switch spec.Method {
+	case "none":
+		return fail(), nil
+	case "password", "wordlist":
+		if spec.PasswordFlag != "" && !has(spec.PasswordFlag) {
+			return fail(), nil
+		}
+	default:
+		return fail(), nil
+	}
+	first, err := e.store.SetHostCracked(ctx, v.Fingerprint, h.ID, true)
+	if err != nil {
+		return CrackResult{}, err
+	}
+	res := CrackResult{
+		Success:      true,
+		First:        first,
+		TraceSeconds: spec.TraceSeconds,
+	}
+	if first {
+		res.Effects = h.Effects.OnFirstCrack
+	}
+	return res, nil
+}
+
+// TraceExpired applies the trace consequences: the host locks again for
+// this player for 10 minutes. No level loss in v1.
+func (e *Engine) TraceExpired(ctx context.Context, h *content.Host, fp string) error {
+	return e.store.SetHostCooldown(ctx, fp, h.ID, time.Now().Add(10*time.Minute))
 }
 
 // Ls lists the host's files for the viewer: readable ones normally,
 // above-level ones as redacted rows naming their clearance.
-func (e *Engine) Ls(h *content.Host, v board.Viewer) ([]FileRow, error) {
-	if !e.Unlocked(h, v) {
+func (e *Engine) Ls(ctx context.Context, h *content.Host, v board.Viewer) ([]FileRow, error) {
+	if ok, err := e.Unlocked(ctx, h, v.Fingerprint); err != nil {
+		return nil, err
+	} else if !ok {
 		return nil, ErrLocked
 	}
 	rows := make([]FileRow, 0, len(h.Files))
@@ -107,7 +192,9 @@ func (e *Engine) Ls(h *content.Host, v board.Viewer) ([]FileRow, error) {
 // Cat returns a file body, applying its grants_flag as a side effect.
 // Above-level files return ErrClearance naming the required level.
 func (e *Engine) Cat(ctx context.Context, h *content.Host, name string, v board.Viewer) (*content.HostFile, error) {
-	if !e.Unlocked(h, v) {
+	if ok, err := e.Unlocked(ctx, h, v.Fingerprint); err != nil {
+		return nil, err
+	} else if !ok {
 		return nil, ErrLocked
 	}
 	for i := range h.Files {

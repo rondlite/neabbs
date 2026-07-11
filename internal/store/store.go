@@ -78,12 +78,28 @@ type Store interface {
 	// PostsForBoard returns player-authored messages for a board, ID order.
 	PostsForBoard(ctx context.Context, boardID string) ([]SavedMessage, error)
 
+	// HostState returns per-player host state: cracked now, whether the
+	// first-crack effects ever fired, and any lockout deadline.
+	HostState(ctx context.Context, fp, hostID string) (HostState, error)
+	// SetHostCracked flips the cracked bit; on the first crack ever it also
+	// marks first_cracked and reports it.
+	SetHostCracked(ctx context.Context, fp, hostID string, cracked bool) (first bool, err error)
+	// SetHostCooldown locks the host for this player until the deadline.
+	SetHostCooldown(ctx context.Context, fp, hostID string, until time.Time) error
+
 	// AllPlayers returns every player (admin inspect).
 	AllPlayers(ctx context.Context) ([]Player, error)
 	// PlayerByHandle returns the player with the given handle, or ErrNotFound.
 	PlayerByHandle(ctx context.Context, handle string) (*Player, error)
 
 	Close() error
+}
+
+// HostState is a player's relationship with one host.
+type HostState struct {
+	Cracked       bool
+	FirstCracked  bool      // first-crack effects already fired once
+	CooldownUntil time.Time // zero = no lockout
 }
 
 // SavedMessage is a player-authored board message as persisted.

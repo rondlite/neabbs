@@ -1,0 +1,61 @@
+# #phreak — the reward for finishing the THIS-0→3 arc. Contains hooks and
+# foreshadowing for THIS-4+ content that doesn't exist yet.
+id: phreak
+name: "#PHREAK"
+area: this
+min_level: 3
+writable: true
+messages:
+  - id: 201
+    author: "blueboxer"
+    level: 3
+    date: "05-86"
+    subject: "je bent er"
+    body: |
+      als je dit leest heb je de hele keten gelopen. gemeente, SARA,
+      de universiteit. dat is geen gokwerk meer, dat is vakwerk.
+
+      hier praten we over de lijnen zelf. niet over wat erop staat,
+      maar over hoe het netwerk klinkt. welkom in de mooiste hoek
+      van THIS.
+  - id: 202
+    author: "route66"
+    level: 3
+    date: "05-86"
+    subject: "2600 hertz en wat erna kwam"
+    body: |
+      de oude truc: een toon van 2600 hertz op het juiste moment en
+      de centrale denkt dat je hebt opgehangen terwijl je er nog zit.
+      werkte in amerika, werkte hier half.
+
+      wat NA 2600 kwam is interessanter, en staat op de nachtcentrale
+      (nacht.centrale.ptt.nl). die zit op THIS-5. nog even geduld.
+  - id: 203
+    author: "de_specht"
+    level: 3
+    date: "06-86"
+    subject: "de modempool die niemand afsloot"
+    body: |
+      route66 had het ooit over een PTT-modempool waar de
+      nummerreeksen nog van klopten. THIS-4 materiaal. het staat
+      op het board zodra iemand van ons de tijd vindt het uit te
+      typen. (leest de beheerder mee? natuurlijk leest de
+      beheerder mee.)
+  - id: 204
+    author: "phantom"
+    level: 4
+    date: "07-86"
+    subject: "verder dan hier"
+    body: |
+      [THIS-4. de kaart houdt hier op. wat hierboven staat bouwden
+      we nooit af. misschien bouw jij het.]
+  - id: 205
+    author: "beheerder"
+    level: 3
+    date: "06-86"
+    subject: "huisregel voor deze hoek"
+    body: |
+      jullie zijn ver gekomen. dat betekent dat jullie weten hoe je
+      een spoor uitwist. gebruik die kennis hier: wat op #phreak
+      staat, blijft op #phreak. de eerste die buiten THIS zijn mond
+      voorbijpraat, zet ik terug op nul. en dat meen ik.

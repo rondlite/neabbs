@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 	"path/filepath"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/rondlite/neabbs/internal/board"
 	"github.com/rondlite/neabbs/internal/content"
@@ -12,6 +14,16 @@ import (
 )
 
 func testSet() *content.Set {
+	pw := &content.Host{
+		ID: "kraakbaar", Address: "kraak.this.nl", MinLevel: 0, Locked: true,
+		Crack: &content.CrackSpec{Method: "password", PasswordFlag: "kraak_pw",
+			HintOnFail: "wachtwoord vereist (hint: board #1)", TraceSeconds: 90},
+		Files: []content.HostFile{{Name: "buit.txt", MinLevel: 0}},
+	}
+	pw.Effects.OnFirstCrack = &content.Effects{
+		GrantLevel: 1, GrantFlags: []string{"gekraakt"},
+		Broadcast: "{handle} is binnengedrongen bij kraak.this.nl",
+	}
 	return &content.Set{
 		Hosts: []content.Host{
 			{ID: "open0", Address: "open.this.nl", MinLevel: 0,
@@ -23,6 +35,7 @@ func testSet() *content.Set {
 			{ID: "vip", Address: "vip.this.nl", MinLevel: 9, RequiresFlag: "vip_pas"},
 			{ID: "dicht", Address: "dicht.this.nl", MinLevel: 0, Locked: true,
 				Crack: &content.CrackSpec{Method: "none", MinLevel: 5, HintOnFail: "THIS-5 vereist"}},
+			*pw,
 		},
 	}
 }
@@ -97,7 +110,7 @@ func TestLsAndCat(t *testing.T) {
 	v, has := viewer(0)
 
 	h, _ := e.Connect("open.this.nl", v, has)
-	rows, err := e.Ls(h, v)
+	rows, err := e.Ls(ctx, h, v)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -118,8 +131,75 @@ func TestLsAndCat(t *testing.T) {
 
 	// Locked host refuses ls/cat.
 	d, _ := e.Connect("dicht.this.nl", v, has)
-	if _, err := e.Ls(d, v); !errors.Is(err, ErrLocked) {
+	if _, err := e.Ls(ctx, d, v); !errors.Is(err, ErrLocked) {
 		t.Fatalf("ls on locked: %v", err)
+	}
+}
+
+func TestCrackLoop(t *testing.T) {
+	e := newEngine(t)
+	ctx := context.Background()
+	e.store.(*sqlitestore.Store).CreatePlayer(ctx, "fp")
+
+	v, has := viewer(0)
+	h, _ := e.Connect("kraak.this.nl", v, has)
+
+	// Without the password flag: specific refusal, still locked.
+	res, err := e.Crack(ctx, h, v, has)
+	if err != nil || res.Success || !strings.Contains(res.Msg, "wachtwoord vereist") {
+		t.Fatalf("crack without flag: %+v %v", res, err)
+	}
+	if ok, _ := e.Unlocked(ctx, h, "fp"); ok {
+		t.Fatal("locked host unlocked after failed crack")
+	}
+
+	// With the flag: success, first-crack effects, trace starts.
+	v, has = viewer(0, "kraak_pw")
+	res, err = e.Crack(ctx, h, v, has)
+	if err != nil || !res.Success || !res.First || res.TraceSeconds != 90 {
+		t.Fatalf("crack: %+v %v", res, err)
+	}
+	if res.Effects == nil || res.Effects.GrantLevel != 1 {
+		t.Fatalf("first-crack effects missing: %+v", res.Effects)
+	}
+	if ok, _ := e.Unlocked(ctx, h, "fp"); !ok {
+		t.Fatal("cracked host still locked")
+	}
+
+	// Re-crack: no-op message, never re-fires effects.
+	res, _ = e.Crack(ctx, h, v, has)
+	if res.Success || !strings.Contains(res.Msg, "al open") {
+		t.Fatalf("re-crack: %+v", res)
+	}
+
+	// Trace expiry: locked again, cooldown blocks the next attempt,
+	// and a later successful crack is not "first" anymore.
+	if err := e.TraceExpired(ctx, h, "fp"); err != nil {
+		t.Fatal(err)
+	}
+	if ok, _ := e.Unlocked(ctx, h, "fp"); ok {
+		t.Fatal("host still unlocked after trace kick")
+	}
+	res, _ = e.Crack(ctx, h, v, has)
+	if res.Success || !strings.Contains(res.Msg, "herkent je nog") {
+		t.Fatalf("crack during cooldown: %+v", res)
+	}
+	// Simulate cooldown expiry.
+	e.store.SetHostCooldown(ctx, "fp", h.ID, time.Now().Add(-time.Minute))
+	res, _ = e.Crack(ctx, h, v, has)
+	if !res.Success || res.First {
+		t.Fatalf("re-crack after cooldown: %+v", res)
+	}
+}
+
+func TestCrackClearanceGate(t *testing.T) {
+	e := newEngine(t)
+	ctx := context.Background()
+	v, has := viewer(0)
+	h, _ := e.Connect("dicht.this.nl", v, has)
+	res, _ := e.Crack(ctx, h, v, has)
+	if res.Success || !strings.Contains(res.Msg, "THIS-5") {
+		t.Fatalf("teaser crack must name its clearance: %+v", res)
 	}
 }
 

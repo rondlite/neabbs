@@ -54,13 +54,18 @@ messages:
       rond in een bestand of een bericht. lezen is de echte hack.
   - id: 106
     author: "de_specht"
-    level: 1
+    level: 0
     date: "04-86"
     subject: "de gemeente slaapt"
+    grants_flag: "gemeente_pw"
     body: |
-      wie bij de gemeente iets zoekt: hun nachtdienst is een wachtwoord
-      dat op een briefje naast de terminal ligt. figuurlijk dan. het
-      briefje bestaat, alleen niet op papier. kijk waar personeel praat.
+      voor de nieuwe die ergens moet beginnen: de gemeentelijke VAX
+      (vax.gemeente.nl) draait 's nachts op een testaccount. het
+      wachtwoord is al jaren "nachtdienst", want de beheerder daar
+      is te lui om het te veranderen.
+
+      scan, connect, crack. in die volgorde. en lees onderweg alles,
+      want de volgende deur staat altijd in het vorige bestand.
   - id: 107
     author: "phantom"
     level: 2

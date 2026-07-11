@@ -1,0 +1,61 @@
+# Arc host 1 (THIS-0 → THIS-1). Password acquired by reading the intercepted
+# memo on the archive host — the "lookup wearing a ski mask" mechanic.
+id: gemeente-vax
+address: "vax.gemeente.nl"
+min_level: 0
+locked: true
+banner: |
+  GEMEENTE AMSTERDAM — VAX/VMS V4.7
+  Onbevoegd gebruik is strafbaar.
+
+  == nachtdienst actief ==
+crack:
+  method: password
+  password_flag: "gemeente_pw"
+  hint_on_fail: "TOEGANG GEWEIGERD — wachtwoord vereist. (personeel slingert alles rond. lees wat er te lezen valt.)"
+  trace_seconds: 90 # generous: clean disconnect always beats it in normal play
+files:
+  - name: "personeel.txt"
+    min_level: 0
+    body: |
+      INTERNE MEMO — AFD. AUTOMATISERING
+
+      collega's,
+
+      wie er OOK steeds met het testaccount van het rekencentrum
+      werkt: dat is niet de bedoeling. dat account was voor de
+      koppeling met SARA en had ALLANG weg gemoeten.
+
+      en nee, ik noem hier geen wachtwoorden. jullie weten best
+      waar die staan. (op het bord bij de koffie, zoals altijd,
+      tot iemand van beveiliging langsloopt.)
+
+      -- w. druiventak, systeembeheer
+  - name: "modemlijst.dat"
+    min_level: 1
+    grants_flag: "found_modemlist"
+    body: |
+      MODEMLIJST KOPPELNET (VERTROUWELIJK)
+
+      SARA rekencentrum . . . rekencentrum.sara.nl
+      belastingen . . . . . . [afgesloten per 01-86]
+      politie meldkamer . . . [nooit aangesloten, gelukkig]
+
+      deze lijst niet printen. (deze lijst is drie keer geprint.)
+  - name: "notulen-jan86.txt"
+    min_level: 1
+    grants_flag: "sara_testaccount"
+    body: |
+      NOTULEN AUTOMATISERINGSOVERLEG, JANUARI 1986 (fragment)
+
+      3. beveiliging. dhr. druiventak meldt dat het "wel meevalt"
+         met de inbraakpogingen. het testaccount voor de SARA-
+         koppeling (gebruikersnaam TEST, wachtwoord "koffie86")
+         blijft voorlopig staan "want anders werkt de koppeling
+         niet". besloten dit door te schuiven naar volgend overleg.
+      4. koffieautomaat. uitvoerige discussie, zie bijlage.
+effects:
+  on_first_crack:
+    grant_level: 1
+    grant_flags: ["cracked_gemeente"]
+    broadcast: "{handle} is binnengedrongen bij vax.gemeente.nl"

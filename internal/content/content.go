@@ -525,6 +525,32 @@ func Lint(s *Set) error {
 		}
 	}
 
+	// Promotion gaps: promotions come only from effects. Every level from 1
+	// up to the highest granted level must be reachable by some effect,
+	// otherwise content above the gap is dead.
+	granted := map[int]bool{}
+	for i := range s.HiddenCommands {
+		if lvl := s.HiddenCommands[i].Effects.GrantLevel; lvl > 0 {
+			granted[lvl] = true
+		}
+	}
+	maxLevel := 0
+	for i := range s.Hosts {
+		if fc := s.Hosts[i].Effects.OnFirstCrack; fc != nil && fc.GrantLevel > 0 {
+			granted[fc.GrantLevel] = true
+		}
+	}
+	for lvl := range granted {
+		if lvl > maxLevel {
+			maxLevel = lvl
+		}
+	}
+	for lvl := 1; lvl <= maxLevel; lvl++ {
+		if !granted[lvl] {
+			fail("promotion gap: no effect grants level %d (but level %d exists)", lvl, maxLevel)
+		}
+	}
+
 	if len(errs) > 0 {
 		return fmt.Errorf("content lint:\n  %s", strings.Join(errs, "\n  "))
 	}

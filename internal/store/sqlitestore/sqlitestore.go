@@ -53,6 +53,14 @@ CREATE TABLE IF NOT EXISTS posts (
 	posted_at INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS posts_board ON posts(board_id);
+CREATE TABLE IF NOT EXISTS host_state (
+	fingerprint    TEXT NOT NULL,
+	host_id        TEXT NOT NULL,
+	cracked        INTEGER NOT NULL DEFAULT 0,
+	first_cracked  INTEGER NOT NULL DEFAULT 0,
+	cooldown_until INTEGER NOT NULL DEFAULT 0,
+	PRIMARY KEY (fingerprint, host_id)
+);
 `
 
 // Store is the SQLite-backed store.Store.
@@ -283,6 +291,53 @@ func (s *Store) PostsForBoard(ctx context.Context, boardID string) ([]store.Save
 		out = append(out, m)
 	}
 	return out, rows.Err()
+}
+
+func (s *Store) HostState(ctx context.Context, fp, hostID string) (store.HostState, error) {
+	var hs store.HostState
+	var until int64
+	err := s.db.QueryRowContext(ctx, `
+		SELECT cracked, first_cracked, cooldown_until FROM host_state
+		WHERE fingerprint = ? AND host_id = ?`, fp, hostID).
+		Scan(&hs.Cracked, &hs.FirstCracked, &until)
+	if errors.Is(err, sql.ErrNoRows) {
+		return store.HostState{}, nil
+	}
+	if err != nil {
+		return store.HostState{}, err
+	}
+	if until > 0 {
+		hs.CooldownUntil = time.Unix(until, 0)
+	}
+	return hs, nil
+}
+
+func (s *Store) SetHostCracked(ctx context.Context, fp, hostID string, cracked bool) (bool, error) {
+	prev, err := s.HostState(ctx, fp, hostID)
+	if err != nil {
+		return false, err
+	}
+	first := cracked && !prev.FirstCracked
+	_, err = s.db.ExecContext(ctx, `
+		INSERT INTO host_state (fingerprint, host_id, cracked, first_cracked, cooldown_until)
+		VALUES (?, ?, ?, ?, 0)
+		ON CONFLICT(fingerprint, host_id) DO UPDATE SET
+			cracked = excluded.cracked,
+			first_cracked = MAX(first_cracked, excluded.first_cracked),
+			cooldown_until = 0`,
+		fp, hostID, cracked, cracked)
+	return first, err
+}
+
+func (s *Store) SetHostCooldown(ctx context.Context, fp, hostID string, until time.Time) error {
+	_, err := s.db.ExecContext(ctx, `
+		INSERT INTO host_state (fingerprint, host_id, cracked, first_cracked, cooldown_until)
+		VALUES (?, ?, 0, 0, ?)
+		ON CONFLICT(fingerprint, host_id) DO UPDATE SET
+			cracked = 0,
+			cooldown_until = excluded.cooldown_until`,
+		fp, hostID, until.Unix())
+	return err
 }
 
 func (s *Store) AllPlayers(ctx context.Context) ([]store.Player, error) {

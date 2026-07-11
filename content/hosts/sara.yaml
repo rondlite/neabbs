@@ -1,0 +1,61 @@
+# Arc host 2 (THIS-1 → THIS-2). Visible once you have the gemeente
+# modemlist flag; password lives in the wordlist-crackable test account.
+id: sara-rekencentrum
+address: "rekencentrum.sara.nl"
+min_level: 1
+requires_flag: "found_modemlist"
+locked: true
+banner: |
+  SARA — STICHTING ACADEMISCH REKENCENTRUM AMSTERDAM
+  CDC CYBER 750 · NOS/BE
+
+  LOGIN:
+crack:
+  method: wordlist
+  password_flag: "sara_testaccount"
+  hint_on_fail: "LOGIN GEWEIGERD — dit is het testaccount van de gemeentekoppeling. je hebt de juiste inloggegevens nog niet gezien."
+  trace_seconds: 120
+files:
+  - name: "welkom.txt"
+    min_level: 1
+    body: |
+      welkom op de CYBER. rekentijd is kostbaar, gedraag u.
+      dit account (TEST/GEMEENTE) had allang ingetrokken moeten
+      zijn. omdat niemand dat deed, leest u dit nu.
+  - name: "gebruikers.dir"
+    min_level: 2
+    grants_flag: "sara_userlist"
+    body: |
+      ACTIEVE GEBRUIKERS (nachtdienst)
+
+      SYSOP    - de beheerder. humeurig na 02:00.
+      PHANTOM  - laatst gezien 03-86. account nooit gesloten.
+                 wachtwoord staat nog op de fabrieksinstelling:
+                 zijn eigen naam achterstevoren. lui, tot het eind.
+      GAST     - u, waarschijnlijk.
+
+      wie met de beheerder wil praten: hij hangt rond op zijn
+      eigen machine, beheerder.sara.nl. neem koffie mee.
+  - name: "phantom-account.txt"
+    min_level: 2
+    grants_flag: "phantom_account"
+    body: |
+      [losse notitie bij de gebruikerslijst]
+
+      PHANTOM's oude inlog werkt nog op hydra bij de UvA. zelfde
+      wachtwoord als hier. hij hergebruikte alles. dat werd zijn
+      probleem en nu jouw kans.
+  - name: "phreak-hint.txt"
+    min_level: 2
+    grants_flag: "phreak_invite"
+    body: |
+      [krabbel in de kantlijn van een uitdraai]
+
+      "de jongens met de blauwe doosjes hebben een eigen hoek.
+       #phreak. je komt er als je op niveau bent. vraag niet,
+       lees. het staat er als je het mag zien."
+effects:
+  on_first_crack:
+    grant_level: 2
+    grant_flags: ["cracked_sara"]
+    broadcast: "{handle} draait rekentijd op de CYBER van SARA"

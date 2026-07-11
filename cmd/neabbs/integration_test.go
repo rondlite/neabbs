@@ -411,3 +411,102 @@ func TestDiscoveryChainIntoTHIS(t *testing.T) {
 	c.send("u")
 	c.waitFor("NO CARRIER")
 }
+
+// TestHackingArc walks the full THIS-0→THIS-3 crack chain: read the board
+// clue → crack gemeente (promote to 1, trace) → read files → crack SARA
+// (2) → crack UvA (3) → #phreak unlocks.
+func TestHackingArc(t *testing.T) {
+	addr := startServer(t)
+	c := dialBBS(t, addr)
+	c.waitFor("Nieuwe beller")
+	c.send("kraker\r")
+	c.waitFor("HOOFDMENU")
+
+	// Shortcut into THIS: grant the invite via a synthetic run of the chain
+	// is long, so drive the door directly by reading the real chain files.
+	c.send("f")
+	c.waitFor("BESTANDEN")
+	c.send("lees 9\r")
+	c.waitFor("NOTITIES")
+	c.send("terug\r")
+	c.waitFor("HOOFDMENU")
+	c.send("b")
+	c.waitFor("Gebruik: board <id>")
+	c.send("algemeen\r")
+	c.waitFor("40 jaar is niks")
+	c.send("read 11\r")
+	c.waitFor("die dit wél leest")
+	c.send("terug\r")
+	c.waitFor("HOOFDMENU")
+	c.send("f")
+	c.waitFor("herstel-log.txt")
+	c.send("lees 12\r")
+	c.waitFor("HERSTEL-LOGBOEK")
+	c.send("terug\r")
+	c.waitFor("HOOFDMENU")
+	c.send("this\r")
+	c.waitFor("THIS-0")
+
+	// Read the board clue → grants gemeente_pw.
+	c.send("board this-board\r")
+	c.waitFor("de gemeente slaapt")
+	c.send("read 106\r")
+	c.waitFor("nachtdienst")
+
+	// #phreak (THIS-3) must be invisible at THIS-0.
+	c.send("boards\r")
+	if strings.Contains(c.snapshot(), "phreak") {
+		t.Fatal("#phreak visible below THIS-3")
+	}
+
+	// Crack gemeente → promote to THIS-1, trace starts.
+	c.send("scan\r")
+	c.waitFor("vax.gemeente.nl")
+	c.send("connect vax.gemeente.nl\r")
+	c.waitFor("VAX/VMS")
+	c.send("crack\r")
+	c.waitFor("TOEGANG VERLEEND")
+	c.waitFor("PROMOTIE — THIS-1")
+	c.waitFor("TRACE ACTIEF")
+	c.send("ls\r")
+	c.waitFor("modemlijst.dat")
+	c.send("cat modemlijst.dat\r") // grants found_modemlist → SARA visible
+	c.waitFor("SARA")
+	c.send("cat notulen-jan86.txt\r") // grants sara_testaccount
+	c.waitFor("koffie86")
+	c.send("disconnect\r")
+	c.waitFor("trace afgebroken")
+
+	// Crack SARA → THIS-2.
+	c.send("connect rekencentrum.sara.nl\r")
+	c.waitFor("CYBER")
+	c.send("crack\r")
+	c.waitFor("TOEGANG VERLEEND")
+	c.waitFor("PROMOTIE — THIS-2")
+	c.send("cat gebruikers.dir\r") // grants sara_userlist → UvA visible
+	c.waitFor("PHANTOM")
+	c.send("cat phantom-account.txt\r") // grants phantom_account
+	c.waitFor("hydra")
+	c.send("disconnect\r")
+	c.waitFor("verbroken")
+
+	// Crack UvA → THIS-3, #phreak opens.
+	c.send("connect hydra.uva.nl\r")
+	c.waitFor("HYDRA")
+	c.send("crack\r")
+	c.waitFor("TOEGANG VERLEEND")
+	c.waitFor("PROMOTIE — THIS-3")
+	c.send("disconnect\r")
+	c.waitFor("verbroken")
+
+	// #phreak now exists and is readable.
+	c.send("boards\r")
+	c.waitFor("phreak")
+	c.send("board phreak\r")
+	c.waitFor("je bent er")
+	c.send("read 201\r")
+	c.waitFor("de hele keten gelopen")
+
+	c.send("logout\r")
+	c.waitFor("NO CARRIER")
+}

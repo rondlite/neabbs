@@ -108,6 +108,10 @@ type Model struct {
 	thisLines []string
 	hostAddr  string // connected host address ("" = home node)
 
+	// trace timer: runs after cracking a traced host, until disconnect
+	traceHost  string // host id being traced ("" = no trace)
+	traceUntil time.Time
+
 	wallBudget int
 
 	// input rate limiting: token bucket
@@ -491,6 +495,16 @@ func (m *Model) menuLine(line string) (tea.Model, tea.Cmd) {
 // enterThisMsg switches to THIS mode after the doorverbinden beat.
 type enterThisMsg struct{}
 
+// traceTickMsg drives the trace countdown.
+type traceTickMsg struct{}
+
+// crackRunMsg fires after the wordlist animation beat and runs the crack.
+type crackRunMsg struct{ hostAddr string }
+
+func traceTick() tea.Cmd {
+	return tea.Tick(time.Second, func(time.Time) tea.Msg { return traceTickMsg{} })
+}
+
 // applyEffects mutates the player per a content Effects block and refreshes
 // the in-memory player row.
 func (m *Model) applyEffects(e content.Effects) error {
@@ -648,6 +662,13 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	case enterThisMsg:
 		return m.enterThis()
+	case traceTickMsg:
+		return m.traceTicked()
+	case crackRunMsg:
+		if h := m.currentHost(); h != nil && strings.EqualFold(h.Address, msg.hostAddr) {
+			return m.runCrack(h)
+		}
+		return m, nil
 	case printTickMsg:
 		return m, m.printer.tick()
 	case ritualDelayMsg:
@@ -1163,6 +1184,8 @@ func (m *Model) enterThis() (tea.Model, tea.Cmd) {
 	m.inThis = true
 	m.boardID = ""
 	m.hostAddr = ""
+	m.traceHost = ""
+	m.traceUntil = time.Time{}
 	m.input.Prompt = "> "
 	m.deps.Sess.SetArea("", true) // public user list shows only "lijn bezet"
 	arrival := m.deps.Content.ThisArrival
@@ -1179,6 +1202,8 @@ func (m *Model) exitThis() (tea.Model, tea.Cmd) {
 	m.inThis = false
 	m.boardID = ""
 	m.hostAddr = ""
+	m.traceHost = "" // leaving THIS is a clean disconnect
+	m.traceUntil = time.Time{}
 	m.state = stateMenu
 	m.input.Prompt = "Keuze: "
 	m.deps.Sess.SetArea("hoofdmenu", false)
@@ -1235,6 +1260,8 @@ func (m *Model) thisLine(line string) (tea.Model, tea.Cmd) {
 		return m.lsHost()
 	case "cat", "type":
 		return m.catHost(arg)
+	case "crack", "kraak":
+		return m.crackHost()
 	case "who", "wie":
 		return m, m.out(m.renderThisWho())
 	case "wall":
@@ -1312,12 +1339,8 @@ func (m *Model) connectHost(addr string) (tea.Model, tea.Cmd) {
 	if h.Banner != "" {
 		out = append(out, "", strings.TrimRight(h.Banner, "\n"))
 	}
-	if !m.deps.World.Unlocked(h, m.viewer()) {
-		hint := "toegang vergrendeld."
-		if h.Crack != nil && h.Crack.HintOnFail != "" {
-			hint = h.Crack.HintOnFail
-		}
-		out = append(out, "", hint)
+	if ok, err := m.deps.World.Unlocked(context.Background(), h, m.deps.Player.Fingerprint); err == nil && !ok {
+		out = append(out, "", m.lockedHint(h))
 	}
 	return m, m.out(strings.Join(out, "\n"))
 }
@@ -1328,7 +1351,87 @@ func (m *Model) disconnectHost() (tea.Model, tea.Cmd) {
 	}
 	addr := m.hostAddr
 	m.hostAddr = ""
-	return m, m.out(fmt.Sprintf("verbinding met %s verbroken.", addr))
+	out := fmt.Sprintf("verbinding met %s verbroken.", addr)
+	if m.traceHost != "" {
+		// A clean disconnect beats the trace. That's the whole game.
+		m.traceHost = ""
+		m.traceUntil = time.Time{}
+		out += "\ntrace afgebroken. netjes op tijd."
+	}
+	return m, m.out(out)
+}
+
+// crackHost attempts to unlock the current host. Wordlist cracks get their
+// little show first; the outcome lands via crackRunMsg.
+func (m *Model) crackHost() (tea.Model, tea.Cmd) {
+	h := m.currentHost()
+	if h == nil {
+		return m, m.out("crack: niet verbonden. eerst connect <adres>.")
+	}
+	if h.Locked && h.Crack != nil && h.Crack.Method == "wordlist" {
+		m.thisPrint("woordenlijst geladen. draaien maar...\n[########________________________]")
+		return m, tea.Tick(1500*time.Millisecond, func(time.Time) tea.Msg {
+			return crackRunMsg{hostAddr: h.Address}
+		})
+	}
+	return m.runCrack(h)
+}
+
+// runCrack executes the crack attempt and applies its consequences.
+func (m *Model) runCrack(h *content.Host) (tea.Model, tea.Cmd) {
+	ctx := context.Background()
+	res, err := m.deps.World.Crack(ctx, h, m.viewer(), m.hasFlag)
+	if err != nil {
+		return m, m.out("crack: er knettert iets. probeer opnieuw.")
+	}
+	if !res.Success {
+		return m, m.out(res.Msg)
+	}
+	out := []string{green.Render("*** TOEGANG VERLEEND ***")}
+	if res.First && res.Effects != nil {
+		oldLevel := m.deps.Player.Level
+		if err := m.applyEffects(*res.Effects); err == nil {
+			if m.deps.Player.Level > oldLevel {
+				out = append(out, green.Render(fmt.Sprintf("*** PROMOTIE — THIS-%d toegekend ***", m.deps.Player.Level)))
+			}
+			if res.Effects.Broadcast != "" {
+				line := strings.ReplaceAll(res.Effects.Broadcast, "{handle}", m.deps.Player.Handle)
+				m.deps.Registry.Broadcast(WallMsg{Line: "*** " + line}, m.deps.Sess)
+			}
+		}
+	}
+	var cmd tea.Cmd
+	if res.TraceSeconds > 0 {
+		m.traceHost = h.ID
+		m.traceUntil = time.Now().Add(time.Duration(res.TraceSeconds) * time.Second)
+		out = append(out, fmt.Sprintf("waarschuwing: traceerpoging gestart. je hebt %d seconden. 'disconnect' verbreekt schoon.", res.TraceSeconds))
+		cmd = traceTick()
+	}
+	out = append(out, "tik 'ls' voor de inhoud.")
+	m.thisPrint(strings.Join(out, "\n"))
+	return m, cmd
+}
+
+// traceTicked advances the countdown; on expiry: kick to home node,
+// 10-minute lockout, flavor. No level loss in v1.
+func (m *Model) traceTicked() (tea.Model, tea.Cmd) {
+	if m.traceHost == "" || m.state == stateDone {
+		return m, nil
+	}
+	if time.Now().Before(m.traceUntil) {
+		return m, traceTick()
+	}
+	h := m.deps.Content.HostByAddress(m.hostAddr)
+	hostID := m.traceHost
+	m.traceHost = ""
+	m.traceUntil = time.Time{}
+	m.hostAddr = ""
+	if h != nil && h.ID == hostID {
+		_ = m.deps.World.TraceExpired(context.Background(), h, m.deps.Player.Fingerprint)
+	}
+	m.thisPrint(green.Render("*** VERBINDING VERBROKEN — je bent bijna getraceerd. ***") +
+		"\nterug op de thuisnode. die host wil je 10 minuten niet zien.")
+	return m, nil
 }
 
 func (m *Model) lsHost() (tea.Model, tea.Cmd) {
@@ -1336,7 +1439,7 @@ func (m *Model) lsHost() (tea.Model, tea.Cmd) {
 	if h == nil {
 		return m, m.out("ls: niet verbonden. eerst connect <adres>.")
 	}
-	rows, err := m.deps.World.Ls(h, m.viewer())
+	rows, err := m.deps.World.Ls(context.Background(), h, m.viewer())
 	if err != nil {
 		return m, m.out(m.lockedHint(h))
 	}
@@ -1466,6 +1569,13 @@ func (m *Model) thisView() string {
 	left := " NEABBS//THIS "
 	if m.hostAddr != "" {
 		left += "· " + m.hostAddr + " "
+	}
+	if m.traceHost != "" {
+		rem := time.Until(m.traceUntil)
+		if rem < 0 {
+			rem = 0
+		}
+		left += fmt.Sprintf("· TRACE ACTIEF — %d:%02d ", int(rem.Minutes()), int(rem.Seconds())%60)
 	}
 	right := fmt.Sprintf(" %s · %s ", m.deps.Player.Handle, level)
 	pad := w - lipgloss.Width(left) - lipgloss.Width(right)
