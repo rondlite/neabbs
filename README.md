@@ -28,6 +28,23 @@ sleutels (`ssh -i andere_sleutel -p 2222 localhost`).
 | `LLM_MODEL`      | (leeg)       | modelnaam voor de LLM              |
 | `LLM_API_KEY`    | (leeg)       | bearer-token voor de LLM           |
 
+## Deployen (volume & rechten)
+
+De container heeft één schrijfbaar pad nodig: het volume met de DB en de
+hostkey (default `/data`). Veel platforms (Fly, Railway, Coolify, k8s, …)
+koppelen zo'n volume als `root`, waardoor een strikt non-root proces er
+niet in kan schrijven (`unable to open database file (14)`).
+
+Daarom start de daemon als `root` **uitsluitend** om de eigenaar van de
+schrijfbare mappen recht te zetten, en zakt daarna permanent naar uid/gid
+`65532` — vóór de DB wordt geopend. Serveren gebeurt dus nooit als root.
+
+- Mount het volume op `/data` (of zet `NEABBS_DB`/`NEABBS_HOSTKEY` naar een
+  pad binnen je mount).
+- Doel-uid/gid overschrijven kan met `NEABBS_UID` / `NEABBS_GID`.
+- Draai je met `--user 65532` en is het volume al schrijfbaar voor die uid,
+  dan wordt de root-fase overgeslagen en draait alles direct als non-root.
+
 ## Ontwikkelen
 
 ```sh

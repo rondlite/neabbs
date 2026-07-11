@@ -10,11 +10,17 @@ RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /neabbs ./cmd/neabbs
 # a fresh named volume inherits this ownership and is therefore writable.
 RUN mkdir -p /data
 
-FROM gcr.io/distroless/static:nonroot
+# Root base (no :nonroot). The daemon starts as root ONLY to fix ownership
+# of a root-owned mounted volume, then permanently drops to uid/gid 65532
+# before opening the DB (see cmd/neabbs/privileges_linux.go). It never
+# serves as root. Run with --user 65532 to skip the root phase entirely
+# when the volume is already writable by that uid.
+FROM gcr.io/distroless/static
 COPY --from=build /neabbs /neabbs
 COPY content /content
-# distroless "nonroot" is uid/gid 65532; the builder has no such user by
-# name, so chown numerically. The DB and hostkey are the only writes.
+# Pre-owned by the target uid so a fresh named volume is writable without
+# the self-heal step; the builder has no such user by name, so chown
+# numerically. The DB and hostkey are the only writes.
 COPY --from=build --chown=65532:65532 /data /data
 ENV NEABBS_LISTEN=:2222 \
     NEABBS_DB=/data/neabbs.db \
@@ -22,5 +28,4 @@ ENV NEABBS_LISTEN=:2222 \
     NEABBS_CONTENT=/content
 EXPOSE 2222
 VOLUME /data
-USER nonroot
 ENTRYPOINT ["/neabbs"]

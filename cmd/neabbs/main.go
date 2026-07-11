@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
@@ -51,6 +52,13 @@ func run(args []string) error {
 		}
 	}
 	cfg := config.FromEnv()
+
+	// If the container started as root (platforms often mount volumes
+	// root-owned), fix ownership of the writable dirs and drop to the
+	// unprivileged user before touching the DB.
+	if err := dropPrivileges(filepath.Dir(cfg.DBPath), filepath.Dir(cfg.HostKey)); err != nil {
+		return fmt.Errorf("drop privileges: %w", err)
+	}
 
 	// lipgloss's global renderer detects the daemon's stdout (not a TTY, so
 	// colour would be stripped). Every session is an interactive PTY over
