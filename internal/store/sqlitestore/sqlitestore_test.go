@@ -186,6 +186,56 @@ func TestAddHeat(t *testing.T) {
 	}
 }
 
+func TestBreaches(t *testing.T) {
+	s := open(t)
+	ctx := context.Background()
+	if bi, err := s.BreachInfo(ctx, "h1"); err != nil || bi.Count != 0 {
+		t.Fatalf("empty host: %+v err=%v", bi, err)
+	}
+	// alice first (earlier timestamp), then bob; alice recorded twice = idempotent.
+	if err := s.RecordBreach(ctx, "h1", "alice", time.Unix(100, 0)); err != nil {
+		t.Fatal(err)
+	}
+	_ = s.RecordBreach(ctx, "h1", "alice", time.Unix(999, 0)) // ignored, keeps first
+	_ = s.RecordBreach(ctx, "h1", "bob", time.Unix(200, 0))
+	bi, err := s.BreachInfo(ctx, "h1")
+	if err != nil || bi.Count != 2 || bi.FirstHandle != "alice" {
+		t.Fatalf("breach info: %+v err=%v", bi, err)
+	}
+	if bi.FirstAt.Unix() != 100 {
+		t.Fatalf("first-at not preserved: %d", bi.FirstAt.Unix())
+	}
+}
+
+func TestLeaderboard(t *testing.T) {
+	s := open(t)
+	ctx := context.Background()
+	mk := func(fp, handle string, lvl int, hosts ...string) {
+		if _, err := s.CreatePlayer(ctx, fp); err != nil {
+			t.Fatal(err)
+		}
+		_ = s.SetHandle(ctx, fp, handle)
+		_ = s.SetThisMember(ctx, fp, true)
+		_ = s.SetLevel(ctx, fp, lvl)
+		for i, h := range hosts {
+			_ = s.RecordBreach(ctx, h, handle, time.Unix(int64(i+1), 0))
+		}
+	}
+	mk("fp1", "novice", 1)
+	mk("fp2", "ace", 9, "a", "b", "c")
+	mk("fp3", "middler", 5, "a")
+	top, err := s.Leaderboard(ctx, 10)
+	if err != nil || len(top) != 3 {
+		t.Fatalf("leaderboard: %v %+v", err, top)
+	}
+	if top[0].Handle != "ace" || top[0].Level != 9 || top[0].Breaches != 3 {
+		t.Fatalf("rank 1 wrong: %+v", top[0])
+	}
+	if top[1].Handle != "middler" || top[2].Handle != "novice" {
+		t.Fatalf("ordering wrong: %+v", top)
+	}
+}
+
 func TestPendingQueue(t *testing.T) {
 	s := open(t)
 	ctx := context.Background()

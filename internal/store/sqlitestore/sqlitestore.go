@@ -67,6 +67,12 @@ CREATE TABLE IF NOT EXISTS host_state (
 	cooldown_until INTEGER NOT NULL DEFAULT 0,
 	PRIMARY KEY (fingerprint, host_id)
 );
+CREATE TABLE IF NOT EXISTS breaches (
+	host_id TEXT NOT NULL,
+	handle  TEXT NOT NULL,
+	at      INTEGER NOT NULL,
+	PRIMARY KEY (host_id, handle)
+);
 `
 
 // Store is the SQLite-backed store.Store.
@@ -447,6 +453,59 @@ func (s *Store) SetHostCooldown(ctx context.Context, fp, hostID string, until ti
 			cooldown_until = excluded.cooldown_until`,
 		fp, hostID, until.Unix())
 	return err
+}
+
+func (s *Store) RecordBreach(ctx context.Context, hostID, handle string, at time.Time) error {
+	if handle == "" {
+		return nil
+	}
+	_, err := s.db.ExecContext(ctx,
+		"INSERT OR IGNORE INTO breaches (host_id, handle, at) VALUES (?, ?, ?)",
+		hostID, handle, at.Unix())
+	return err
+}
+
+func (s *Store) BreachInfo(ctx context.Context, hostID string) (store.BreachInfo, error) {
+	var bi store.BreachInfo
+	var handle sql.NullString
+	var at sql.NullInt64
+	err := s.db.QueryRowContext(ctx, `
+		SELECT COUNT(*),
+		       (SELECT handle FROM breaches WHERE host_id = ? ORDER BY at, handle LIMIT 1),
+		       (SELECT MIN(at) FROM breaches WHERE host_id = ?)
+		FROM breaches WHERE host_id = ?`, hostID, hostID, hostID).
+		Scan(&bi.Count, &handle, &at)
+	if err != nil {
+		return store.BreachInfo{}, err
+	}
+	bi.FirstHandle = handle.String
+	if at.Valid {
+		bi.FirstAt = time.Unix(at.Int64, 0)
+	}
+	return bi, nil
+}
+
+func (s *Store) Leaderboard(ctx context.Context, limit int) ([]store.Notoriety, error) {
+	rows, err := s.db.QueryContext(ctx, `
+		SELECT p.handle, p.level,
+		       (SELECT COUNT(*) FROM breaches b WHERE b.handle = p.handle) AS breaches
+		FROM players p
+		WHERE p.this_member = 1 AND p.handle <> '' AND p.banned = 0
+		ORDER BY p.level DESC, breaches DESC, p.handle ASC
+		LIMIT ?`, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []store.Notoriety
+	for rows.Next() {
+		var n store.Notoriety
+		if err := rows.Scan(&n.Handle, &n.Level, &n.Breaches); err != nil {
+			return nil, err
+		}
+		out = append(out, n)
+	}
+	return out, rows.Err()
 }
 
 func (s *Store) AllPlayers(ctx context.Context) ([]store.Player, error) {

@@ -75,6 +75,21 @@ type Caller struct {
 	At     time.Time
 }
 
+// BreachInfo is the shared trail a host carries: how many distinct operators
+// have cracked it, and who got there first.
+type BreachInfo struct {
+	Count       int
+	FirstHandle string
+	FirstAt     time.Time
+}
+
+// Notoriety is one operator's standing on the leaderboard.
+type Notoriety struct {
+	Handle   string
+	Level    int
+	Breaches int // distinct hosts cracked
+}
+
 // Store is the persistence boundary.
 type Store interface {
 	// PlayerByFingerprint returns the player, or ErrNotFound.
@@ -143,6 +158,14 @@ type Store interface {
 	// AddNPCTurns adds n to today's NPC-turn counter (per-player, all NPCs)
 	// and returns the new total for day (YYYY-MM-DD); a day rollover resets.
 	AddNPCTurns(ctx context.Context, fp, day string, n int) (int, error)
+
+	// RecordBreach notes that handle has cracked hostID (idempotent per
+	// operator — the first time is kept, so it never overwrites the pioneer).
+	RecordBreach(ctx context.Context, hostID, handle string, at time.Time) error
+	// BreachInfo returns the shared trail for one host.
+	BreachInfo(ctx context.Context, hostID string) (BreachInfo, error)
+	// Leaderboard returns operators ranked by THIS level then hosts cracked.
+	Leaderboard(ctx context.Context, limit int) ([]Notoriety, error)
 
 	// AllPlayers returns every player (admin inspect).
 	AllPlayers(ctx context.Context) ([]Player, error)

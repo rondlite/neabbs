@@ -102,6 +102,9 @@ type SysopMsg struct{ Line string }
 // KickMsg forces a session to disconnect (a sysop ban of a live caller).
 type KickMsg struct{ Reason string }
 
+// WhisperMsg is a private line from one THIS operator to another.
+type WhisperMsg struct{ From, Line string }
+
 // Model is the root session model.
 type Model struct {
 	deps    Deps
@@ -763,6 +766,12 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			reason = "TOEGANG INGETROKKEN."
 		}
 		return m, tea.Sequence(tea.Println(reason), tea.Quit)
+	case WhisperMsg:
+		// Whispers only surface inside THIS; nothing leaks to the public BBS.
+		if m.inThis {
+			m.thisPrint(green.Render(fmt.Sprintf("« %s fluistert: %s", msg.From, msg.Line)))
+		}
+		return m, nil
 	case genDraftedMsg:
 		if msg.err != nil {
 			return m, m.out("Genereren mislukt: " + msg.err.Error())
@@ -1378,12 +1387,22 @@ func (m *Model) thisLine(line string) (tea.Model, tea.Cmd) {
 		return m.startTalk()
 	case "who", "wie":
 		return m, m.out(m.renderThisWho())
+	case "ghosts", "spoken":
+		return m, m.out(m.renderGhosts())
+	case "roem", "toplijst":
+		return m, m.out(m.renderLeaderboard())
 	case "wall":
 		rest := ""
 		if idx := strings.Index(line, " "); idx > 0 {
 			rest = strings.TrimSpace(line[idx:])
 		}
 		return m.wall(rest)
+	case "fluister", "whisper":
+		rest := ""
+		if idx := strings.Index(line, " "); idx > 0 {
+			rest = strings.TrimSpace(line[idx:])
+		}
+		return m.whisper(rest)
 	case "boards":
 		return m, m.out(m.renderThisBoards())
 	case "board":
@@ -1456,6 +1475,16 @@ func (m *Model) connectHost(addr string) (tea.Model, tea.Cmd) {
 	if ok, err := m.deps.World.Unlocked(context.Background(), h, m.deps.Player.Fingerprint); err == nil && !ok {
 		out = append(out, "", m.lockedHint(h))
 	}
+	// Shared world: a breachable host wears the trail of who got in before you.
+	if h.Locked {
+		if bi, err := m.deps.Store.BreachInfo(context.Background(), h.ID); err == nil && bi.Count > 0 {
+			line := fmt.Sprintf("sporen: %d operator(s) zijn hier binnen geweest. eerste: %s", bi.Count, bi.FirstHandle)
+			if !bi.FirstAt.IsZero() {
+				line += " (" + bi.FirstAt.Format("02-01-06") + ")"
+			}
+			out = append(out, "", dimmed.Render(line))
+		}
+	}
 	return m, m.out(strings.Join(out, "\n"))
 }
 
@@ -1501,6 +1530,9 @@ func (m *Model) runCrack(h *content.Host) (tea.Model, tea.Cmd) {
 	if !res.Success {
 		return m, m.out(res.Msg)
 	}
+	// The shared trail: record that this operator has been here (idempotent;
+	// the first breacher is never overwritten).
+	_ = m.deps.Store.RecordBreach(ctx, h.ID, m.deps.Player.Handle, time.Now())
 	out := []string{green.Render("*** TOEGANG VERLEEND ***")}
 	if res.First && res.Effects != nil {
 		oldLevel := m.deps.Player.Level
