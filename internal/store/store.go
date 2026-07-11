@@ -23,7 +23,7 @@ type Player struct {
 	Level       int // 0-9, meaningful only when ThisMember
 	Flags       map[string]bool
 	Banned      bool
-	Admin       bool // sysop: may moderate (delete posts, elevated who/broadcast)
+	Admin       bool   // sysop: may moderate (delete posts, elevated who/broadcast)
 	Speed       int    // baud emulation chars/sec class: 1200 or 2400
 	MinutesUsed int    // minutes used today (time-limit theater)
 	MinutesDay  string // YYYY-MM-DD the MinutesUsed counter belongs to
@@ -84,6 +84,14 @@ type Store interface {
 	// whether a row was actually deleted (false = no such player post; the ID
 	// may be a YAML-seeded message, which is immutable).
 	DeletePost(ctx context.Context, boardID string, id int) (bool, error)
+	// PendingPosts returns all sysop-review drafts (any board), oldest first.
+	PendingPosts(ctx context.Context) ([]SavedMessage, error)
+	// PublishPost clears the pending flag on a draft, making it live. Reports
+	// whether a pending post with that ID existed.
+	PublishPost(ctx context.Context, id int) (bool, error)
+	// DeletePendingPost discards a draft. It only ever removes a pending row,
+	// so it can never delete a live post by mistake.
+	DeletePendingPost(ctx context.Context, id int) (bool, error)
 
 	// HostState returns per-player host state: cracked now, whether the
 	// first-crack effects ever fired, and any lockout deadline.
@@ -121,6 +129,7 @@ type SavedMessage struct {
 	Level    int
 	Subject  string
 	Body     string
-	ReplyTo  int // 0 = top-level
+	ReplyTo  int  // 0 = top-level
+	Pending  bool // true = sysop-review draft, hidden until published
 	PostedAt time.Time
 }

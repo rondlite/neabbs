@@ -762,6 +762,14 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			reason = "TOEGANG INGETROKKEN."
 		}
 		return m, tea.Sequence(tea.Println(reason), tea.Quit)
+	case genDraftedMsg:
+		if msg.err != nil {
+			return m, m.out("Genereren mislukt: " + msg.err.Error())
+		}
+		if msg.n == 0 {
+			return m, m.out("De LLM leverde geen bruikbare concepten.")
+		}
+		return m, m.out(fmt.Sprintf("%d concept(en) klaar voor %s. Bekijk met: sysop pending", msg.n, msg.board))
 	case chat.Event:
 		if m.state == stateChat {
 			return m, tea.Println(msg.Line)

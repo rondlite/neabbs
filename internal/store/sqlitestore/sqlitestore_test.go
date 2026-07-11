@@ -143,6 +143,48 @@ func TestPostsIDSpace(t *testing.T) {
 	}
 }
 
+func TestPendingQueue(t *testing.T) {
+	s := open(t)
+	ctx := context.Background()
+	// A draft is hidden from the board until published.
+	draftID, err := s.SavePost(ctx, &store.SavedMessage{
+		BoardID: "algemeen", Author: "npc", Subject: "concept", Body: "x",
+		Pending: true, PostedAt: time.Now(),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if posts, _ := s.PostsForBoard(ctx, "algemeen"); len(posts) != 0 {
+		t.Fatalf("draft must not be visible on the board: %+v", posts)
+	}
+	pend, err := s.PendingPosts(ctx)
+	if err != nil || len(pend) != 1 || pend[0].ID != draftID {
+		t.Fatalf("PendingPosts: %v %+v", err, pend)
+	}
+	// nee on a non-existent id is a no-op.
+	if ok, _ := s.DeletePendingPost(ctx, 999999); ok {
+		t.Fatal("DeletePendingPost of missing id must be false")
+	}
+	// ok publishes: leaves the queue, appears on the board.
+	if ok, err := s.PublishPost(ctx, draftID); err != nil || !ok {
+		t.Fatalf("PublishPost: ok=%v err=%v", ok, err)
+	}
+	if pend, _ := s.PendingPosts(ctx); len(pend) != 0 {
+		t.Fatalf("published post must leave the queue: %+v", pend)
+	}
+	if posts, _ := s.PostsForBoard(ctx, "algemeen"); len(posts) != 1 || posts[0].ID != draftID {
+		t.Fatalf("published post must show on the board: %+v", posts)
+	}
+	// Publishing again is a no-op (already live, not pending).
+	if ok, _ := s.PublishPost(ctx, draftID); ok {
+		t.Fatal("re-publish of a live post must be false")
+	}
+	// DeletePendingPost must never touch a live post.
+	if ok, _ := s.DeletePendingPost(ctx, draftID); ok {
+		t.Fatal("DeletePendingPost must not delete a live post")
+	}
+}
+
 func TestAdminBit(t *testing.T) {
 	s := open(t)
 	ctx := context.Background()

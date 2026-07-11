@@ -53,6 +53,7 @@ CREATE TABLE IF NOT EXISTS posts (
 	subject   TEXT NOT NULL,
 	body      TEXT NOT NULL,
 	reply_to  INTEGER NOT NULL DEFAULT 0,
+	pending   INTEGER NOT NULL DEFAULT 0,
 	posted_at INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS posts_board ON posts(board_id);
@@ -91,6 +92,7 @@ func Open(path string) (*Store, error) {
 	// columns explicitly and swallow the "duplicate column" error.
 	for _, mig := range []string{
 		`ALTER TABLE players ADD COLUMN admin INTEGER NOT NULL DEFAULT 0`,
+		`ALTER TABLE posts ADD COLUMN pending INTEGER NOT NULL DEFAULT 0`,
 	} {
 		if _, err := db.Exec(mig); err != nil && !strings.Contains(err.Error(), "duplicate column") {
 			db.Close()
@@ -295,9 +297,9 @@ func (s *Store) SetLastRead(ctx context.Context, fp, boardID string, msgID int) 
 
 func (s *Store) SavePost(ctx context.Context, m *store.SavedMessage) (int, error) {
 	res, err := s.db.ExecContext(ctx, `
-		INSERT INTO posts (board_id, author, level, subject, body, reply_to, posted_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?)`,
-		m.BoardID, m.Author, m.Level, m.Subject, m.Body, m.ReplyTo, m.PostedAt.Unix())
+		INSERT INTO posts (board_id, author, level, subject, body, reply_to, pending, posted_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+		m.BoardID, m.Author, m.Level, m.Subject, m.Body, m.ReplyTo, m.Pending, m.PostedAt.Unix())
 	if err != nil {
 		return 0, err
 	}
@@ -306,12 +308,28 @@ func (s *Store) SavePost(ctx context.Context, m *store.SavedMessage) (int, error
 }
 
 func (s *Store) PostsForBoard(ctx context.Context, boardID string) ([]store.SavedMessage, error) {
+	// Only published posts are visible; drafts (pending=1) await sysop review.
 	rows, err := s.db.QueryContext(ctx, `
 		SELECT id, board_id, author, level, subject, body, reply_to, posted_at
-		FROM posts WHERE board_id = ? ORDER BY id`, boardID)
+		FROM posts WHERE board_id = ? AND pending = 0 ORDER BY id`, boardID)
 	if err != nil {
 		return nil, err
 	}
+	return scanPosts(rows)
+}
+
+func (s *Store) PendingPosts(ctx context.Context) ([]store.SavedMessage, error) {
+	rows, err := s.db.QueryContext(ctx, `
+		SELECT id, board_id, author, level, subject, body, reply_to, posted_at
+		FROM posts WHERE pending = 1 ORDER BY id`)
+	if err != nil {
+		return nil, err
+	}
+	return scanPosts(rows)
+}
+
+// scanPosts drains a posts query with the shared column list.
+func scanPosts(rows *sql.Rows) ([]store.SavedMessage, error) {
 	defer rows.Close()
 	var out []store.SavedMessage
 	for rows.Next() {
@@ -328,6 +346,24 @@ func (s *Store) PostsForBoard(ctx context.Context, boardID string) ([]store.Save
 
 func (s *Store) DeletePost(ctx context.Context, boardID string, id int) (bool, error) {
 	res, err := s.db.ExecContext(ctx, "DELETE FROM posts WHERE board_id = ? AND id = ?", boardID, id)
+	if err != nil {
+		return false, err
+	}
+	n, err := res.RowsAffected()
+	return n > 0, err
+}
+
+func (s *Store) PublishPost(ctx context.Context, id int) (bool, error) {
+	res, err := s.db.ExecContext(ctx, "UPDATE posts SET pending = 0 WHERE id = ? AND pending = 1", id)
+	if err != nil {
+		return false, err
+	}
+	n, err := res.RowsAffected()
+	return n > 0, err
+}
+
+func (s *Store) DeletePendingPost(ctx context.Context, id int) (bool, error) {
+	res, err := s.db.ExecContext(ctx, "DELETE FROM posts WHERE id = ? AND pending = 1", id)
 	if err != nil {
 		return false, err
 	}

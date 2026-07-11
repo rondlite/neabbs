@@ -43,23 +43,7 @@ func runGenposts(args []string) error {
 		return fmt.Errorf("genposts: no board %q", *boardID)
 	}
 
-	base := cset.Prompts["genposts"]
-	if base == "" {
-		base = "Je schrijft sfeervolle, korte filler-berichten voor een Nederlands 1980s BBS. Periode-echt, geen anachronismen."
-	}
-	system := fmt.Sprintf(`%s
-
-Board: %s (%s)
-Niveau: THIS-%d
-Schrijf %d korte berichten. Antwoord UITSLUITEND als YAML in dit formaat, niets eromheen:
-
-messages:
-  - author: "handle"
-    level: %d
-    subject: "onderwerp"
-    body: |
-      tekst
-`, strings.TrimRight(base, "\n"), b.ID, b.Name, *level, *count, *level)
+	system := llm.GenpostSystemPrompt(cset.Prompts["genposts"], b.ID, b.Name, *level, *count)
 
 	out, err := client.Chat(context.Background(), []llm.Message{
 		{Role: "system", Content: system},

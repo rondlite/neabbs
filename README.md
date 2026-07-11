@@ -78,15 +78,34 @@ heeft die speler extra commando's, bruikbaar vanaf elk menu (publiek én THIS);
 voor niet-sysops bestaan ze niet (geen enkel spoor):
 
 ```
-sysop who          alle lijnen: handle, vingerafdruk, en THIS-aanwezigheid
-sysop zeg <tekst>  omroep naar iedereen (publiek én THIS)
-sysop wis <nr>     verwijder bericht <nr> in het huidige board
+sysop who            alle lijnen: handle, vingerafdruk, en THIS-aanwezigheid
+sysop zeg <tekst>    omroep naar iedereen (publiek én THIS)
+sysop wis <nr>       verwijder bericht <nr> in het huidige board
+sysop ban <handle>   verban (verbreekt live sessies direct) · unban <handle>
+sysop gen <board> [n]  laat de LLM n concepten schrijven (naar de wachtrij)
+sysop pending        toon concepten die op review wachten
+sysop ok <id>        publiceer een concept · sysop nee <id> verwerpt
 sysop help
 ```
 
 `sysop wis` verwijdert alleen door bellers geplaatste berichten (id ≥ 10000);
-YAML-content is vast en blijft staan. Live sessie-info (`who`, omroep) komt uit
-de draaiende daemon, niet de CLI — daarom zijn dit in-game commando's.
+YAML-content is vast en blijft staan. Live sessie-info (`who`, omroep, ban)
+komt uit de draaiende daemon, niet de CLI — daarom zijn dit in-game commando's.
+
+**Gegenereerde berichten reviewen.** Er zijn twee routes:
+
+1. *Offline (curated, permanent).* `neabbs genposts --board <id> [--level N]
+   [--count N]` roept de LLM aan en print YAML-concepten naar stdout — het
+   schrijft niets weg. Je leest ze na, snoeit, en plakt de goede `messages:`
+   in `content/boards/<id>.yaml`; na herstart laadt de content-lint ze als
+   vaste content (id < 10000, niet in-game te wissen). De review ben jij.
+2. *In-game (sysop, review-wachtrij).* `sysop gen <board> [n]` laat de LLM
+   async n concepten schrijven; die belanden **pending** in de wachtrij en
+   zijn voor niemand zichtbaar. `sysop pending` toont ze, `sysop ok <id>`
+   publiceert er één (wordt een gewone spelerspost, id ≥ 10000, later met
+   `sysop wis` te verwijderen), `sysop nee <id>` gooit hem weg. Niets gaat
+   ongezien live. De LLM draait nooit op het kritieke pad: de generatie is
+   async met een timeout, en mislukt hij, dan gebeurt er simpelweg niets.
 
 Content is data: boards in `content/boards/*.yaml`, bulletins in
 `content/bulletins/*.txt`, bestandensectie in `content/files.yaml`, hosts in

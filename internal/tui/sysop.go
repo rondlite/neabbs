@@ -5,8 +5,13 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+
+	"github.com/rondlite/neabbs/internal/llm"
+	"github.com/rondlite/neabbs/internal/store"
+	"github.com/rondlite/neabbs/internal/text"
 )
 
 // sysopSurface reports whether the current state is a command surface where
@@ -26,6 +31,10 @@ const sysopHelp = `SYSOP — moderatie
   sysop wis <nr>         verwijder bericht <nr> in het huidige board
   sysop ban <handle>     verban een speler (verbreekt live sessies direct)
   sysop unban <handle>   hef een verbanning op
+  sysop gen <board> [n]  laat de LLM n concepten schrijven (wachtrij)
+  sysop pending          toon concepten die op review wachten
+  sysop ok <id>          publiceer een concept
+  sysop nee <id>         verwerp een concept
   sysop help             deze lijst`
 
 // sysopCmd dispatches the sysop-only verbs. It is only reached for players
@@ -60,6 +69,32 @@ func (m *Model) sysopCmd(line string, fields []string) (tea.Model, tea.Cmd) {
 			arg = fields[2]
 		}
 		return m.sysopBan(arg, sub == "ban")
+	case "gen", "genereer":
+		board := ""
+		if len(fields) > 2 {
+			board = strings.ToLower(fields[2])
+		}
+		n := 5
+		if len(fields) > 3 {
+			if v, err := strconv.Atoi(fields[3]); err == nil {
+				n = v
+			}
+		}
+		return m.sysopGen(board, n)
+	case "pending", "wachtrij":
+		return m.sysopPending()
+	case "ok", "publiceer":
+		arg := ""
+		if len(fields) > 2 {
+			arg = fields[2]
+		}
+		return m.sysopReview(arg, true)
+	case "nee", "verwerp":
+		arg := ""
+		if len(fields) > 2 {
+			arg = fields[2]
+		}
+		return m.sysopReview(arg, false)
 	}
 	return m, m.out("Onbekend sysop-commando. Probeer: sysop help")
 }
@@ -168,4 +203,119 @@ func (m *Model) sysopDelete(arg string) (tea.Model, tea.Cmd) {
 		out += "\n" + renderListing(l)
 	}
 	return m, m.out(out)
+}
+
+// genDraftedMsg reports the outcome of an async draft generation.
+type genDraftedMsg struct {
+	board string
+	n     int
+	err   error
+}
+
+// sysopGen kicks off async LLM generation of n filler drafts for a board. The
+// LLM call and DB writes run in a tea.Cmd (off the Update goroutine) so the
+// session never blocks — drafts land in the pending queue for review, never
+// live. Honours the "review before use" rule the offline genposts tool set.
+func (m *Model) sysopGen(board string, n int) (tea.Model, tea.Cmd) {
+	if !m.deps.LLM.Enabled() {
+		return m, m.out("LLM staat uit — genereren kan niet (zet LLM_BASE_URL/MODEL/API_KEY).")
+	}
+	b := m.deps.Content.BoardByID(board)
+	if b == nil {
+		return m, m.out("Gebruik: sysop gen <board> [n] — onbekend board.")
+	}
+	if n < 1 {
+		n = 1
+	}
+	if n > 10 {
+		n = 10 // one LLM call, keep it bounded
+	}
+	base := m.deps.Content.Prompts["genposts"]
+	lc, st := m.deps.LLM, m.deps.Store
+	boardID, boardName := b.ID, b.Name
+	gen := func() tea.Msg {
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		sys := llm.GenpostSystemPrompt(base, boardID, boardName, 0, n)
+		out, err := lc.Chat(ctx, []llm.Message{
+			{Role: "system", Content: sys},
+			{Role: "user", Content: fmt.Sprintf("Genereer %d berichten voor %s.", n, boardName)},
+		})
+		if err != nil {
+			return genDraftedMsg{err: err}
+		}
+		drafts, err := llm.ParseDrafts(out)
+		if err != nil {
+			return genDraftedMsg{err: err}
+		}
+		saved := 0
+		for _, d := range drafts {
+			author := text.CleanLine(d.Author)
+			if author == "" {
+				author = "anoniem"
+			}
+			_, e := st.SavePost(ctx, &store.SavedMessage{
+				BoardID:  boardID,
+				Author:   author,
+				Level:    0, // filler is board texture; review before raising
+				Subject:  text.CleanLine(d.Subject),
+				Body:     text.Clean(d.Body),
+				Pending:  true,
+				PostedAt: time.Now(),
+			})
+			if e == nil {
+				saved++
+			}
+		}
+		return genDraftedMsg{board: boardID, n: saved}
+	}
+	return m, tea.Batch(
+		m.out(fmt.Sprintf("Concepten aanvragen bij de LLM voor %s (%d)… dit kan even duren.", boardID, n)),
+		gen)
+}
+
+// sysopPending lists the review queue across all boards.
+func (m *Model) sysopPending() (tea.Model, tea.Cmd) {
+	posts, err := m.deps.Store.PendingPosts(context.Background())
+	if err != nil {
+		return m, m.out("Kon de wachtrij niet ophalen.")
+	}
+	if len(posts) == 0 {
+		return m, m.out("Geen concepten in de wachtrij.")
+	}
+	var b strings.Builder
+	b.WriteString(fmt.Sprintf("CONCEPTEN OP REVIEW (%d)\n", len(posts)))
+	b.WriteString(strings.Repeat("-", 60) + "\n")
+	for _, p := range posts {
+		b.WriteString(fmt.Sprintf("  #%-6d %-10s %-12.12s %.32s\n", p.ID, p.BoardID, p.Author, p.Subject))
+	}
+	b.WriteString("\nsysop ok <id> publiceert · sysop nee <id> verwerpt")
+	return m, m.out(b.String())
+}
+
+// sysopReview publishes (ok) or discards (nee) a single draft by ID.
+func (m *Model) sysopReview(arg string, publish bool) (tea.Model, tea.Cmd) {
+	id, err := strconv.Atoi(arg)
+	if err != nil {
+		if publish {
+			return m, m.out("Gebruik: sysop ok <id>")
+		}
+		return m, m.out("Gebruik: sysop nee <id>")
+	}
+	var ok bool
+	if publish {
+		ok, err = m.deps.Store.PublishPost(context.Background(), id)
+	} else {
+		ok, err = m.deps.Store.DeletePendingPost(context.Background(), id)
+	}
+	if err != nil {
+		return m, m.out("Actie mislukt.")
+	}
+	if !ok {
+		return m, m.out(fmt.Sprintf("Geen concept #%d in de wachtrij.", id))
+	}
+	if publish {
+		return m, m.out(fmt.Sprintf("#%d gepubliceerd.", id))
+	}
+	return m, m.out(fmt.Sprintf("#%d verworpen.", id))
 }
