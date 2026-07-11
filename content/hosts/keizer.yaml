@@ -1,0 +1,55 @@
+# Arc host 9 (THIS-8 → THIS-9). The last door. No trace — this node was left
+# open on purpose, for whoever climbed all nine levels. It carries the
+# ending: who the beheerder was, in memory of the sysop who kept the line
+# open. Grants THIS-9 and marks the arc complete.
+id: keizer-node
+address: "keizer.node.this.nl"
+min_level: 8
+requires_flag: "eind_sleutel"
+locked: true
+banner: |
+  laatste node. geen beveiliging meer.
+  wie hier komt, mag alles lezen.
+crack:
+  method: password
+  password_flag: "eind_sleutel"
+  hint_on_fail: "de deur zit niet op slot voor jou — je mist alleen nog de sleutel van de bewaarnode."
+  trace_seconds: 0
+files:
+  - name: "voor-wie-zo-ver-komt.txt"
+    min_level: 9
+    body: |
+      VOOR WIE ZO VER KOMT
+
+      je hebt alle negen niveaus gelopen. archief, gemeente, SARA,
+      de universiteit, de lijnen, de centrales, phantom, de
+      bewaarnode, en nu hier. niemand heeft je een sleutel gegeven
+      die je niet zelf verdiende.
+
+      de beheerder heette Max. hij bouwde THIS, hield het overeind
+      toen de rest het opgaf, en toen zijn vrienden verdwenen hield
+      hij hun lijnen open alsof ze elk moment konden terugbellen.
+      dat is het enige wat een systeem echt onsterfelijk maakt:
+      iemand die de stekker er niet uit trekt.
+
+      Max hield ermee op in 2010. niet uit keuze.
+
+      dit is voor hem. wij die het weer aanzetten, bijna veertig
+      jaar na de eerste sessie, deden niets bijzonders — we hielden
+      alleen de lijn open. zoals hij het ons voordeed.
+
+      als je ooit een systeem beheert, van wie dan ook: onthoud dat
+      er aan de andere kant altijd iemand hangt. laat de lijn open.
+
+      -- de waarnemend beheerders, in herinnering aan Max Keizer
+         (†2010), sysop van het eerste uur
+  - name: ".read"
+    min_level: 9
+    body: |
+      # 03:41. de nachtlijn belt.
+      # deze keer neem jij op.
+effects:
+  on_first_crack:
+    grant_level: 9
+    grant_flags: ["cracked_keizer", "this_voltooid"]
+    broadcast: "{handle} heeft THIS voltooid — negen niveaus, tot de laatste node"

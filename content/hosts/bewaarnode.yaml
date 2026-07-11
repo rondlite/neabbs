@@ -1,0 +1,64 @@
+# Arc host 8 (THIS-7 → THIS-8). Cold storage: the machine that explains the
+# silence — why THIS went dark and slept for almost forty years. Opened with
+# the beheerder's name (bewaar_sleutel) from phantom's machine. Grants the
+# final key.
+id: this-bewaarnode
+address: "bewaar.node.this.nl"
+min_level: 7
+requires_flag: "keizer_spoor"
+locked: true
+banner: |
+  BEWAARNODE — koude opslag
+  tapes, dumps, en alles wat niemand durfde te wissen.
+
+  identificeer u:
+crack:
+  method: password
+  password_flag: "bewaar_sleutel"
+  hint_on_fail: "AFGEWEZEN — de bewaarnode opent alleen op de naam van de beheerder. die naam heb je gevonden op phantom's machine, of nog niet."
+  trace_seconds: 45
+files:
+  - name: "waarom-het-stil-werd.txt"
+    min_level: 8
+    grants_flag: "eind_sleutel"
+    body: |
+      WAAROM HET STIL WERD
+
+      de scene ging niet met een knal. ze ging met een zucht.
+      modems werden ingeruild voor internet, de jongens werden
+      mannen met banen, en de machines werden afgeschakeld, één
+      voor één, tot er niets meer belde.
+
+      één iemand borg ze niet op. de beheerder — voluit een naam
+      die je op de eindnode leest — sleepte de kasten naar zijn
+      zolder en hield ze warm. jaren. decennia. hij hield phantom's
+      nachtlijn open en de tapes koel, voor het geval iemand ooit
+      nog zou bellen.
+
+      in 2010 hield hij ermee op. niet uit keuze. de machines
+      bleven staan, koud nu, tot anderen ze vonden en, bijna
+      veertig jaar na de eerste sessie, de stroom er weer opzetten.
+
+      de laatste deur staat op keizer.node.this.nl. daar staat wie
+      hij was, in zijn eigen woorden. dit is de sleutel ernaartoe.
+  - name: ".inventaris"
+    min_level: 8
+    body: |
+      # koude opslag, inhoud (afgekort)
+      # - volledige boarddumps 1985-1991
+      # - phantom's tapes (verzegeld)
+      # - één doos met het opschrift "voor wie zo ver komt"
+mail:
+  - from: "de beheerders (waarnemend)"
+    subject: "we hebben het aangezet"
+    min_level: 8
+    body: |
+      we vonden de zolder, de kasten, en de handleiding die hij
+      achterliet. we hebben niets veranderd behalve de stroom.
+      als je dit leest werkt het weer. dank, Max. we nemen het
+      over.
+effects:
+  on_first_crack:
+    grant_level: 8
+    grant_flags: ["cracked_bewaar"]
+    broadcast: "{handle} opende de bewaarnode"

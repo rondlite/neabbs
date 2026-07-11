@@ -1,0 +1,67 @@
+# Arc host 5 (THIS-4 → THIS-5). The regional exchange where all wijken meet.
+# Visible via the wijkcentrale netstat (reg_map); multi-stage crack: you need
+# the schakelplan map AND to have owned the wijkcentrale first. Grants THIS-5
+# and the access key to the nachtcentrale.
+id: ptt-regio
+address: "regio.centrale.ptt.nl"
+min_level: 4
+requires_flag: "reg_map"
+locked: true
+banner: |
+  PTT — REGIONALE CENTRALE AMSTERDAM
+  hier komen de wijken samen.
+
+  NACHTINGANG:
+crack:
+  method: password
+  password_flag: "reg_kaart"
+  requires_flags: ["cracked_wijk"]
+  hint_on_fail: "NACHTINGANG GESLOTEN. je hebt de wijknummering nodig, en de centrale wil zien dat je van onderop komt — niet dat je hier zomaar bent neergedaald."
+  trace_seconds: 60
+files:
+  - name: "routering.txt"
+    min_level: 5
+    grants_flag: "nacht_sleutel"
+    body: |
+      ROUTERING — NACHTVERKEER
+
+      bijna alles wat 's nachts nog loopt, loopt via één node:
+      de nachtcentrale (nacht.centrale.ptt.nl). die was ooit het
+      hart van het net. nu draait er bijna niets meer op.
+
+      bijna. er is één sessie die niet stopt. de nachtcentrale
+      logt hem al jaren. wil je weten wie dat is, dan moet je
+      naar binnen. de sleutel is deze routeringstabel — hij
+      overtuigt de centrale dat je erbij hoort.
+  - name: ".oud"
+    min_level: 5
+    body: |
+      # restanten van een oude beheerderssessie
+      # laatste commit: de beheerder, kort voordat het stil werd
+      "als ik hier niet meer ben: laat de nachtcentrale draaien.
+       niet uit nostalgie. er hangt iemand aan die ik niet in de
+       steek wil laten."
+mail:
+  - from: "operator-3"
+    subject: "afschalen?"
+    min_level: 5
+    body: |
+      leiding wil de regio 's nachts afschalen om stroom te sparen.
+      ik heb tegengehouden dat we de nachtcentrale meenemen. daar
+      loopt nog wat. vraag me niet wat. het loopt gewoon nog.
+netstat:
+  min_level: 5
+  grants_flag: "nacht_toegang"
+  body: |
+    Node                         Verkeer    Status
+    wijk.centrale.ptt.nl         laag       ESTABLISHED
+    (12 andere wijken)           nihil      IDLE
+    nacht.centrale.ptt.nl        1 sessie   ESTABLISHED (sinds: onbekend)
+
+    (die ene sessie op de nachtcentrale staat er langer dan de
+     teller kan tellen. de ingang is nu voor jou vrij.)
+effects:
+  on_first_crack:
+    grant_level: 5
+    grant_flags: ["cracked_regio"]
+    broadcast: "{handle} heeft de regionale centrale open"

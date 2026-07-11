@@ -1,17 +1,58 @@
-# The visible-but-uncrackable teaser: names its clearance so the dead end
-# teaches instead of frustrating.
+# Arc host 6 (THIS-5 → THIS-6). Once the visible-but-uncrackable teaser; now
+# the hub. Reachable with the regio access flag, opened with the routing key
+# from the regio. This is where the mystery turns personal: one session that
+# never ends. Reading its log grants the trail to whoever is still calling in.
 id: ptt-nachtcentrale
 address: "nacht.centrale.ptt.nl"
-min_level: 0
+min_level: 5
+requires_flag: "nacht_toegang"
 locked: true
 banner: |
   PTT TELECOMMUNICATIE — NACHTCENTRALE
   Onbevoegd gebruik is strafbaar (art. 138a WvS).
 
-  == systeem in nachtdienst ==
+  == systeem in nachtdienst sinds: --:-- ==
 crack:
-  method: none
-  min_level: 5
-  hint_on_fail: "TOEGANG GEWEIGERD — nachtcentrale accepteert alleen THIS-5 sleutels. kom terug als je zover bent."
-files: []
-effects: {}
+  method: password
+  password_flag: "nacht_sleutel"
+  hint_on_fail: "TOEGANG GEWEIGERD — de nachtcentrale herkent alleen wie via de regio komt en de routering kent. kom terug met de sleutel."
+  trace_seconds: 90
+files:
+  - name: "sessielog.txt"
+    min_level: 6
+    grants_flag: "phantom_thuis_spoor"
+    body: |
+      SESSIELOG — LANGSTLOPENDE VERBINDING
+
+      sessie #1 geopend: 14-03-1986 03:41
+      sessie #1 gesloten: —
+      onderbroken en handmatig hersteld: talloze keren
+
+      de verbinding komt elke nacht terug op hetzelfde tijdstip,
+      van hetzelfde nummer. het nummer staat op naam van een
+      account dat al lang dood zou moeten zijn: phantom.
+
+      hij logt in, doet niets, en hangt weer op. al bijna veertig
+      jaar. iemand houdt zijn lijn open. of iets.
+
+      wie hij was staat op zijn eigen machine: phantom.thuis.nl.
+  - name: ".stil"
+    min_level: 6
+    body: |
+      # nachtwacht, met de hand bijgehouden
+      # ik heb sessie #1 nooit durven sluiten.
+      # het voelt als de laatste die nog weet dat wij bestonden.
+mail:
+  - from: "phantom"
+    subject: "(geen onderwerp)"
+    min_level: 6
+    body: |
+      [automatisch bericht, elke nacht opnieuw verstuurd, altijd leeg
+       op één regel na]
+
+      nog wakker?
+effects:
+  on_first_crack:
+    grant_level: 6
+    grant_flags: ["cracked_nacht"]
+    broadcast: "{handle} staat op de nachtcentrale"

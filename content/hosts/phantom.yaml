@@ -1,0 +1,59 @@
+# Arc host 7 (THIS-6 → THIS-7). Phantom's own machine. Visible once you have
+# the trail from the nachtcentrale. The crack is the payoff of a running
+# theme: phantom reused everything, so the password that opened hydra opens
+# this too. Here the mystery turns toward the person who kept it all alive.
+id: phantom-thuis
+address: "phantom.thuis.nl"
+min_level: 6
+requires_flag: "phantom_thuis_spoor"
+locked: true
+banner: |
+  privemachine. geen banner, geen naam.
+  als je hier bent weet je van wie.
+
+  login:
+crack:
+  method: password
+  password_flag: "phantom_account"
+  hint_on_fail: "login incorrect. (je kent zijn wachtwoord al — je gebruikte het op hydra. hij hergebruikte alles. dat was de hele les.)"
+  trace_seconds: 60
+files:
+  - name: "wie.txt"
+    min_level: 7
+    grants_flag: "keizer_spoor"
+    body: |
+      dus je hebt het gehaald tot mijn eigen machine.
+
+      ik was phantom. ik vond de dingen het eerst en ik zei het
+      minst. toen de scene doodbloedde en iedereen z'n modem
+      opborg, bleef er één iemand die de boel niet liet vallen.
+      de beheerder. de sysop. hij hield de machines warm lang
+      nadat het zin had.
+
+      toen ik er niet meer was, deed hij iets vreemds en moois:
+      hij hield mijn nachtelijke login open. elke nacht, 03:41,
+      een lege sessie. zijn manier om te zeggen: ik ben je niet
+      vergeten.
+
+      wie hij was, en wat er daarna gebeurde, staat op de
+      bewaarnode (bewaar.node.this.nl). ga kijken. hij verdient
+      het dat iemand het leest.
+  - name: "sleutel.txt"
+    min_level: 7
+    grants_flag: "bewaar_sleutel"
+    body: |
+      [voor wie doorgaat naar de bewaarnode]
+
+      de bewaarnode staat op slot met de naam van de beheerder,
+      niet die van mij. dit briefje is die naam, in de vorm die
+      de node accepteert. draag het met respect.
+  - name: ".laatste"
+    min_level: 7
+    body: |
+      # het laatste wat phantom schreef, ongedateerd
+      "niets gaat echt weg zolang iemand de lijn openhoudt."
+effects:
+  on_first_crack:
+    grant_level: 7
+    grant_flags: ["cracked_phantom"]
+    broadcast: "{handle} vond phantom's eigen machine"

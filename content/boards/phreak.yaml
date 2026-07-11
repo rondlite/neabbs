@@ -41,14 +41,32 @@ messages:
       op het board zodra iemand van ons de tijd vindt het uit te
       typen. (leest de beheerder mee? natuurlijk leest de
       beheerder mee.)
+  - id: 206
+    author: "de_specht"
+    level: 3
+    date: "07-86"
+    subject: "RE: de modempool die niemand afsloot"
+    grants_flag: "toon_reeks"
+    body: |
+      goed. ik heb de tijd gevonden. hier is de toonreeks voor de
+      PTT-wijkcentrale (wijk.centrale.ptt.nl), zoals beloofd:
+
+        2600 · 1700+1100 · 700+900 · pauze · 2600
+
+      draai hem als een woordenlijst op de toonkiezer en de
+      nachtingang klapt open. binnen vind je de weg naar boven —
+      de wijk hangt onder de regio, en de regio onder iets ouds.
+
+      dit blijft op #phreak. je weet hoe het zit.
   - id: 204
     author: "phantom"
     level: 4
     date: "07-86"
     subject: "verder dan hier"
     body: |
-      [THIS-4. de kaart houdt hier op. wat hierboven staat bouwden
-      we nooit af. misschien bouw jij het.]
+      [THIS-4. hier hield de kaart ooit op. inmiddels loopt het
+      spoor verder dan wij kwamen. iemand heeft het afgemaakt.
+      misschien was jij dat.]
   - id: 205
     author: "beheerder"
     level: 3

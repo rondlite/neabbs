@@ -368,11 +368,14 @@ func TestDiscoveryChainIntoTHIS(t *testing.T) {
 		t.Fatal("THIS board leaked to non-member")
 	}
 
-	// The world: scan lists the open host and the locked teaser only.
+	// The world: scan lists the open tutorial host and the first locked
+	// host. Deeper hosts stay invisible until their flags are earned.
 	c.send("scan\r")
 	c.waitFor("archief.this.nl")
-	c.waitFor("nacht.centrale.ptt.nl")
+	c.waitFor("vax.gemeente.nl")
 	c.waitFor("[vergrendeld]")
+	c.send("connect phantom.thuis.nl\r")
+	c.waitFor("geen route naar host.") // deep arc host invisible at THIS-0
 
 	// Tutorial host: connect → banner, ls shows redacted rows, cat works,
 	// above-level cat names the clearance.
@@ -386,12 +389,13 @@ func TestDiscoveryChainIntoTHIS(t *testing.T) {
 	c.send("cat modemlijst-oud.dat\r")
 	c.waitFor("TOEGANG GEWEIGERD — THIS-2 vereist.")
 
-	// Locked teaser responds specifically, naming its clearance.
-	c.send("connect nacht.centrale.ptt.nl\r")
-	c.waitFor("NACHTCENTRALE")
-	c.waitFor("THIS-5 sleutels")
-	c.send("ls\r")
-	c.waitFor("THIS-5 sleutels") // ls refused with the same specific hint
+	// A locked host on the THIS-0 map responds specifically: connecting shows
+	// its banner, and cracking without the password names what's missing
+	// (the puzzle) rather than failing generically.
+	c.send("connect vax.gemeente.nl\r")
+	c.waitFor("GEMEENTE AMSTERDAM")
+	c.send("crack\r")
+	c.waitFor("wachtwoord vereist")
 	c.send("disconnect\r")
 	c.waitFor("verbroken")
 
