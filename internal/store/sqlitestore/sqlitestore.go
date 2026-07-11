@@ -31,6 +31,8 @@ CREATE TABLE IF NOT EXISTS players (
 	npc_turns    INTEGER NOT NULL DEFAULT 0,
 	npc_day      TEXT    NOT NULL DEFAULT '',
 	admin        INTEGER NOT NULL DEFAULT 0,
+	heat         INTEGER NOT NULL DEFAULT 0,
+	heat_at      INTEGER NOT NULL DEFAULT 0,
 	created_at   INTEGER NOT NULL,
 	last_seen    INTEGER NOT NULL
 );
@@ -93,6 +95,8 @@ func Open(path string) (*Store, error) {
 	for _, mig := range []string{
 		`ALTER TABLE players ADD COLUMN admin INTEGER NOT NULL DEFAULT 0`,
 		`ALTER TABLE posts ADD COLUMN pending INTEGER NOT NULL DEFAULT 0`,
+		`ALTER TABLE players ADD COLUMN heat INTEGER NOT NULL DEFAULT 0`,
+		`ALTER TABLE players ADD COLUMN heat_at INTEGER NOT NULL DEFAULT 0`,
 	} {
 		if _, err := db.Exec(mig); err != nil && !strings.Contains(err.Error(), "duplicate column") {
 			db.Close()
@@ -111,15 +115,15 @@ func Open(path string) (*Store, error) {
 
 func (s *Store) Close() error { return s.db.Close() }
 
-const playerCols = "fingerprint, handle, this_member, level, flags, banned, speed, minutes_used, minutes_day, admin, created_at, last_seen"
+const playerCols = "fingerprint, handle, this_member, level, flags, banned, speed, minutes_used, minutes_day, admin, heat, heat_at, created_at, last_seen"
 
 func scanPlayer(row interface{ Scan(...any) error }) (*store.Player, error) {
 	var p store.Player
 	var handle sql.NullString
 	var flagsJSON string
-	var created, seen int64
+	var created, seen, heatAt int64
 	err := row.Scan(&p.Fingerprint, &handle, &p.ThisMember, &p.Level, &flagsJSON,
-		&p.Banned, &p.Speed, &p.MinutesUsed, &p.MinutesDay, &p.Admin, &created, &seen)
+		&p.Banned, &p.Speed, &p.MinutesUsed, &p.MinutesDay, &p.Admin, &p.Heat, &heatAt, &created, &seen)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, store.ErrNotFound
 	}
@@ -137,6 +141,9 @@ func scanPlayer(row interface{ Scan(...any) error }) (*store.Player, error) {
 	}
 	p.CreatedAt = time.Unix(created, 0)
 	p.LastSeen = time.Unix(seen, 0)
+	if heatAt > 0 {
+		p.HeatAt = time.Unix(heatAt, 0)
+	}
 	return &p, nil
 }
 
@@ -181,6 +188,30 @@ func (s *Store) SetBanned(ctx context.Context, fp string, banned bool) error {
 func (s *Store) SetAdmin(ctx context.Context, fp string, admin bool) error {
 	_, err := s.db.ExecContext(ctx, "UPDATE players SET admin = ? WHERE fingerprint = ?", admin, fp)
 	return err
+}
+
+func (s *Store) AddHeat(ctx context.Context, fp string, delta int) (int, error) {
+	var raw int
+	var at int64
+	if err := s.db.QueryRowContext(ctx,
+		"SELECT heat, heat_at FROM players WHERE fingerprint = ?", fp).Scan(&raw, &at); err != nil {
+		return 0, err
+	}
+	now := time.Now()
+	var since time.Time
+	if at > 0 {
+		since = time.Unix(at, 0)
+	}
+	v := store.DecayedHeat(raw, since, now) + delta
+	if v < 0 {
+		v = 0
+	}
+	if v > store.HeatMax {
+		v = store.HeatMax
+	}
+	_, err := s.db.ExecContext(ctx,
+		"UPDATE players SET heat = ?, heat_at = ? WHERE fingerprint = ?", v, now.Unix(), fp)
+	return v, err
 }
 
 func (s *Store) SetLevel(ctx context.Context, fp string, level int) error {

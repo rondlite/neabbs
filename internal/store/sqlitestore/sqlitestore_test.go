@@ -143,6 +143,49 @@ func TestPostsIDSpace(t *testing.T) {
 	}
 }
 
+func TestDecayedHeat(t *testing.T) {
+	base := time.Unix(1_000_000, 0)
+	if got := store.DecayedHeat(0, base, base.Add(time.Hour)); got != 0 {
+		t.Fatalf("zero stays zero, got %d", got)
+	}
+	if got := store.DecayedHeat(30, base, base.Add(10*time.Minute)); got != 30-10*store.HeatDecayPerMin {
+		t.Fatalf("10-min decay wrong: %d", got)
+	}
+	if got := store.DecayedHeat(5, base, base.Add(time.Hour)); got != 0 {
+		t.Fatalf("heat floors at zero, got %d", got)
+	}
+	if got := store.DecayedHeat(30, time.Time{}, base); got != 30 {
+		t.Fatalf("no basis = no decay, got %d", got)
+	}
+}
+
+func TestAddHeat(t *testing.T) {
+	s := open(t)
+	ctx := context.Background()
+	if _, err := s.CreatePlayer(ctx, "fp1"); err != nil {
+		t.Fatal(err)
+	}
+	if v, err := s.AddHeat(ctx, "fp1", store.HeatCaught); err != nil || v != store.HeatCaught {
+		t.Fatalf("first add: v=%d err=%v", v, err)
+	}
+	// Clamps to HeatMax.
+	if v, _ := s.AddHeat(ctx, "fp1", 999); v != store.HeatMax {
+		t.Fatalf("clamp high: %d", v)
+	}
+	// Never below zero.
+	if v, _ := s.AddHeat(ctx, "fp1", -999); v != 0 {
+		t.Fatalf("clamp low: %d", v)
+	}
+	// Persisted value is visible on reload.
+	if _, err := s.AddHeat(ctx, "fp1", 20); err != nil {
+		t.Fatal(err)
+	}
+	p, _ := s.PlayerByFingerprint(ctx, "fp1")
+	if got := p.CurrentHeat(time.Now()); got != 20 {
+		t.Fatalf("reload heat = %d, want 20", got)
+	}
+}
+
 func TestPendingQueue(t *testing.T) {
 	s := open(t)
 	ctx := context.Background()

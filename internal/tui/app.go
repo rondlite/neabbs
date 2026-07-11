@@ -1272,6 +1272,11 @@ func (m *Model) chatLine(line string) (tea.Model, tea.Cmd) {
 // enterThis crosses the threshold: full-screen altscreen, green theme, raw
 // prompt. No baud throttle inside (their software was better).
 func (m *Model) enterThis() (tea.Model, tea.Cmd) {
+	// Too much heat: the line is being watched. Refuse until it cools off
+	// (heat decays on its own). Stay on the public BBS, no altscreen switch.
+	if h := m.currentHeat(); h >= store.HeatLockout {
+		return m, m.print("de verbinding valt weg. er wordt meegeluisterd op deze lijn.\nlaat het even rusten en probeer het straks opnieuw.")
+	}
 	m.state = stateThis
 	m.inThis = true
 	m.boardID = ""
@@ -1355,6 +1360,8 @@ func (m *Model) thisLine(line string) (tea.Model, tea.Cmd) {
 		return m.catHost(arg)
 	case "crack", "kraak":
 		return m.crackHost()
+	case "wipe", "wis":
+		return m.wipeTracks()
 	case "talk", "praat":
 		return m.startTalk()
 	case "who", "wie":
@@ -1499,7 +1506,7 @@ func (m *Model) runCrack(h *content.Host) (tea.Model, tea.Cmd) {
 	if res.TraceSeconds > 0 {
 		m.traceHost = h.ID
 		m.traceUntil = time.Now().Add(time.Duration(res.TraceSeconds) * time.Second)
-		out = append(out, fmt.Sprintf("waarschuwing: traceerpoging gestart. je hebt %d seconden. 'disconnect' verbreekt schoon.", res.TraceSeconds))
+		out = append(out, fmt.Sprintf("waarschuwing: traceerpoging gestart. je hebt %d seconden. 'disconnect' verbreekt schoon, 'wipe' wist ook je sporen.", res.TraceSeconds))
 		cmd = traceTick()
 	}
 	out = append(out, "tik 'ls' voor de inhoud.")
@@ -1524,9 +1531,56 @@ func (m *Model) traceTicked() (tea.Model, tea.Cmd) {
 	if h != nil && h.ID == hostID {
 		_ = m.deps.World.TraceExpired(context.Background(), h, m.deps.Player.Fingerprint)
 	}
-	m.thisPrint(green.Render("*** VERBINDING VERBROKEN — je bent bijna getraceerd. ***") +
-		"\nterug op de thuisnode. die host wil je 10 minuten niet zien.")
+	heat := m.addHeat(store.HeatCaught)
+	msg := green.Render("*** VERBINDING VERBROKEN — je bent bijna getraceerd. ***") +
+		"\nterug op de thuisnode. die host wil je 10 minuten niet zien."
+	if heat >= store.HeatLockout {
+		msg += "\nje profiel staat nu bovenaan bij beveiliging. laat het even rusten."
+	} else {
+		msg += "\ntip: 'wipe' schoont je sporen op."
+	}
+	m.thisPrint(msg)
 	return m, nil
+}
+
+// addHeat decays-and-adds to the player's heat, keeps the in-memory player
+// row in sync, and returns the new decayed value.
+func (m *Model) addHeat(delta int) int {
+	v, err := m.deps.Store.AddHeat(context.Background(), m.deps.Player.Fingerprint, delta)
+	if err != nil {
+		return m.deps.Player.CurrentHeat(time.Now())
+	}
+	m.deps.Player.Heat = v
+	m.deps.Player.HeatAt = time.Now()
+	return v
+}
+
+// currentHeat is the player's heat right now.
+func (m *Model) currentHeat() int { return m.deps.Player.CurrentHeat(time.Now()) }
+
+// wipeTracks scrubs the player's trail: it cancels any live trace (a clean
+// getaway) and lowers heat. Always available inside THIS; the pro exit.
+func (m *Model) wipeTracks() (tea.Model, tea.Cmd) {
+	tracing := m.traceHost != ""
+	if tracing {
+		m.traceHost = ""
+		m.traceUntil = time.Time{}
+	}
+	before := m.currentHeat()
+	if !tracing && before == 0 {
+		return m, m.out("wipe: geen sporen om te wissen.")
+	}
+	after := m.addHeat(-store.HeatWipe)
+	var out string
+	if tracing {
+		out = "logs gewist. trace afgebroken — je was hier nooit."
+	} else {
+		out = "logs gewist."
+	}
+	if before > 0 {
+		out += fmt.Sprintf(" (heat %d → %d)", before, after)
+	}
+	return m, m.out(out)
 }
 
 func (m *Model) lsHost() (tea.Model, tea.Cmd) {
@@ -1662,6 +1716,10 @@ func (m *Model) startTalk() (tea.Model, tea.Cmd) {
 	m.talk.sessTurns = 0
 	m.talk.fallbackOn = !m.deps.LLM.Enabled()
 	m.talk.system = llm.BuildSystemPrompt(m.deps.Content.Prompts["npc"], npc, m.hasFlag)
+	// A hot player draws wary NPCs — beveiliging has been asking around.
+	if m.currentHeat() >= store.HeatHot {
+		m.talk.system += "\n\nLET OP: deze beller heeft recent veel alarm veroorzaakt; beveiliging is naar hem op zoek. Wees achterdochtig en waarschuw hem, maar blijf in karakter."
+	}
 	m.state = stateTalk
 	m.input.Prompt = fmt.Sprintf("%s> ", npc.Name)
 
@@ -1800,6 +1858,13 @@ func (m *Model) thisView() string {
 			rem = 0
 		}
 		left += fmt.Sprintf("· TRACE ACTIEF — %d:%02d ", int(rem.Minutes()), int(rem.Seconds())%60)
+	}
+	if heat := m.currentHeat(); heat >= store.HeatWarn {
+		tag := "HEAT"
+		if heat >= store.HeatHot {
+			tag = "HEAT!!"
+		}
+		left += fmt.Sprintf("· %s %d ", tag, heat)
 	}
 	right := fmt.Sprintf(" %s · %s ", m.deps.Player.Handle, level)
 	pad := w - lipgloss.Width(left) - lipgloss.Width(right)

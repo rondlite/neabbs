@@ -27,12 +27,47 @@ type Player struct {
 	Speed       int    // baud emulation chars/sec class: 1200 or 2400
 	MinutesUsed int    // minutes used today (time-limit theater)
 	MinutesDay  string // YYYY-MM-DD the MinutesUsed counter belongs to
+	Heat        int    // THIS "heat": raw value at HeatAt, decays over time
+	HeatAt      time.Time
 	CreatedAt   time.Time
 	LastSeen    time.Time
 }
 
 // HasFlag reports whether the player holds the named flag.
 func (p *Player) HasFlag(f string) bool { return p.Flags[f] }
+
+// Heat policy: getting caught (a trace expiring) raises heat; it decays with
+// time and can be actively scrubbed with `wipe`. Enough heat locks THIS.
+const (
+	HeatMax         = 50
+	HeatCaught      = 15 // a trace expiring
+	HeatWipe        = 20 // one `wipe` scrub
+	HeatDecayPerMin = 1
+	HeatWarn        = 15 // status bar starts warning
+	HeatHot         = 30 // NPCs turn wary; status bar goes hot
+	HeatLockout     = 40 // THIS refuses entry until it decays below this
+)
+
+// DecayedHeat is raw heat aged from `since` to `now`, floored at zero.
+func DecayedHeat(raw int, since, now time.Time) int {
+	if raw <= 0 || since.IsZero() {
+		if raw < 0 {
+			return 0
+		}
+		return raw
+	}
+	mins := int(now.Sub(since).Minutes())
+	if mins < 0 {
+		mins = 0
+	}
+	if v := raw - mins*HeatDecayPerMin; v > 0 {
+		return v
+	}
+	return 0
+}
+
+// CurrentHeat is the player's decayed heat as of now.
+func (p *Player) CurrentHeat(now time.Time) int { return DecayedHeat(p.Heat, p.HeatAt, now) }
 
 // Caller is one entry in the "laatste bellers" log.
 type Caller struct {
@@ -54,6 +89,9 @@ type Store interface {
 	SetBanned(ctx context.Context, fp string, banned bool) error
 	// SetAdmin flips the sysop bit.
 	SetAdmin(ctx context.Context, fp string, admin bool) error
+	// AddHeat decays the stored heat to now, adds delta (clamped to
+	// [0, HeatMax]), persists it, and returns the new value.
+	AddHeat(ctx context.Context, fp string, delta int) (int, error)
 	// GrantFlags adds flags to the player's flag set.
 	GrantFlags(ctx context.Context, fp string, flags ...string) error
 	// SetLevel sets the THIS clearance level (0-9).
