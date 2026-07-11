@@ -10,8 +10,8 @@ origineel te zijn van, welk historisch systeem dan ook. Namen,
 handles en gebeurtenissen op de boards zijn fictie. Overeenkomsten
 met werkelijke personen berusten op heimwee.
 
-In stilte opgedragen aan de sysops van het eerste uur die er niet
-meer zijn. Zonder hen was er niets om naar terug te keren.
+In herinnering aan Max Keizer (†2010), sysop van het eerste uur.
+Zonder hem was er niets om naar terug te keren.
 
 Techniek: één programma, geschreven in Go, bereikbaar via SSH.
 Geen shell, geen bestandssysteem, alleen dit. Uw sleutel is uw
