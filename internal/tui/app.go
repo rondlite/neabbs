@@ -205,9 +205,9 @@ func (m *Model) playerCPS() int {
 	}
 	speed := m.deps.Player.Speed
 	if speed <= 0 {
-		speed = 1200
+		speed = 2400
 	}
-	return speed / 10 // 1200 baud ≈ 120 chars/sec
+	return speed / 10 // 8N1: ~10 bits/byte, so baud/10 ≈ chars/sec
 }
 
 // print pushes a block through the baud-emulated printer.
@@ -247,14 +247,15 @@ func (m *Model) ritual(step ritualStep) tea.Cmd {
 	case ritConnect:
 		speed := p.Speed
 		if speed <= 0 {
-			speed = 1200
+			speed = 2400
 		}
 		busy := m.deps.Registry.LinesBusy()
-		banner := fmt.Sprintf("CONNECT %d\n\n%s\n%s\n\n%s",
-			speed,
-			amber.Render("NEABBS — heropend na 40 jaar stilte"),
-			dimmed.Render("Amsterdam · sinds 1984 · 24 lijnen"),
-			fmt.Sprintf("LIJN %s — %d van %d lijnen bezet", lineLabel(m.deps.Sess.Line), busy, presence.Lines))
+		lineBar := fmt.Sprintf("LIJN %s — %d van %d lijnen bezet", lineLabel(m.deps.Sess.Line), busy, presence.Lines)
+		banner := fmt.Sprintf("%s\n\n%s\n%s\n\n%s",
+			amber.Render(fmt.Sprintf("CONNECT %d", speed)),
+			m.logo(),
+			dimmed.Render("        heropend na 40 jaar stilte · Amsterdam · sinds 1984"),
+			amberBright.Render(lineBar))
 		return tea.Batch(m.print(banner), delay(700*time.Millisecond, ritUsername))
 	case ritUsername:
 		if p.Handle == "" {
@@ -388,21 +389,50 @@ func (m *Model) renderUnread() string {
 
 // ─── main menu ─────────────────────────────────────────────────────────────
 
+const menuWidth = 62
+
+// boxLine frames one plain (unstyled) content string inside amber box rules,
+// padded to menuWidth. Content is styled as a whole so bracketed hotkeys like
+// "[T] THIS" stay contiguous in the byte stream.
+func boxLine(content string, style lipgloss.Style) string {
+	pad := menuWidth - lipgloss.Width(content)
+	if pad < 0 {
+		content = content[:menuWidth]
+		pad = 0
+	}
+	return menuBorder.Render("║") + style.Render(content+strings.Repeat(" ", pad)) + menuBorder.Render("║")
+}
+
 func (m *Model) renderMenu() string {
 	now := time.Now().Format("15:04")
-	var b strings.Builder
-	b.WriteString("\n" + strings.Repeat("=", 62) + "\n")
-	b.WriteString(fmt.Sprintf(" NEABBS HOOFDMENU%38s\n", fmt.Sprintf("LIJN %s · %s", lineLabel(m.deps.Sess.Line), now)))
-	b.WriteString(strings.Repeat("=", 62) + "\n")
-	b.WriteString(" [B] Berichtenboards      [W] Wie is er op de lijnen\n")
-	b.WriteString(" [F] Bestanden            [C] Babbelbox\n")
-	b.WriteString(" [S] Sysop oproepen       [I] Colofon\n")
-	b.WriteString(" [Q] Quickscan nieuwe berichten\n")
-	b.WriteString(" [U] Uitloggen\n")
+	title := " NEABBS · HOOFDMENU"
+	info := fmt.Sprintf("LIJN %s · %s ", lineLabel(m.deps.Sess.Line), now)
+	gap := menuWidth - lipgloss.Width(title) - lipgloss.Width(info)
+	if gap < 1 {
+		gap = 1
+	}
+
+	rows := []string{
+		" [B] Berichtenboards      [W] Wie is er op de lijnen",
+		" [F] Bestanden            [C] Babbelbox",
+		" [S] Sysop oproepen       [I] Colofon",
+		" [Q] Quickscan nieuwe berichten",
+		" [U] Uitloggen",
+	}
 	// The door stays discovered once found: members see the THIS entry.
 	if m.deps.Player.ThisMember {
-		b.WriteString(" [T] THIS\n")
+		rows = append(rows, " [T] THIS")
 	}
+
+	var b strings.Builder
+	b.WriteString("\n")
+	b.WriteString(menuBorder.Render("╔"+strings.Repeat("═", menuWidth)+"╗") + "\n")
+	b.WriteString(boxLine(title+strings.Repeat(" ", gap)+info, amberBright) + "\n")
+	b.WriteString(menuBorder.Render("╠"+strings.Repeat("═", menuWidth)+"╣") + "\n")
+	for _, r := range rows {
+		b.WriteString(boxLine(r, menuHot) + "\n")
+	}
+	b.WriteString(menuBorder.Render("╚"+strings.Repeat("═", menuWidth)+"╝") + "\n")
 	b.WriteString(dimmed.Render(" Ook: praat <tekst> — roep iets naar alle lijnen") + "\n")
 	if m.minutesLeft <= 0 {
 		b.WriteString(dimmed.Render(" De sysop tikt op zijn horloge. Uw beltijd is om.") + "\n")
@@ -463,7 +493,7 @@ func (m *Model) menuLine(line string) (tea.Model, tea.Cmd) {
 	case "praat":
 		rest := strings.TrimSpace(line[len("praat"):])
 		return m.praat(rest)
-	case "2400":
+	case "9600":
 		return m.upgradeSpeed()
 	case "logout", "uitloggen":
 		return m.quit()
@@ -594,17 +624,19 @@ func (m *Model) refillMinuteBudgets() {
 	}
 }
 
-// upgradeSpeed is the discoverable modem-upgrade command.
+// upgradeSpeed is the discoverable modem-upgrade command: the board topped
+// out at 9600 by the end of the '80s, so a fast caller can renegotiate up.
 func (m *Model) upgradeSpeed() (tea.Model, tea.Cmd) {
-	if m.deps.Player.Speed >= 2400 {
-		return m, m.print("Uw modem loopt al op 2400 baud.")
+	if m.deps.Player.Speed >= 9600 {
+		return m, m.print("Uw modem loopt al op 9600 baud. Sneller kan de lijn niet.")
 	}
-	if err := m.deps.Store.SetSpeed(context.Background(), m.deps.Player.Fingerprint, 2400); err != nil {
+	if err := m.deps.Store.SetSpeed(context.Background(), m.deps.Player.Fingerprint, 9600); err != nil {
 		return m, m.print("Er knettert iets op de lijn. Probeer later opnieuw.")
 	}
-	m.deps.Player.Speed = 2400
+	m.deps.Player.Speed = 9600
 	m.printer.cps = m.playerCPS()
-	return m, m.print("+++ CARRIER RENEGOTIATED +++\nCONNECT 2400\n\nUw modem-upgrade is permanent geregistreerd.")
+	return m, m.print(amberBright.Render("+++ CARRIER RENEGOTIATED +++") +
+		"\nCONNECT 9600\n\nUw modem-upgrade is permanent geregistreerd. Alles gaat nu vier keer zo hard.")
 }
 
 // pageSysop rings the operator. v0: nobody home (period-appropriate wait).
@@ -732,7 +764,7 @@ func (m *Model) key(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	if m.printer.more {
 		return m, m.printer.moreKey(msg.String())
 	}
-	if len(m.printer.current) > 0 {
+	if m.printer.active() {
 		return m, m.printer.skip()
 	}
 
@@ -771,7 +803,7 @@ func (m *Model) key(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	}
 
 	// Main menu: single-keystroke hotkeys when the buffer is empty.
-	// Letters that start typed commands (praat, 2400, this, ...) are not
+	// Letters that start typed commands (praat, 9600, this, ...) are not
 	// hotkeys, so multi-char commands remain typable.
 	if m.state == stateMenu && m.input.Value() == "" && len(msg.Runes) == 1 {
 		switch r := strings.ToLower(string(msg.Runes[0])); r {

@@ -57,7 +57,7 @@ type Store interface {
 	SetLevel(ctx context.Context, fp string, level int) error
 	// SetThisMember flips THIS membership (permanent in practice).
 	SetThisMember(ctx context.Context, fp string, member bool) error
-	// SetSpeed stores the baud class (1200/2400).
+	// SetSpeed stores the baud class (2400/9600).
 	SetSpeed(ctx context.Context, fp string, speed int) error
 	// AddMinutes adds n to today's used-minutes counter and returns the new
 	// total for day (YYYY-MM-DD). A day rollover resets the counter.

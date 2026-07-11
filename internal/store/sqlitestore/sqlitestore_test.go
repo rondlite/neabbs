@@ -32,7 +32,7 @@ func TestPlayerLifecycle(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if p.Handle != "" || p.ThisMember || p.Level != 0 || p.Banned || p.Speed != 1200 {
+	if p.Handle != "" || p.ThisMember || p.Level != 0 || p.Banned || p.Speed != 2400 {
 		t.Fatalf("bad defaults: %+v", p)
 	}
 

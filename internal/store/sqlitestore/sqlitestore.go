@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS players (
 	level        INTEGER NOT NULL DEFAULT 0,
 	flags        TEXT    NOT NULL DEFAULT '[]',
 	banned       INTEGER NOT NULL DEFAULT 0,
-	speed        INTEGER NOT NULL DEFAULT 1200,
+	speed        INTEGER NOT NULL DEFAULT 2400,
 	minutes_used INTEGER NOT NULL DEFAULT 0,
 	minutes_day  TEXT    NOT NULL DEFAULT '',
 	npc_turns    INTEGER NOT NULL DEFAULT 0,

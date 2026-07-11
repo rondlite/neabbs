@@ -12,13 +12,17 @@ import (
 
 var redactStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
 
+// headerStyle bolds section titles without setting a colour, so it reads
+// correctly in both the amber public BBS and the green THIS mode.
+var headerStyle = lipgloss.NewStyle().Bold(true)
+
 // renderBoardList formats the visible boards for the `boards` command.
 func renderBoardList(boards []*content.Board) string {
 	if len(boards) == 0 {
 		return "Geen boards beschikbaar."
 	}
 	var b strings.Builder
-	b.WriteString("BOARDS\n")
+	b.WriteString(headerStyle.Render("BOARDS") + "\n")
 	for _, bd := range boards {
 		b.WriteString(fmt.Sprintf("  %-12s %s\n", bd.ID, bd.Name))
 	}
@@ -30,8 +34,8 @@ func renderBoardList(boards []*content.Board) string {
 // 80-column friendly. Redacted rows carry the [THIS-N] clearance tag.
 func renderListing(l *board.Listing) string {
 	var b strings.Builder
-	b.WriteString(fmt.Sprintf("%s — %s\n", strings.ToUpper(l.Board.ID), l.Board.Name))
-	b.WriteString(strings.Repeat("-", 78) + "\n")
+	b.WriteString(headerStyle.Render(fmt.Sprintf("%s — %s", strings.ToUpper(l.Board.ID), l.Board.Name)) + "\n")
+	b.WriteString(strings.Repeat("─", 78) + "\n")
 	if len(l.Rows) == 0 {
 		b.WriteString("(geen berichten)\n")
 	}
@@ -56,8 +60,8 @@ func renderListing(l *board.Listing) string {
 // renderFileList formats the public file area (bestanden).
 func renderFileList(files []content.File) string {
 	var b strings.Builder
-	b.WriteString("BESTANDEN\n")
-	b.WriteString(strings.Repeat("-", 70) + "\n")
+	b.WriteString(headerStyle.Render("BESTANDEN") + "\n")
+	b.WriteString(strings.Repeat("─", 70) + "\n")
 	if len(files) == 0 {
 		b.WriteString("(leeg — de sysop is nog aan het inpakken)\n")
 	}
@@ -75,7 +79,7 @@ func renderFileList(files []content.File) string {
 // renderFile formats one file for the pager.
 func renderFile(f *content.File) string {
 	var b strings.Builder
-	b.WriteString(fmt.Sprintf("=== %s ===\n\n", f.Name))
+	b.WriteString(headerStyle.Render(fmt.Sprintf("═══ %s ═══", f.Name)) + "\n\n")
 	b.WriteString(strings.TrimRight(f.Body, "\n"))
 	return b.String()
 }
@@ -83,7 +87,7 @@ func renderFile(f *content.File) string {
 // renderMessage formats one readable message.
 func renderMessage(boardID string, m *board.Msg) string {
 	var b strings.Builder
-	b.WriteString(fmt.Sprintf("Bericht #%d op %s\n", m.ID, strings.ToUpper(boardID)))
+	b.WriteString(headerStyle.Render(fmt.Sprintf("Bericht #%d op %s", m.ID, strings.ToUpper(boardID))) + "\n")
 	b.WriteString(fmt.Sprintf("Van      : %s\n", m.Author))
 	if m.Date != "" {
 		b.WriteString(fmt.Sprintf("Datum    : %s\n", m.Date))
@@ -92,7 +96,7 @@ func renderMessage(boardID string, m *board.Msg) string {
 		b.WriteString(fmt.Sprintf("Antwoord : op #%d\n", m.ReplyTo))
 	}
 	b.WriteString(fmt.Sprintf("Onderwerp: %s\n", m.Subject))
-	b.WriteString(strings.Repeat("-", 78) + "\n")
+	b.WriteString(strings.Repeat("─", 78) + "\n")
 	b.WriteString(strings.TrimRight(m.Body, "\n"))
 	return b.String()
 }

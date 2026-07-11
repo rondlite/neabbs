@@ -7,20 +7,31 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// printer emulates a 1200/2400-baud connection: output is revealed at a
-// fixed chars/sec rate inside the View, committed to scrollback when a block
+// printer emulates a dial-up connection: output is revealed at a fixed
+// chars/sec rate inside the View, committed to scrollback when a block
 // finishes. Any key mid-draw skips to the end of the current block
 // (authentic — everyone did this). Long output pauses on a
 // `-- Meer? (J/n) --` pager prompt.
 //
+// The reveal is ANSI-aware: colour/escape sequences are atomic zero-width
+// cells, so a coloured block never tears mid-escape at any baud rate.
+//
 // cps == 0 disables the throttle (NEABBS_BAUD=0): blocks print instantly.
 type printer struct {
-	cps int // chars per second; 0 = instant
+	cps int // visible chars per second; 0 = instant
 
-	current  []rune // page being revealed
-	revealed int    // how much of current is shown
+	raw      string // the block currently being revealed ("" = idle)
+	cells    []cell // raw tokenised into visible runes + atomic escapes
+	revealed int    // how many cells are shown
 	queue    []page
 	more     bool // waiting at a -- Meer? -- prompt
+}
+
+// cell is one reveal unit: a single visible rune, or a whole ANSI escape
+// sequence (visible == false, zero width, emitted for free).
+type cell struct {
+	text    string
+	visible bool
 }
 
 // page is one screenful. cont marks a continuation page of the same block:
@@ -41,8 +52,11 @@ func printTick() tea.Cmd {
 	return tea.Tick(40*time.Millisecond, func(time.Time) tea.Msg { return printTickMsg{} })
 }
 
+// active reports whether a block is mid-reveal (owns the screen).
+func (p *printer) active() bool { return p.raw != "" }
+
 // busy reports whether the printer owns the screen (revealing or paging).
-func (p *printer) busy() bool { return len(p.current) > 0 || len(p.queue) > 0 || p.more }
+func (p *printer) busy() bool { return p.raw != "" || len(p.queue) > 0 || p.more }
 
 // enqueue splits text into pages and starts printing. Returns the command
 // that begins the reveal (nil if the printer was already running).
@@ -63,7 +77,8 @@ func (p *printer) next() tea.Cmd {
 	if len(p.queue) == 0 {
 		return nil
 	}
-	p.current = []rune(p.queue[0].text)
+	p.raw = p.queue[0].text
+	p.cells = tokenize(p.raw)
 	p.queue = p.queue[1:]
 	p.revealed = 0
 	if p.cps <= 0 {
@@ -72,27 +87,39 @@ func (p *printer) next() tea.Cmd {
 	return printTick()
 }
 
-// tick advances the reveal. Returns (commitCmd, stillRunning).
+// tick advances the reveal by up to `step` visible cells; escape cells are
+// flushed for free so colour never tears.
 func (p *printer) tick() tea.Cmd {
-	if len(p.current) == 0 {
+	if p.raw == "" {
 		return nil
 	}
 	step := p.cps * 40 / 1000
 	if step < 1 {
 		step = 1
 	}
-	p.revealed += step
-	if p.revealed < len(p.current) {
-		return printTick()
+	budget := step
+	for p.revealed < len(p.cells) {
+		c := p.cells[p.revealed]
+		if c.visible && budget == 0 {
+			break
+		}
+		if c.visible {
+			budget--
+		}
+		p.revealed++
 	}
-	return p.finishBlock()
+	if p.revealed >= len(p.cells) {
+		return p.finishBlock()
+	}
+	return printTick()
 }
 
 // finishBlock commits the fully revealed page to scrollback, then pauses at
 // the pager (continuation of the same block) or flows into the next block.
 func (p *printer) finishBlock() tea.Cmd {
-	block := string(p.current)
-	p.current = nil
+	block := p.raw
+	p.raw = ""
+	p.cells = nil
 	p.revealed = 0
 	commit := tea.Println(block)
 	if len(p.queue) == 0 {
@@ -107,7 +134,7 @@ func (p *printer) finishBlock() tea.Cmd {
 
 // skip is called on any key while revealing: jump to the end of the block.
 func (p *printer) skip() tea.Cmd {
-	if len(p.current) == 0 {
+	if p.raw == "" {
 		return nil
 	}
 	return p.finishBlock()
@@ -133,14 +160,39 @@ func (p *printer) view() string {
 	if p.more {
 		return dimmed.Render("-- Meer? (J/n) --")
 	}
-	if len(p.current) == 0 {
+	if p.raw == "" {
 		return ""
 	}
-	n := p.revealed
-	if n > len(p.current) {
-		n = len(p.current)
+	var b strings.Builder
+	for i := 0; i < p.revealed && i < len(p.cells); i++ {
+		b.WriteString(p.cells[i].text)
 	}
-	return string(p.current[:n])
+	return b.String()
+}
+
+// tokenize splits s into reveal cells: whole CSI escape sequences
+// (ESC [ … final-byte) become zero-width cells, every other rune is one
+// visible cell.
+func tokenize(s string) []cell {
+	runes := []rune(s)
+	cells := make([]cell, 0, len(runes))
+	for i := 0; i < len(runes); {
+		if runes[i] == 0x1b && i+1 < len(runes) && runes[i+1] == '[' {
+			j := i + 2
+			for j < len(runes) && !(runes[j] >= '@' && runes[j] <= '~') {
+				j++
+			}
+			if j < len(runes) {
+				j++ // include the final byte
+			}
+			cells = append(cells, cell{text: string(runes[i:j]), visible: false})
+			i = j
+			continue
+		}
+		cells = append(cells, cell{text: string(runes[i]), visible: true})
+		i++
+	}
+	return cells
 }
 
 // paginate splits text into pages of at most n lines each.

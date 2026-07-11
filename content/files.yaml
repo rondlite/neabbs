@@ -23,12 +23,12 @@ files:
       Een modem (MOdulator-DEModulator) zet computersignalen om in
       piepjes die door de telefoonlijn passen, en andersom.
 
-      Snelheden anno 1984:
-        300 baud   - rustig meelezen
+      Snelheden door de jaren:
+        300 baud   - rustig meelezen (begin jaren '80)
         1200 baud  - de standaard, 120 tekens per seconde
-        1200/75    - viewdata; snel heen, traag terug
-        2400 baud  - het nieuwste van het nieuwste, voor wie het
-                     durft aan te vragen bij zijn favoriete systeem
+        2400 baud  - waar NEABBS tegenwoordig op opent
+        9600 baud  - het snelste dat deze lijnen aan het eind van
+                     de jaren '80 haalden. voor wie het durft.
 
       Tip van de redactie: sommige systemen accepteren een
       snelheids-verzoek gewoon als commando in het hoofdmenu. Gewoon

@@ -56,8 +56,9 @@ messages:
     subject: "snelheid van dit systeem"
     body: |
       Mooi dat de sysop de lijnsnelheid authentiek heeft gehouden.
-      1200 baud, net als vroeger. Al gaan er geruchten dat er ooit
-      een upgrade-programma bestond voor vaste bellers.
+      2400 baud bij het inbellen, net als tegen het eind. Al gaan er
+      geruchten dat er ooit een upgrade-programma bestond voor vaste
+      bellers dat je nog sneller liet gaan.
   - id: 7
     author: "soldeerbout"
     level: 0
@@ -67,7 +68,8 @@ messages:
     body: |
       Klopt, dat bestond echt. Je moest een modemcode intikken in het
       hoofdmenu. Welke weet ik niet meer — het was gewoon de naam van
-      de snelheid die je wilde, als ik het goed heb.
+      de snelheid die je wilde. 9600 als ik me niet vergis, dat was
+      hier het maximum.
   - id: 8
     author: "msx_marco"
     level: 0

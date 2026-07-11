@@ -147,6 +147,7 @@ type Set struct {
 	Bulletins      []Bulletin // sorted by filename
 	Colofon        string
 	Goodbye        string
+	LoginBanner    string            // content/login-banner.txt (optional ANSI/text wordmark)
 	HiddenCommands []HiddenCommand   // content/areas/main.yaml
 	ThisArrival    string            // content/this-arrival.txt
 	Hosts          []Host            // content/hosts/*.yaml, sorted by min_level then id
@@ -313,6 +314,7 @@ func Load(dir string) (*Set, error) {
 		{"colofon.txt", &set.Colofon},
 		{"goodbye.txt", &set.Goodbye},
 		{"this-arrival.txt", &set.ThisArrival},
+		{"login-banner.txt", &set.LoginBanner},
 	} {
 		if buf, err := os.ReadFile(filepath.Join(dir, t.file)); err == nil {
 			*t.dst = string(buf)

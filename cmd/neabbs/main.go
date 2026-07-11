@@ -12,6 +12,7 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/ssh"
 	bm "github.com/charmbracelet/wish/bubbletea"
 	"github.com/muesli/termenv"
@@ -50,6 +51,11 @@ func run(args []string) error {
 		}
 	}
 	cfg := config.FromEnv()
+
+	// lipgloss's global renderer detects the daemon's stdout (not a TTY, so
+	// colour would be stripped). Every session is an interactive PTY over
+	// SSH, so force 256-colour output; otherwise all styling renders plain.
+	lipgloss.SetColorProfile(termenv.ANSI256)
 
 	st, err := sqlitestore.Open(cfg.DBPath)
 	if err != nil {

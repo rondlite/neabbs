@@ -187,7 +187,7 @@ func TestFullCallRitualAndInvisibility(t *testing.T) {
 	c := dialBBS(t, addr)
 
 	// Call ritual: connect banner → handle picker → theater → menu.
-	c.waitFor("CONNECT 1200")
+	c.waitFor("CONNECT 2400")
 	c.waitFor("Nieuwe beller gedetecteerd")
 	c.send("tester\r")
 	c.waitFor("Aangenaam, tester")
