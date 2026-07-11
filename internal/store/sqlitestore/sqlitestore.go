@@ -28,6 +28,8 @@ CREATE TABLE IF NOT EXISTS players (
 	speed        INTEGER NOT NULL DEFAULT 1200,
 	minutes_used INTEGER NOT NULL DEFAULT 0,
 	minutes_day  TEXT    NOT NULL DEFAULT '',
+	npc_turns    INTEGER NOT NULL DEFAULT 0,
+	npc_day      TEXT    NOT NULL DEFAULT '',
 	created_at   INTEGER NOT NULL,
 	last_seen    INTEGER NOT NULL
 );
@@ -215,6 +217,20 @@ func (s *Store) AddMinutes(ctx context.Context, fp string, day string, n int) (i
 	}
 	var used int
 	err = s.db.QueryRowContext(ctx, "SELECT minutes_used FROM players WHERE fingerprint = ?", fp).Scan(&used)
+	return used, err
+}
+
+func (s *Store) AddNPCTurns(ctx context.Context, fp string, day string, n int) (int, error) {
+	_, err := s.db.ExecContext(ctx, `
+		UPDATE players SET
+			npc_turns = CASE WHEN npc_day = ? THEN npc_turns + ? ELSE ? END,
+			npc_day = ?
+		WHERE fingerprint = ?`, day, n, n, day, fp)
+	if err != nil {
+		return 0, err
+	}
+	var used int
+	err = s.db.QueryRowContext(ctx, "SELECT npc_turns FROM players WHERE fingerprint = ?", fp).Scan(&used)
 	return used, err
 }
 

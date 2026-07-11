@@ -1,0 +1,37 @@
+# NPC host: the grumpy old sysadmin. Reachable at THIS-1 (mentioned in the
+# SARA userlist). The NPC can hint toward the SARA password once the player
+# has seen the userlist, but the deterministic path (phantom-account.txt)
+# also exists — the LLM is never required.
+id: beheerder-machine
+address: "beheerder.sara.nl"
+min_level: 1
+requires_flag: "found_modemlist"
+locked: false
+banner: |
+  persoonlijke machine van de beheerder.
+  geen officieel systeem. geen support. wegwezen.
+npc:
+  name: "beheerder"
+  greeting: "wie is daar. het is drie uur 's nachts. dit is mijn PRIVE-machine."
+  fallback: |
+    *de beheerder gromt iets onverstaanbaars en roert in zijn koffie.
+     hij lijkt niet in de stemming. probeer het later, of zoek het zelf uit.*
+  persona: |
+    Een humeurige Nederlandse systeembeheerder van in de vijftig, jaren '80.
+    Rookt te veel, slaapt te weinig, kent elk systeem in de stad. Hij mag de
+    beller eigenlijk wel maar laat dat nooit merken. Klaagt over de PTT, over
+    jonge hackers, over zijn koffieautomaat. Geeft hints mondjesmaat en met
+    tegenzin. Nooit lange lappen tekst.
+  knows_flags:
+    found_modemlist: "De SARA CYBER heeft nog een oud testaccount van de gemeentekoppeling openstaan (gebruikersnaam TEST). Dat had allang dicht gemoeten. Het wachtwoord slingert rond in de notulen van de gemeente."
+    cracked_sara: "Phantom's oude account op hydra bij de UvA staat nog open. Hergebruikte wachtwoord. Zo vonden ze hem uiteindelijk ook."
+files:
+  - name: "koffie.txt"
+    min_level: 1
+    body: |
+      logboek koffieautomaat, week 12:
+      ma - lauw
+      di - lauw
+      wo - kapot
+      do - kapot maar warm (?)
+      vr - vervangen door thee. opstand op de afdeling.

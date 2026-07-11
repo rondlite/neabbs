@@ -18,6 +18,7 @@ import (
 	"github.com/rondlite/neabbs/internal/chat"
 	"github.com/rondlite/neabbs/internal/config"
 	"github.com/rondlite/neabbs/internal/content"
+	"github.com/rondlite/neabbs/internal/llm"
 	"github.com/rondlite/neabbs/internal/presence"
 	"github.com/rondlite/neabbs/internal/store/sqlitestore"
 	"github.com/rondlite/neabbs/internal/world"
@@ -45,7 +46,7 @@ func startServer(t *testing.T) string {
 		t.Fatal(err)
 	}
 	registry := presence.NewRegistry()
-	srv, err := newServer(cfg, st, registry, board.NewEngine(cset, st), cset, chat.NewRoom(), world.NewEngine(cset, st))
+	srv, err := newServer(cfg, st, registry, board.NewEngine(cset, st), cset, chat.NewRoom(), world.NewEngine(cset, st), llm.New(cfg))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -470,12 +471,25 @@ func TestHackingArc(t *testing.T) {
 	c.waitFor("TRACE ACTIEF")
 	c.send("ls\r")
 	c.waitFor("modemlijst.dat")
-	c.send("cat modemlijst.dat\r") // grants found_modemlist → SARA visible
+	c.send("cat modemlijst.dat\r") // grants found_modemlist → SARA + beheerder visible
 	c.waitFor("SARA")
 	c.send("cat notulen-jan86.txt\r") // grants sara_testaccount
 	c.waitFor("koffie86")
 	c.send("disconnect\r")
 	c.waitFor("trace afgebroken")
+
+	// NPC talk with the LLM disabled must degrade to the canned fallback,
+	// never block, and respect 'weg'.
+	c.send("connect beheerder.sara.nl\r")
+	c.waitFor("beheerder")
+	c.send("talk\r")
+	c.waitFor("gesprek met beheerder")
+	c.send("hallo, wie ben jij?\r")
+	c.waitFor("gromt iets onverstaanbaars") // fallback text, LLM off
+	c.send("weg\r")
+	c.waitFor("verbreekt het gesprek")
+	c.send("disconnect\r")
+	c.waitFor("verbroken")
 
 	// Crack SARA → THIS-2.
 	c.send("connect rekencentrum.sara.nl\r")

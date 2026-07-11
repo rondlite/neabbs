@@ -24,7 +24,9 @@ sleutels (`ssh -i andere_sleutel -p 2222 localhost`).
 | `NEABBS_HOSTKEY` | `./hostkey`  | SSH hostkey (auto-gegenereerd)     |
 | `NEABBS_CONTENT` | `./content`  | Content-directory (YAML/tekst)     |
 | `NEABBS_BAUD`    | (aan)        | `0` schakelt baud-emulatie uit     |
-| `LLM_BASE_URL`   | (leeg = uit) | OpenAI-compatible endpoint (later) |
+| `LLM_BASE_URL`   | (leeg = uit) | OpenAI-compatible chat endpoint    |
+| `LLM_MODEL`      | (leeg)       | modelnaam voor de LLM              |
+| `LLM_API_KEY`    | (leeg)       | bearer-token voor de LLM           |
 
 ## Ontwikkelen
 
@@ -43,5 +45,26 @@ Admin-CLI (tegen het DB-bestand, server mag draaien):
 ```
 
 Content is data: boards in `content/boards/*.yaml`, bulletins in
-`content/bulletins/*.txt`, bestandensectie in `content/files.yaml`.
-De content-lint draait bij het opstarten en weigert kapotte content.
+`content/bulletins/*.txt`, bestandensectie in `content/files.yaml`, hosts in
+`content/hosts/*.yaml`, en systeem-prompts in `content/prompts/*.txt`.
+De content-lint draait bij het opstarten en weigert kapotte content
+(onbereikbare vlaggen, promotie-gaten, dubbele id's, publieke content die
+naar THIS verwijst, en meer).
+
+## LLM (optioneel, alleen flavour)
+
+De game is volledig speelbaar met de LLM uit (`LLM_BASE_URL` niet gezet).
+LLM-uitvoer is nooit op het kritieke pad: elke call heeft een timeout van
+10 s en valt terug op vaste tekst. Zet de drie `LLM_*` env vars om een
+OpenAI-compatible endpoint (bijv. een lokale vLLM-gateway) te gebruiken.
+
+- **NPC's** — sommige hosts hebben een `npc`-blok; `talk` opent een gesprek.
+  De NPC hint naar dingen die de speler al ontsloten heeft (`knows_flags`),
+  maar een deterministisch pad naar elke vlag bestaat altijd ook.
+  Limieten: 20 beurten per sessie, 60 per dag.
+- **genposts** — offline hulpmiddel dat sfeer-berichten als YAML voordraft
+  voor menselijke review; draait nooit in-game:
+
+  ```sh
+  LLM_BASE_URL=... LLM_MODEL=... ./bin/neabbs genposts --board algemeen --level 0 --count 20
+  ```

@@ -19,6 +19,7 @@ import (
 	"github.com/rondlite/neabbs/internal/chat"
 	"github.com/rondlite/neabbs/internal/config"
 	"github.com/rondlite/neabbs/internal/content"
+	"github.com/rondlite/neabbs/internal/llm"
 	"github.com/rondlite/neabbs/internal/presence"
 	"github.com/rondlite/neabbs/internal/store"
 	"github.com/rondlite/neabbs/internal/text"
@@ -44,6 +45,7 @@ type Deps struct {
 	Content  *content.Set
 	Chat     *chat.Room
 	World    *world.Engine
+	LLM      *llm.Client
 }
 
 type state int
@@ -56,6 +58,7 @@ const (
 	stateFiles
 	stateChat
 	stateThis
+	stateTalk
 	stateComposeSubject
 	stateComposeBody
 	stateComposeLevel
@@ -111,6 +114,15 @@ type Model struct {
 	// trace timer: runs after cracking a traced host, until disconnect
 	traceHost  string // host id being traced ("" = no trace)
 	traceUntil time.Time
+
+	// NPC talk session state
+	talk struct {
+		host       string        // host id whose NPC we're talking to
+		system     string        // built system prompt
+		history    []llm.Message // running conversation
+		sessTurns  int           // turns this session (cap 20)
+		fallbackOn bool          // true once we've degraded to canned text
+	}
 
 	wallBudget int
 
@@ -669,6 +681,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m.runCrack(h)
 		}
 		return m, nil
+	case npcReplyMsg:
+		return m.npcReplied(msg)
 	case printTickMsg:
 		return m, m.printer.tick()
 	case ritualDelayMsg:
@@ -737,6 +751,14 @@ func (m *Model) key(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return m, tea.Println("Geannuleerd.")
 		case m.state == stateChat:
 			return m.leaveChat()
+		case m.state == stateTalk:
+			var npc *content.NPC
+			for i := range m.deps.Content.Hosts {
+				if m.deps.Content.Hosts[i].ID == m.talk.host {
+					npc = m.deps.Content.Hosts[i].NPC
+				}
+			}
+			return m.endTalk(npc)
 		case m.state == stateBoards || m.state == stateFiles:
 			return m.backToMenu()
 		}
@@ -811,6 +833,8 @@ func (m *Model) handleLine(line string) (tea.Model, tea.Cmd) {
 		return m.chatLine(line)
 	case stateThis:
 		return m.thisLine(line)
+	case stateTalk:
+		return m.talkLine(line)
 	case stateComposeSubject:
 		return m.composeSubject(line)
 	case stateComposeBody:
@@ -1204,6 +1228,7 @@ func (m *Model) exitThis() (tea.Model, tea.Cmd) {
 	m.hostAddr = ""
 	m.traceHost = "" // leaving THIS is a clean disconnect
 	m.traceUntil = time.Time{}
+	m.talk.host = ""
 	m.state = stateMenu
 	m.input.Prompt = "Keuze: "
 	m.deps.Sess.SetArea("hoofdmenu", false)
@@ -1262,6 +1287,8 @@ func (m *Model) thisLine(line string) (tea.Model, tea.Cmd) {
 		return m.catHost(arg)
 	case "crack", "kraak":
 		return m.crackHost()
+	case "talk", "praat":
+		return m.startTalk()
 	case "who", "wie":
 		return m, m.out(m.renderThisWho())
 	case "wall":
@@ -1535,6 +1562,135 @@ func (m *Model) wall(msg string) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+// ─── NPC talk (LLM, flavor only) ───────────────────────────────────────────
+
+// npcReplyMsg carries an NPC turn result back into the loop.
+type npcReplyMsg struct {
+	host   string
+	reply  string
+	viaLLM bool
+}
+
+// startTalk opens an NPC chat on the current host, if it has an npc block.
+func (m *Model) startTalk() (tea.Model, tea.Cmd) {
+	h := m.currentHost()
+	if h == nil {
+		return m, m.out("talk: niet verbonden.")
+	}
+	if h.NPC == nil {
+		return m, m.out("talk: hier is niemand om mee te praten.")
+	}
+	if ok, err := m.deps.World.Unlocked(context.Background(), h, m.deps.Player.Fingerprint); err == nil && !ok {
+		return m, m.out(m.lockedHint(h))
+	}
+	// Daily cap check (shared across NPCs).
+	used, err := m.deps.Store.AddNPCTurns(context.Background(), m.deps.Player.Fingerprint, today(), 0)
+	if err == nil && used >= llm.MaxTurnsPerDay {
+		return m, m.out("talk: je hebt vandaag genoeg gekletst. morgen weer.")
+	}
+	npc := h.NPC
+	m.talk.host = h.ID
+	m.talk.history = nil
+	m.talk.sessTurns = 0
+	m.talk.fallbackOn = !m.deps.LLM.Enabled()
+	m.talk.system = llm.BuildSystemPrompt(m.deps.Content.Prompts["npc"], npc, m.hasFlag)
+	m.state = stateTalk
+	m.input.Prompt = fmt.Sprintf("%s> ", npc.Name)
+
+	greeting := npc.Greeting
+	if greeting == "" {
+		greeting = fmt.Sprintf("%s kijkt op.", npc.Name)
+	}
+	return m, m.out(fmt.Sprintf("[gesprek met %s — 'weg' beeindigt]\n%s: %s",
+		npc.Name, npc.Name, greeting))
+}
+
+func (m *Model) talkLine(line string) (tea.Model, tea.Cmd) {
+	h := m.deps.Content.Hosts // resolve current NPC host by id
+	var npc *content.NPC
+	for i := range h {
+		if h[i].ID == m.talk.host {
+			npc = h[i].NPC
+			break
+		}
+	}
+	if line == "" {
+		return m, nil
+	}
+	if strings.EqualFold(line, "weg") || strings.EqualFold(line, "exit") || strings.EqualFold(line, "terug") {
+		return m.endTalk(npc)
+	}
+	if npc == nil {
+		return m.endTalk(nil)
+	}
+	if m.talk.sessTurns >= llm.MaxTurnsPerSession {
+		return m, m.out(fmt.Sprintf("%s: genoeg voor nu. wegwezen.", npc.Name))
+	}
+	m.talk.sessTurns++
+	_, _ = m.deps.Store.AddNPCTurns(context.Background(), m.deps.Player.Fingerprint, today(), 1)
+
+	user := text.CleanLine(line)
+	m.thisPrint(green.Render("jij: " + user))
+	m.talk.history = append(m.talk.history, llm.Message{Role: "user", Content: user})
+
+	// If the LLM is disabled, answer immediately with the canned fallback.
+	if !m.deps.LLM.Enabled() {
+		return m, m.deliverNPC(npc, npc.Fallback, false)
+	}
+	// Otherwise run the call off the Update goroutine (10 s timeout inside).
+	// history already includes this user turn.
+	system, history, host := m.talk.system, append([]llm.Message(nil), m.talk.history...), m.talk.host
+	fallback := npc.Fallback
+	return m, func() tea.Msg {
+		reply, viaLLM := m.deps.LLM.Reply(context.Background(), system, history[:len(history)-1], user, fallback)
+		return npcReplyMsg{host: host, reply: reply, viaLLM: viaLLM}
+	}
+}
+
+// npcReplied prints the async NPC reply if the player is still in the same
+// conversation (they may have walked away meanwhile).
+func (m *Model) npcReplied(msg npcReplyMsg) (tea.Model, tea.Cmd) {
+	if m.state != stateTalk || m.talk.host != msg.host {
+		return m, nil
+	}
+	var npc *content.NPC
+	for i := range m.deps.Content.Hosts {
+		if m.deps.Content.Hosts[i].ID == msg.host {
+			npc = m.deps.Content.Hosts[i].NPC
+			break
+		}
+	}
+	if npc == nil {
+		return m, nil
+	}
+	return m, m.deliverNPC(npc, msg.reply, msg.viaLLM)
+}
+
+// deliverNPC records the exchange and prints the NPC line (used for the
+// synchronous LLM-disabled path).
+func (m *Model) deliverNPC(npc *content.NPC, reply string, viaLLM bool) tea.Cmd {
+	if reply == "" {
+		reply = "..."
+	}
+	if viaLLM {
+		m.talk.history = append(m.talk.history,
+			llm.Message{Role: "assistant", Content: reply})
+	}
+	return m.out(fmt.Sprintf("%s: %s", npc.Name, reply))
+}
+
+func (m *Model) endTalk(npc *content.NPC) (tea.Model, tea.Cmd) {
+	name := "iemand"
+	if npc != nil {
+		name = npc.Name
+	}
+	m.talk.host = ""
+	m.talk.history = nil
+	m.state = stateThis
+	m.input.Prompt = "> "
+	return m, m.out(fmt.Sprintf("[je verbreekt het gesprek met %s]", name))
+}
+
 // renderThisBoards lists only THIS-area boards (the public boards live on
 // the other side of the door).
 func (m *Model) renderThisBoards() string {
@@ -1632,7 +1788,7 @@ func (m *Model) View() string {
 	if m.state == stateDone {
 		return ""
 	}
-	if m.inThis {
+	if m.inThis || m.state == stateTalk {
 		return m.thisView()
 	}
 	if pv := m.printer.view(); pv != "" {

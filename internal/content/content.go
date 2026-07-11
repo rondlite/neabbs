@@ -83,9 +83,21 @@ type Host struct {
 	Locked       bool       `yaml:"locked"` // requires a successful `crack`
 	Crack        *CrackSpec `yaml:"crack"`
 	Files        []HostFile `yaml:"files"`
+	NPC          *NPC       `yaml:"npc"`
 	Effects      struct {
 		OnFirstCrack *Effects `yaml:"on_first_crack"`
 	} `yaml:"effects"`
+}
+
+// NPC is an optional LLM-backed character on a host, reachable via `talk`.
+// The NPC may hint toward flags the player holds; a deterministic path to
+// every flag must also exist (the LLM is never on the critical path).
+type NPC struct {
+	Name       string            `yaml:"name"`
+	Persona    string            `yaml:"persona"`     // persona prompt (or prompts/ ref via PersonaFile)
+	Greeting   string            `yaml:"greeting"`    // shown on `talk`, LLM-free
+	Fallback   string            `yaml:"fallback"`    // canned reply when the LLM is unavailable
+	KnowsFlags map[string]string `yaml:"knows_flags"` // flag → fact the NPC may reveal if the player holds it
 }
 
 // CrackSpec describes how a locked host opens.
@@ -135,9 +147,10 @@ type Set struct {
 	Bulletins      []Bulletin // sorted by filename
 	Colofon        string
 	Goodbye        string
-	HiddenCommands []HiddenCommand // content/areas/main.yaml
-	ThisArrival    string          // content/this-arrival.txt
-	Hosts          []Host          // content/hosts/*.yaml, sorted by min_level then id
+	HiddenCommands []HiddenCommand   // content/areas/main.yaml
+	ThisArrival    string            // content/this-arrival.txt
+	Hosts          []Host            // content/hosts/*.yaml, sorted by min_level then id
+	Prompts        map[string]string // content/prompts/*.txt, keyed by basename without extension
 }
 
 // HostByAddress returns the host with the given address (case-insensitive),
@@ -255,6 +268,26 @@ func Load(dir string) (*Set, error) {
 			}
 			return set.Hosts[i].ID < set.Hosts[j].ID
 		})
+	} else if !os.IsNotExist(err) {
+		return nil, err
+	}
+
+	// System prompts: content/prompts/*.txt (LLM system prompts live in
+	// content, not Go code).
+	set.Prompts = map[string]string{}
+	promptsDir := filepath.Join(dir, "prompts")
+	if entries, err := os.ReadDir(promptsDir); err == nil {
+		for _, e := range entries {
+			if e.IsDir() || !strings.HasSuffix(e.Name(), ".txt") {
+				continue
+			}
+			buf, err := os.ReadFile(filepath.Join(promptsDir, e.Name()))
+			if err != nil {
+				return nil, err
+			}
+			key := strings.TrimSuffix(e.Name(), ".txt")
+			set.Prompts[key] = string(buf)
+		}
 	} else if !os.IsNotExist(err) {
 		return nil, err
 	}

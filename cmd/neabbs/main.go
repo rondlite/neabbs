@@ -20,6 +20,7 @@ import (
 	"github.com/rondlite/neabbs/internal/chat"
 	"github.com/rondlite/neabbs/internal/config"
 	"github.com/rondlite/neabbs/internal/content"
+	"github.com/rondlite/neabbs/internal/llm"
 	"github.com/rondlite/neabbs/internal/presence"
 	"github.com/rondlite/neabbs/internal/sshd"
 	"github.com/rondlite/neabbs/internal/store"
@@ -42,8 +43,10 @@ func run(args []string) error {
 			// fall through to the daemon
 		case "admin":
 			return runAdmin(args[1:])
+		case "genposts":
+			return runGenposts(args[1:])
 		default:
-			return fmt.Errorf("unknown subcommand %q (want serve or admin)", args[0])
+			return fmt.Errorf("unknown subcommand %q (want serve, admin, or genposts)", args[0])
 		}
 	}
 	cfg := config.FromEnv()
@@ -61,7 +64,7 @@ func run(args []string) error {
 	slog.Info("content loaded", "boards", len(cset.Boards))
 
 	registry := presence.NewRegistry()
-	srv, err := newServer(cfg, st, registry, board.NewEngine(cset, st), cset, chat.NewRoom(), world.NewEngine(cset, st))
+	srv, err := newServer(cfg, st, registry, board.NewEngine(cset, st), cset, chat.NewRoom(), world.NewEngine(cset, st), llm.New(cfg))
 	if err != nil {
 		return err
 	}
@@ -90,7 +93,7 @@ const (
 	ctxPlayer  ctxKey = "neabbs-player"
 )
 
-func newServer(cfg config.Config, st store.Store, registry *presence.Registry, engine *board.Engine, cset *content.Set, room *chat.Room, w *world.Engine) (*ssh.Server, error) {
+func newServer(cfg config.Config, st store.Store, registry *presence.Registry, engine *board.Engine, cset *content.Set, room *chat.Room, w *world.Engine, lc *llm.Client) (*ssh.Server, error) {
 	teaMW := bm.MiddlewareWithProgramHandler(func(s ssh.Session) *tea.Program {
 		sess, _ := s.Context().Value(ctxSession).(*presence.Session)
 		player, _ := s.Context().Value(ctxPlayer).(*store.Player)
@@ -107,6 +110,7 @@ func newServer(cfg config.Config, st store.Store, registry *presence.Registry, e
 			Content:  cset,
 			Chat:     room,
 			World:    w,
+			LLM:      lc,
 		})
 		p := tea.NewProgram(m, append(bm.MakeOptions(s), tea.WithoutSignalHandler())...)
 		sess.SetSend(func(msg any) { p.Send(msg) })

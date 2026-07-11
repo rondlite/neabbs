@@ -87,6 +87,10 @@ type Store interface {
 	// SetHostCooldown locks the host for this player until the deadline.
 	SetHostCooldown(ctx context.Context, fp, hostID string, until time.Time) error
 
+	// AddNPCTurns adds n to today's NPC-turn counter (per-player, all NPCs)
+	// and returns the new total for day (YYYY-MM-DD); a day rollover resets.
+	AddNPCTurns(ctx context.Context, fp, day string, n int) (int, error)
+
 	// AllPlayers returns every player (admin inspect).
 	AllPlayers(ctx context.Context) ([]Player, error)
 	// PlayerByHandle returns the player with the given handle, or ErrNotFound.
