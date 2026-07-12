@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"crypto/ed25519"
 	"crypto/rand"
 	"io"
@@ -26,6 +27,13 @@ import (
 
 // startServer boots the full Wish server on a random port.
 func startServer(t *testing.T) string {
+	addr, _ := startServerWithStore(t)
+	return addr
+}
+
+// startServerWithStore is startServer, also handing back the store so a test
+// can reach past the UI — granting the sysop flag, say.
+func startServerWithStore(t *testing.T) (string, *sqlitestore.Store) {
 	t.Helper()
 	dir := t.TempDir()
 	cfg := config.Config{
@@ -56,7 +64,38 @@ func startServer(t *testing.T) string {
 	}
 	go srv.Serve(ln)
 	t.Cleanup(func() { srv.Close() })
-	return ln.Addr().String()
+	return ln.Addr().String(), st
+}
+
+// TestSysopTimeOnSelfKeepsSessionAlive: the sysop refilling their OWN call time
+// must not take their session down. Delivering a message into a Bubble Tea
+// program from inside that same program's Update loop blocks (see
+// presence.Broadcast, which spawns a goroutine for exactly this reason), so a
+// self-directed refill is the case that wedges the session.
+func TestSysopTimeOnSelfKeepsSessionAlive(t *testing.T) {
+	addr, st := startServerWithStore(t)
+	c := dialBBS(t, addr)
+	c.register("chief")
+	c.waitFor("HOOFDMENU")
+
+	ctx := context.Background()
+	p, err := st.PlayerByHandle(ctx, "chief")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := st.SetAdmin(ctx, p.Fingerprint, true); err != nil {
+		t.Fatal(err)
+	}
+	// The live model refreshes the player row on its poll, so the flag lands
+	// without a reconnect.
+	time.Sleep(3 * time.Second)
+
+	c.send("sysop tijd chief\r")
+	c.waitFor("beltegoed bijgevuld")
+
+	// The session must still answer afterwards.
+	c.send("w")
+	c.waitFor("WIE IS ER OP DE LIJNEN")
 }
 
 // client is a scripted SSH session against the BBS.

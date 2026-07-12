@@ -194,13 +194,7 @@ func (m *Model) sysopBan(handle string, ban bool) (tea.Model, tea.Cmd) {
 		return m, m.out(fmt.Sprintf(m.tr("%s is niet langer verbannen.", "%s is no longer banned."), target.Handle))
 	}
 	// Drop any live sessions on that fingerprint.
-	kicked := 0
-	for _, s := range m.deps.Registry.All() {
-		if s.Fingerprint == target.Fingerprint {
-			s.SendMsg(KickMsg{Reason: "TOEGANG INGETROKKEN DOOR DE SYSOP."})
-			kicked++
-		}
-	}
+	kicked := m.deps.Registry.SendTo(target.Fingerprint, KickMsg{Reason: "TOEGANG INGETROKKEN DOOR DE SYSOP."})
 	return m, m.out(fmt.Sprintf(m.tr("%s verbannen. %d live sessie(s) verbroken.", "%s banned. %d live session(s) dropped."), target.Handle, kicked))
 }
 
@@ -219,13 +213,7 @@ func (m *Model) sysopReset(handle string) (tea.Model, tea.Cmd) {
 	if err := m.deps.Store.ResetProgress(context.Background(), target.Fingerprint, target.Handle); err != nil {
 		return m, m.out(m.tr("Reset mislukt.", "Reset failed."))
 	}
-	kicked := 0
-	for _, s := range m.deps.Registry.All() {
-		if s.Fingerprint == target.Fingerprint {
-			s.SendMsg(KickMsg{Reason: "SESSIE GERESET DOOR DE SYSOP — log opnieuw in."})
-			kicked++
-		}
-	}
+	kicked := m.deps.Registry.SendTo(target.Fingerprint, KickMsg{Reason: "SESSIE GERESET DOOR DE SYSOP — log opnieuw in."})
 	return m, m.out(fmt.Sprintf(m.tr("%s: THIS-arc gereset (lidmaatschap ingetrokken, niveau 0, vlaggen/hosts/heat/sporen gewist). %d sessie(s) verbroken.", "%s: THIS-arc reset (membership revoked, level 0, flags/hosts/heat/traces wiped). %d session(s) dropped."), target.Handle, kicked))
 }
 
@@ -243,13 +231,7 @@ func (m *Model) sysopTime(handle string) (tea.Model, tea.Cmd) {
 	if err := m.deps.Store.ResetMinutes(context.Background(), target.Fingerprint, today()); err != nil {
 		return m, m.out(m.tr("Bijvullen mislukt.", "Top-up failed."))
 	}
-	live := 0
-	for _, s := range m.deps.Registry.All() {
-		if s.Fingerprint == target.Fingerprint {
-			s.SendMsg(TimeRefillMsg{})
-			live++
-		}
-	}
+	live := m.deps.Registry.SendTo(target.Fingerprint, TimeRefillMsg{})
 	return m, m.out(fmt.Sprintf(m.tr("%s: beltegoed bijgevuld (%d minuten). %d live sessie(s) bijgewerkt.",
 		"%s: call time topped up (%d minutes). %d live session(s) updated."), target.Handle, dailyMinutes, live))
 }

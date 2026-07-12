@@ -175,6 +175,27 @@ func (r *Registry) Broadcast(msg any, except *Session) {
 	}()
 }
 
+// SendTo delivers msg to every live session belonging to fp and reports how
+// many there were. Delivery happens on a fresh goroutine for the same reason
+// Broadcast does it: Program.Send blocks when called from inside the target's
+// own Update loop, and a sysop acting on themselves (refilling their own time,
+// resetting their own arc) is exactly that case — done synchronously it
+// deadlocks the session instead of messaging it.
+func (r *Registry) SendTo(fp string, msg any) int {
+	var targets []*Session
+	for _, s := range r.All() {
+		if s.Fingerprint == fp {
+			targets = append(targets, s)
+		}
+	}
+	go func() {
+		for _, s := range targets {
+			s.SendMsg(msg)
+		}
+	}()
+	return len(targets)
+}
+
 // SetSend installs the Bubble Tea bridge for a session.
 func (s *Session) SetSend(f func(any)) {
 	s.mu.Lock()
