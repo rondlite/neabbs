@@ -26,7 +26,7 @@
     "| |\\  | |___ / ___ \\| |_) | |_) |__) |",
     "|_| \\_|_____/_/   \\_\\____/|____/____/"
   ];
-  var bootLines = ["ATDT 020-6225555", "CONNECT 1200", ""]
+  var bootLines = ["ATDT 020-621984", "CONNECT 1200", ""]
     .concat(LOGO)
     .concat(["", "Heropend na 40 jaar stilte.", ""]);
 
