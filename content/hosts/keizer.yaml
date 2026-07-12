@@ -17,7 +17,9 @@ banner:
 crack:
   method: password
   password_flag: "eind_sleutel"
-  hint_on_fail: "de deur zit niet op slot voor jou — je mist alleen nog de sleutel van de bewaarnode."
+  hint_on_fail:
+    nl: "de deur zit niet op slot voor jou — je mist alleen nog de sleutel van de bewaarnode."
+    en: "the door isn't locked to you — you're just still missing the key from the archive node."
   trace_seconds: 0
 files:
   - name: "voor-wie-zo-ver-komt.txt"
@@ -86,4 +88,6 @@ effects:
   on_first_crack:
     grant_level: 9
     grant_flags: ["cracked_keizer", "this_voltooid"]
-    broadcast: "{handle} heeft THIS voltooid — negen niveaus, tot de laatste node"
+    broadcast:
+      nl: "{handle} heeft THIS voltooid — negen niveaus, tot de laatste node"
+      en: "{handle} has completed THIS — nine levels, down to the last node"

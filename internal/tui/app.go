@@ -1552,8 +1552,8 @@ func (m *Model) runCrack(h *content.Host) (tea.Model, tea.Cmd) {
 			if m.deps.Player.Level > oldLevel {
 				out = append(out, green.Render(fmt.Sprintf(m.tr("*** PROMOTIE — THIS-%d toegekend ***", "*** PROMOTION — THIS-%d granted ***"), m.deps.Player.Level)))
 			}
-			if res.Effects.Broadcast != "" {
-				line := strings.ReplaceAll(res.Effects.Broadcast, "{handle}", m.deps.Player.Handle)
+			if bc := res.Effects.Broadcast.Get(m.lang()); bc != "" {
+				line := strings.ReplaceAll(bc, "{handle}", m.deps.Player.Handle)
 				m.deps.Registry.Broadcast(WallMsg{Line: "*** " + line}, m.deps.Sess)
 			}
 		}
@@ -1806,8 +1806,8 @@ func (m *Model) catHost(name string) (tea.Model, tea.Cmd) {
 // lockedHint names what a locked host wants — locked things respond
 // specifically, not generically.
 func (m *Model) lockedHint(h *content.Host) string {
-	if h.Crack != nil && h.Crack.HintOnFail != "" {
-		return h.Crack.HintOnFail
+	if h.Crack != nil && h.Crack.HintOnFail.Get(m.lang()) != "" {
+		return h.Crack.HintOnFail.Get(m.lang())
 	}
 	return m.tr("toegang vergrendeld.", "access locked.")
 }

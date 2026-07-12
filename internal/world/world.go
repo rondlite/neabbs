@@ -119,32 +119,38 @@ type CrackResult struct {
 // mask" mechanic: password cracks succeed iff the player already holds the
 // password_flag — acquiring that flag elsewhere IS the puzzle.
 func (e *Engine) Crack(ctx context.Context, h *content.Host, v board.Viewer, has func(string) bool) (CrackResult, error) {
+	tr := func(nl, en string) string {
+		if content.NormalizeLang(v.Lang) == content.LangEN && en != "" {
+			return en
+		}
+		return nl
+	}
 	if !h.Locked {
-		return CrackResult{Msg: "crack: dit systeem staat gewoon open."}, nil
+		return CrackResult{Msg: tr("crack: dit systeem staat gewoon open.", "crack: this system is simply open.")}, nil
 	}
 	hs, err := e.store.HostState(ctx, v.Fingerprint, h.ID)
 	if err != nil {
 		return CrackResult{}, err
 	}
 	if hs.Cracked {
-		return CrackResult{Msg: "crack: al open. rustig maar."}, nil
+		return CrackResult{Msg: tr("crack: al open. rustig maar.", "crack: already open. easy now.")}, nil
 	}
 	if until := hs.CooldownUntil; !until.IsZero() && time.Now().Before(until) {
 		rem := time.Until(until).Round(time.Minute)
 		if rem < time.Minute {
 			rem = time.Minute
 		}
-		return CrackResult{Msg: fmt.Sprintf("crack: dit systeem herkent je nog van daarnet. probeer het over %s weer.", rem)}, nil
+		return CrackResult{Msg: fmt.Sprintf(tr("crack: dit systeem herkent je nog van daarnet. probeer het over %s weer.", "crack: this system still recognises you from earlier. try again in %s."), rem)}, nil
 	}
 	spec := h.Crack
 	if spec == nil {
-		return CrackResult{Msg: "crack: geen bekende ingang."}, nil
+		return CrackResult{Msg: tr("crack: geen bekende ingang.", "crack: no known way in.")}, nil
 	}
 	fail := func() CrackResult {
-		if spec.HintOnFail != "" {
-			return CrackResult{Msg: spec.HintOnFail}
+		if hint := spec.HintOnFail.Get(v.Lang); hint != "" {
+			return CrackResult{Msg: hint}
 		}
-		return CrackResult{Msg: "TOEGANG GEWEIGERD."}
+		return CrackResult{Msg: tr("TOEGANG GEWEIGERD.", "ACCESS DENIED.")}
 	}
 	if v.Level < spec.MinLevel {
 		return fail(), nil

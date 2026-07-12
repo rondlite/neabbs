@@ -69,7 +69,7 @@ type Effects struct {
 	SetThisMember bool     `yaml:"set_this_member"`
 	GrantFlags    []string `yaml:"grant_flags"`
 	GrantLevel    int      `yaml:"grant_level"` // 0 = no promotion
-	Broadcast     string   `yaml:"broadcast"`   // {handle} substituted; THIS members only
+	Broadcast     L        `yaml:"broadcast"`   // {handle} substituted; THIS members only
 }
 
 // Host is one node in the THIS world graph (content/hosts/*.yaml).
@@ -125,7 +125,7 @@ type CrackSpec struct {
 	PasswordFlag  string   `yaml:"password_flag"`  // crack succeeds iff player holds this flag
 	RequiresFlags []string `yaml:"requires_flags"` // multi-stage: ALL must be held too
 	MinLevel      int      `yaml:"min_level"`      // below this: crack refused, names the clearance
-	HintOnFail    string   `yaml:"hint_on_fail"`
+	HintOnFail    L        `yaml:"hint_on_fail"`
 	TraceSeconds  int      `yaml:"trace_seconds"` // trace timer starts on successful crack
 }
 

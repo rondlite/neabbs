@@ -21,7 +21,9 @@ banner:
 crack:
   method: password
   password_flag: "nacht_sleutel"
-  hint_on_fail: "TOEGANG GEWEIGERD — de nachtcentrale herkent alleen wie via de regio komt en de routering kent. kom terug met de sleutel."
+  hint_on_fail:
+    nl: "TOEGANG GEWEIGERD — de nachtcentrale herkent alleen wie via de regio komt en de routering kent. kom terug met de sleutel."
+    en: "ACCESS DENIED — the night exchange only recognises those who arrive via the region and know the routing. come back with the key."
   trace_seconds: 90
 files:
   - name: "sessielog.txt"
@@ -90,4 +92,6 @@ effects:
   on_first_crack:
     grant_level: 6
     grant_flags: ["cracked_nacht"]
-    broadcast: "{handle} staat op de nachtcentrale"
+    broadcast:
+      nl: "{handle} staat op de nachtcentrale"
+      en: "{handle} is on the night exchange"

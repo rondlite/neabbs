@@ -21,7 +21,9 @@ banner:
 crack:
   method: password
   password_flag: "phantom_account"
-  hint_on_fail: "login incorrect. (je kent zijn wachtwoord al — je gebruikte het op hydra. hij hergebruikte alles. dat was de hele les.)"
+  hint_on_fail:
+    nl: "login incorrect. (je kent zijn wachtwoord al — je gebruikte het op hydra. hij hergebruikte alles. dat was de hele les.)"
+    en: "login incorrect. (you already know his password — you used it on hydra. he reused everything. that was the whole lesson.)"
   trace_seconds: 60
 files:
   - name: "wie.txt"
@@ -91,4 +93,6 @@ effects:
   on_first_crack:
     grant_level: 7
     grant_flags: ["cracked_phantom"]
-    broadcast: "{handle} vond phantom's eigen machine"
+    broadcast:
+      nl: "{handle} vond phantom's eigen machine"
+      en: "{handle} found phantom's own machine"

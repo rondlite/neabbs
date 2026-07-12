@@ -19,7 +19,9 @@ banner:
 crack:
   method: wordlist
   password_flag: "sara_testaccount"
-  hint_on_fail: "LOGIN GEWEIGERD — dit is het testaccount van de gemeentekoppeling. je hebt de juiste inloggegevens nog niet gezien."
+  hint_on_fail:
+    nl: "LOGIN GEWEIGERD — dit is het testaccount van de gemeentekoppeling. je hebt de juiste inloggegevens nog niet gezien."
+    en: "LOGIN DENIED — this is the test account for the municipal link. you haven't seen the right credentials yet."
   trace_seconds: 120
 files:
   - name: "welkom.txt"
@@ -164,4 +166,6 @@ effects:
   on_first_crack:
     grant_level: 2
     grant_flags: ["cracked_sara"]
-    broadcast: "{handle} draait rekentijd op de CYBER van SARA"
+    broadcast:
+      nl: "{handle} draait rekentijd op de CYBER van SARA"
+      en: "{handle} is running compute time on SARA's CYBER"

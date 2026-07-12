@@ -18,7 +18,9 @@ banner:
 crack:
   method: password
   password_flag: "gemeente_pw"
-  hint_on_fail: "TOEGANG GEWEIGERD — wachtwoord vereist. (personeel slingert alles rond. lees wat er te lezen valt.)"
+  hint_on_fail:
+    nl: "TOEGANG GEWEIGERD — wachtwoord vereist. (personeel slingert alles rond. lees wat er te lezen valt.)"
+    en: "ACCESS DENIED — password required. (staff leave everything lying around. read what there is to read.)"
   trace_seconds: 90 # generous: clean disconnect always beats it in normal play
 files:
   - name: "personeel.txt"
@@ -98,4 +100,6 @@ effects:
   on_first_crack:
     grant_level: 1
     grant_flags: ["cracked_gemeente"]
-    broadcast: "{handle} is binnengedrongen bij vax.gemeente.nl"
+    broadcast:
+      nl: "{handle} is binnengedrongen bij vax.gemeente.nl"
+      en: "{handle} has broken into vax.gemeente.nl"

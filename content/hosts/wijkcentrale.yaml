@@ -21,7 +21,9 @@ banner:
 crack:
   method: wordlist
   password_flag: "toon_reeks"
-  hint_on_fail: "GEEN ANTWOORD. de centrale luistert wel, maar niet naar jou. de juiste toonreeks staat op #phreak, voor wie hem mag zien."
+  hint_on_fail:
+    nl: "GEEN ANTWOORD. de centrale luistert wel, maar niet naar jou. de juiste toonreeks staat op #phreak, voor wie hem mag zien."
+    en: "NO ANSWER. the exchange is listening, but not to you. the right tone sequence is on #phreak, for those allowed to see it."
   trace_seconds: 75
 files:
   - name: "schakelplan.txt"
@@ -100,4 +102,6 @@ effects:
   on_first_crack:
     grant_level: 4
     grant_flags: ["cracked_wijk"]
-    broadcast: "{handle} zit op de PTT-wijkcentrale"
+    broadcast:
+      nl: "{handle} zit op de PTT-wijkcentrale"
+      en: "{handle} is on the PTT district exchange"

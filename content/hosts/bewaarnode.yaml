@@ -21,7 +21,9 @@ banner:
 crack:
   method: password
   password_flag: "bewaar_sleutel"
-  hint_on_fail: "AFGEWEZEN — de bewaarnode opent alleen op de naam van de beheerder. die naam heb je gevonden op phantom's machine, of nog niet."
+  hint_on_fail:
+    nl: "AFGEWEZEN — de bewaarnode opent alleen op de naam van de beheerder. die naam heb je gevonden op phantom's machine, of nog niet."
+    en: "REJECTED — the archive node only opens to the beheerder's name. you found that name on phantom's machine, or not yet."
   trace_seconds: 45
 files:
   - name: "waarom-het-stil-werd.txt"
@@ -102,4 +104,6 @@ effects:
   on_first_crack:
     grant_level: 8
     grant_flags: ["cracked_bewaar"]
-    broadcast: "{handle} opende de bewaarnode"
+    broadcast:
+      nl: "{handle} opende de bewaarnode"
+      en: "{handle} opened the archive node"

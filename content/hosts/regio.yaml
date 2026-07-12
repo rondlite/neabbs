@@ -22,7 +22,9 @@ crack:
   method: password
   password_flag: "reg_kaart"
   requires_flags: ["cracked_wijk"]
-  hint_on_fail: "NACHTINGANG GESLOTEN. je hebt de wijknummering nodig, en de centrale wil zien dat je van onderop komt — niet dat je hier zomaar bent neergedaald."
+  hint_on_fail:
+    nl: "NACHTINGANG GESLOTEN. je hebt de wijknummering nodig, en de centrale wil zien dat je van onderop komt — niet dat je hier zomaar bent neergedaald."
+    en: "NIGHT ENTRANCE CLOSED. you need the district numbering, and the exchange wants to see that you came up from below — not that you just dropped in here."
   trace_seconds: 60
 files:
   - name: "routering.txt"
@@ -106,4 +108,6 @@ effects:
   on_first_crack:
     grant_level: 5
     grant_flags: ["cracked_regio"]
-    broadcast: "{handle} heeft de regionale centrale open"
+    broadcast:
+      nl: "{handle} heeft de regionale centrale open"
+      en: "{handle} has the regional exchange open"

@@ -20,7 +20,9 @@ banner:
 crack:
   method: password
   password_flag: "phantom_account"
-  hint_on_fail: "login incorrect. (er liep hier een account dat nooit is gesloten. iemand op SARA weet welk.)"
+  hint_on_fail:
+    nl: "login incorrect. (er liep hier een account dat nooit is gesloten. iemand op SARA weet welk.)"
+    en: "login incorrect. (there was an account here that was never closed. someone on SARA knows which.)"
   trace_seconds: 60
 files:
   - name: ".plan"
@@ -72,4 +74,6 @@ effects:
   on_first_crack:
     grant_level: 3
     grant_flags: ["cracked_uni"]
-    broadcast: "{handle} heeft root op hydra.uva.nl"
+    broadcast:
+      nl: "{handle} heeft root op hydra.uva.nl"
+      en: "{handle} has root on hydra.uva.nl"

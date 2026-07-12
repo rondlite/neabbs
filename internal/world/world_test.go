@@ -17,12 +17,12 @@ func testSet() *content.Set {
 	pw := &content.Host{
 		ID: "kraakbaar", Address: "kraak.this.nl", MinLevel: 0, Locked: true,
 		Crack: &content.CrackSpec{Method: "password", PasswordFlag: "kraak_pw",
-			HintOnFail: "wachtwoord vereist (hint: board #1)", TraceSeconds: 90},
+			HintOnFail: content.L{NL: "wachtwoord vereist (hint: board #1)"}, TraceSeconds: 90},
 		Files: []content.HostFile{{Name: "buit.txt", MinLevel: 0}},
 	}
 	pw.Effects.OnFirstCrack = &content.Effects{
 		GrantLevel: 1, GrantFlags: []string{"gekraakt"},
-		Broadcast: "{handle} is binnengedrongen bij kraak.this.nl",
+		Broadcast: content.L{NL: "{handle} is binnengedrongen bij kraak.this.nl"},
 	}
 	return &content.Set{
 		Hosts: []content.Host{
@@ -34,7 +34,7 @@ func testSet() *content.Set {
 			{ID: "hoog", Address: "hoog.this.nl", MinLevel: 4},
 			{ID: "vip", Address: "vip.this.nl", MinLevel: 9, RequiresFlag: "vip_pas"},
 			{ID: "dicht", Address: "dicht.this.nl", MinLevel: 0, Locked: true,
-				Crack: &content.CrackSpec{Method: "none", MinLevel: 5, HintOnFail: "THIS-5 vereist"}},
+				Crack: &content.CrackSpec{Method: "none", MinLevel: 5, HintOnFail: content.L{NL: "THIS-5 vereist"}}},
 			{ID: "sys", Address: "sys.this.nl", MinLevel: 0,
 				Files: []content.HostFile{
 					{Name: "motd", MinLevel: 0},
@@ -47,7 +47,7 @@ func testSet() *content.Set {
 				Netstat: &content.HostView{MinLevel: 0, GrantsFlag: "net_flag", Body: content.L{NL: "conn"}}},
 			{ID: "multi", Address: "multi.this.nl", MinLevel: 0, Locked: true,
 				Crack: &content.CrackSpec{Method: "password", PasswordFlag: "pw",
-					RequiresFlags: []string{"hash", "wordlist"}, HintOnFail: "meer nodig"}},
+					RequiresFlags: []string{"hash", "wordlist"}, HintOnFail: content.L{NL: "meer nodig"}}},
 			*pw,
 		},
 	}
