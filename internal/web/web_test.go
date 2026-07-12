@@ -61,10 +61,10 @@ func TestStaticAssets(t *testing.T) {
 func TestIndexHasCRTPage(t *testing.T) {
 	body := get(t, testServer(fakeStats{}).handler(), "/", "neabbs.com").Body.String()
 	for _, want := range []string{
-		"ssh neabbs.com",         // connect command
-		"data-nl",                // language toggle machinery
-		"VERWIJDERD DOOR SYSOP",  // the THIS glitch row
-		"id=\"boot\"",            // boot-sequence hero
+		"ssh neabbs.com",        // connect command
+		"data-nl",               // language toggle machinery
+		"VERWIJDERD DOOR SYSOP", // the THIS glitch row
+		"id=\"boot\"",           // boot-sequence hero
 	} {
 		if !strings.Contains(body, want) {
 			t.Errorf("index.html missing %q", want)
