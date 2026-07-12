@@ -207,8 +207,8 @@ func TestResetProgress(t *testing.T) {
 	if p.Level != 0 || len(p.Flags) != 0 || p.CurrentHeat(time.Now()) != 0 {
 		t.Fatalf("progress not cleared: %+v", p)
 	}
-	if !p.ThisMember {
-		t.Fatal("membership must be preserved across reset")
+	if p.ThisMember {
+		t.Fatal("membership must be revoked by reset: the flags that earn the door are wiped, so keeping it would leave THIS unlocked in the menu with no way to replay the discovery")
 	}
 	hs, _ := s.HostState(ctx, "fp1", "host1")
 	if hs.Cracked {
@@ -409,5 +409,51 @@ func TestCountRegistered(t *testing.T) {
 	}
 	if n != 1 {
 		t.Errorf("CountRegistered = %d, want 1 (only players with a handle)", n)
+	}
+}
+
+func TestResetProgressRelocksTHIS(t *testing.T) {
+	s, err := Open(filepath.Join(t.TempDir(), "test.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.Close()
+	ctx := context.Background()
+
+	if _, err := s.CreatePlayer(ctx, "fp1"); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.SetHandle(ctx, "fp1", "replayer"); err != nil {
+		t.Fatal(err)
+	}
+	// A player deep into the arc: member, levelled, carrying the door flag.
+	if err := s.SetThisMember(ctx, "fp1", true); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.SetLevel(ctx, "fp1", 3); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.GrantFlags(ctx, "fp1", "this_invite", "found_modemlist"); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := s.ResetProgress(ctx, "fp1", "replayer"); err != nil {
+		t.Fatal(err)
+	}
+
+	p, err := s.PlayerByFingerprint(ctx, "fp1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Reset means replay: the door must be shut again, or the menu keeps
+	// offering [T] THIS while the discovery chain that earns it is wiped.
+	if p.ThisMember {
+		t.Error("ThisMember still true after reset: THIS stays unlocked in the menu")
+	}
+	if p.Level != 0 {
+		t.Errorf("Level = %d, want 0", p.Level)
+	}
+	if len(p.Flags) != 0 {
+		t.Errorf("Flags = %v, want empty", p.Flags)
 	}
 }

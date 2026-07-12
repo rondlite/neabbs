@@ -198,7 +198,8 @@ func (m *Model) sysopBan(handle string, ban bool) (tea.Model, tea.Cmd) {
 
 // sysopReset wipes a player's THIS arc for replay (a playtest tool) and kicks
 // any live sessions on that fingerprint so they reconnect into the fresh
-// state. Membership is kept, so they land back at THIS-0.
+// state. Membership goes too: they land back on the public BBS with the door
+// shut, and re-walk the discovery chain.
 func (m *Model) sysopReset(handle string) (tea.Model, tea.Cmd) {
 	if handle == "" {
 		return m, m.out(m.tr("Gebruik: sysop reset <handle>", "Usage: sysop reset <handle>"))
@@ -217,7 +218,7 @@ func (m *Model) sysopReset(handle string) (tea.Model, tea.Cmd) {
 			kicked++
 		}
 	}
-	return m, m.out(fmt.Sprintf(m.tr("%s: THIS-arc gereset (niveau 0, vlaggen/hosts/heat/sporen gewist). %d sessie(s) verbroken.", "%s: THIS-arc reset (level 0, flags/hosts/heat/traces wiped). %d session(s) dropped."), target.Handle, kicked))
+	return m, m.out(fmt.Sprintf(m.tr("%s: THIS-arc gereset (lidmaatschap ingetrokken, niveau 0, vlaggen/hosts/heat/sporen gewist). %d sessie(s) verbroken.", "%s: THIS-arc reset (membership revoked, level 0, flags/hosts/heat/traces wiped). %d session(s) dropped."), target.Handle, kicked))
 }
 
 // sysopDelete removes a player-authored post in the current board. YAML-seeded

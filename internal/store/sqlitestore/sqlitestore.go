@@ -477,8 +477,11 @@ func (s *Store) ResetProgress(ctx context.Context, fp, handle string) error {
 		return err
 	}
 	defer tx.Rollback()
+	// this_member goes too: the flags that earn the door are wiped, so leaving
+	// membership behind would keep [T] THIS in the menu with no way to replay
+	// the discovery that unlocks it.
 	if _, err := tx.ExecContext(ctx,
-		"UPDATE players SET level = 0, flags = '[]', heat = 0, heat_at = 0 WHERE fingerprint = ?", fp); err != nil {
+		"UPDATE players SET this_member = 0, level = 0, flags = '[]', heat = 0, heat_at = 0 WHERE fingerprint = ?", fp); err != nil {
 		return err
 	}
 	if _, err := tx.ExecContext(ctx, "DELETE FROM host_state WHERE fingerprint = ?", fp); err != nil {
