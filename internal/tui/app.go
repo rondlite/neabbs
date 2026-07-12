@@ -359,7 +359,7 @@ func (m *Model) unreadCounts() []struct {
 		if err != nil {
 			continue
 		}
-		msgs, err := m.deps.Boards.Messages(ctx, b)
+		msgs, err := m.deps.Boards.Messages(ctx, b, v.Lang)
 		if err != nil {
 			continue
 		}
@@ -463,7 +463,7 @@ func (m *Model) menuAction(key string) (tea.Model, tea.Cmd) {
 		m.state = stateFiles
 		m.input.Prompt = "Bestand> "
 		m.deps.Sess.SetArea("bestanden", false)
-		return m, m.print(renderFileList(m.visibleFiles()))
+		return m, m.print(renderFileList(m.visibleFiles(), m.lang()))
 	case "w", "3":
 		return m, m.print(m.renderWho())
 	case "c", "4":
@@ -506,6 +506,12 @@ func (m *Model) menuLine(line string) (tea.Model, tea.Cmd) {
 		return m.praat(rest)
 	case "9600":
 		return m.upgradeSpeed()
+	case "taal", "language", "lang":
+		arg := ""
+		if len(fields) > 1 {
+			arg = fields[1]
+		}
+		return m.toggleLang(arg)
 	case "logout", "uitloggen":
 		return m.quit()
 	}
@@ -938,6 +944,7 @@ func (m *Model) viewer() board.Viewer {
 		Handle:      p.Handle,
 		ThisMember:  p.ThisMember,
 		Level:       p.Level,
+		Lang:        m.lang(),
 	}
 }
 
@@ -1209,7 +1216,7 @@ func (m *Model) filesLine(line string) (tea.Model, tea.Cmd) {
 	files := m.visibleFiles()
 	fields := strings.Fields(strings.ToLower(line))
 	if len(fields) == 0 {
-		return m, m.print(renderFileList(files))
+		return m, m.print(renderFileList(files, m.lang()))
 	}
 	switch fields[0] {
 	case "terug", "menu":
@@ -1229,7 +1236,7 @@ func (m *Model) filesLine(line string) (tea.Model, tea.Cmd) {
 				*m.deps.Player = *fresh
 			}
 		}
-		return m, m.print(renderFile(f))
+		return m, m.print(renderFile(f, m.lang()))
 	case "logout":
 		return m.quit()
 	}
@@ -1385,6 +1392,8 @@ func (m *Model) thisLine(line string) (tea.Model, tea.Cmd) {
 		return m.wipeTracks()
 	case "talk", "praat":
 		return m.startTalk()
+	case "taal", "language", "lang":
+		return m.toggleLang(arg)
 	case "who", "wie":
 		return m, m.out(m.renderThisWho())
 	case "ghosts", "spoken":

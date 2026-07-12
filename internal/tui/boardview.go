@@ -58,7 +58,7 @@ func renderListing(l *board.Listing) string {
 }
 
 // renderFileList formats the public file area (bestanden).
-func renderFileList(files []content.File) string {
+func renderFileList(files []content.File, lang string) string {
 	var b strings.Builder
 	b.WriteString(headerStyle.Render("BESTANDEN") + "\n")
 	b.WriteString(strings.Repeat("─", 70) + "\n")
@@ -68,19 +68,19 @@ func renderFileList(files []content.File) string {
 	for i, f := range files {
 		size := f.Size
 		if size == "" {
-			size = fmt.Sprintf("%dK", max(1, len(f.Body)/1024))
+			size = fmt.Sprintf("%dK", max(1, len(f.Body.Get(lang))/1024))
 		}
-		b.WriteString(fmt.Sprintf("%3d  %-20.20s %6s  %-8s %s\n", i+1, f.Name, size, f.Date, f.Desc))
+		b.WriteString(fmt.Sprintf("%3d  %-20.20s %6s  %-8s %s\n", i+1, f.Name, size, f.Date, f.Desc.Get(lang)))
 	}
 	b.WriteString("\nGebruik: lees <nr>, terug")
 	return b.String()
 }
 
 // renderFile formats one file for the pager.
-func renderFile(f *content.File) string {
+func renderFile(f *content.File, lang string) string {
 	var b strings.Builder
 	b.WriteString(headerStyle.Render(fmt.Sprintf("═══ %s ═══", f.Name)) + "\n\n")
-	b.WriteString(strings.TrimRight(f.Body, "\n"))
+	b.WriteString(strings.TrimRight(f.Body.Get(lang), "\n"))
 	return b.String()
 }
 

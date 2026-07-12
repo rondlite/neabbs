@@ -37,8 +37,8 @@ type Message struct {
 	ID             int    `yaml:"id"`
 	Author         string `yaml:"author"`
 	Level          int    `yaml:"level"`
-	Subject        string `yaml:"subject"`
-	Body           string `yaml:"body"`
+	Subject        L      `yaml:"subject"`
+	Body           L      `yaml:"body"`
 	SubjectVisible *bool  `yaml:"subject_visible"` // default true
 	AuthorVisible  *bool  `yaml:"author_visible"`  // default true
 	Hidden         bool   `yaml:"hidden"`          // above-level: no stub, count only
@@ -58,8 +58,8 @@ type File struct {
 	Name         string `yaml:"name"`
 	Date         string `yaml:"date"` // display date, freeform period text
 	Size         string `yaml:"size"` // display size, freeform ("12K")
-	Desc         string `yaml:"desc"`
-	Body         string `yaml:"body"`
+	Desc         L      `yaml:"desc"`
+	Body         L      `yaml:"body"`
 	GrantsFlag   string `yaml:"grants_flag"`   // reading the file sets this flag
 	RequiresFlag string `yaml:"requires_flag"` // without it: absent from the list
 }
@@ -408,7 +408,7 @@ func Lint(s *Set) error {
 		if b.Area == AreaPublic {
 			for j := range b.Messages {
 				m := &b.Messages[j]
-				lower := strings.ToLower(m.Subject + "\n" + m.Body)
+				lower := strings.ToLower(m.Subject.AllText() + "\n" + m.Body.AllText())
 				for _, other := range s.Boards {
 					if other.Area == AreaThis && strings.Contains(lower, strings.ToLower(other.ID)) {
 						fail("board %s msg %d: public content references THIS board id %q", b.ID, m.ID, other.ID)
@@ -430,7 +430,7 @@ func Lint(s *Set) error {
 			fail("files.yaml: duplicate file name %q", f.Name)
 		}
 		fileNames[f.Name] = true
-		lower := strings.ToLower(f.Desc + "\n" + f.Body)
+		lower := strings.ToLower(f.Desc.AllText() + "\n" + f.Body.AllText())
 		for _, b := range s.Boards {
 			if b.Area == AreaThis && strings.Contains(lower, strings.ToLower(b.ID)) {
 				fail("files.yaml %s: public file references THIS board id %q", f.Name, b.ID)
@@ -506,7 +506,7 @@ func Lint(s *Set) error {
 			continue
 		}
 		for j := range b.Messages {
-			lower := strings.ToLower(b.Messages[j].Subject + "\n" + b.Messages[j].Body)
+			lower := strings.ToLower(b.Messages[j].Subject.AllText() + "\n" + b.Messages[j].Body.AllText())
 			for k := range s.Hosts {
 				if strings.Contains(lower, strings.ToLower(s.Hosts[k].ID)) ||
 					strings.Contains(lower, strings.ToLower(s.Hosts[k].Address)) {
@@ -516,7 +516,7 @@ func Lint(s *Set) error {
 		}
 	}
 	for i := range s.Files {
-		lower := strings.ToLower(s.Files[i].Desc + "\n" + s.Files[i].Body)
+		lower := strings.ToLower(s.Files[i].Desc.AllText() + "\n" + s.Files[i].Body.AllText())
 		for k := range s.Hosts {
 			if strings.Contains(lower, strings.ToLower(s.Hosts[k].ID)) ||
 				strings.Contains(lower, strings.ToLower(s.Hosts[k].Address)) {

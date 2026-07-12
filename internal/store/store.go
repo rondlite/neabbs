@@ -29,6 +29,7 @@ type Player struct {
 	MinutesDay  string // YYYY-MM-DD the MinutesUsed counter belongs to
 	Heat        int    // THIS "heat": raw value at HeatAt, decays over time
 	HeatAt      time.Time
+	Lang        string // display language: "nl" (default) or "en"
 	CreatedAt   time.Time
 	LastSeen    time.Time
 }
@@ -120,6 +121,8 @@ type Store interface {
 	SetThisMember(ctx context.Context, fp string, member bool) error
 	// SetSpeed stores the baud class (2400/9600).
 	SetSpeed(ctx context.Context, fp string, speed int) error
+	// SetLang stores the display language ("nl"/"en").
+	SetLang(ctx context.Context, fp, lang string) error
 	// AddMinutes adds n to today's used-minutes counter and returns the new
 	// total for day (YYYY-MM-DD). A day rollover resets the counter.
 	AddMinutes(ctx context.Context, fp string, day string, n int) (int, error)

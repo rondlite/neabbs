@@ -39,6 +39,7 @@ type Viewer struct {
 	Handle      string
 	ThisMember  bool
 	Level       int
+	Lang        string // display language for localized content ("nl"/"en")
 }
 
 // Msg is the unified view of a message (YAML seed or player post).
@@ -137,7 +138,7 @@ func (e *Engine) VisibleBoardByID(id string, v Viewer) *content.Board {
 
 // Messages returns all messages on a board (seed + player posts), ID order.
 // No clearance filtering here — callers filter.
-func (e *Engine) Messages(ctx context.Context, b *content.Board) ([]Msg, error) {
+func (e *Engine) Messages(ctx context.Context, b *content.Board, lang string) ([]Msg, error) {
 	msgs := make([]Msg, 0, len(b.Messages))
 	for i := range b.Messages {
 		m := &b.Messages[i]
@@ -145,8 +146,8 @@ func (e *Engine) Messages(ctx context.Context, b *content.Board) ([]Msg, error) 
 			ID:           m.ID,
 			Author:       m.Author,
 			Level:        m.Level,
-			Subject:      m.Subject,
-			Body:         m.Body,
+			Subject:      m.Subject.Get(lang),
+			Body:         m.Body.Get(lang),
 			SubjectShown: m.SubjectShown(),
 			AuthorShown:  m.AuthorShown(),
 			Hidden:       m.Hidden,
@@ -185,7 +186,7 @@ func (e *Engine) Listing(ctx context.Context, boardID string, v Viewer) (*Listin
 	if err != nil {
 		return nil, err
 	}
-	msgs, err := e.Messages(ctx, b)
+	msgs, err := e.Messages(ctx, b, v.Lang)
 	if err != nil {
 		return nil, err
 	}
@@ -222,7 +223,7 @@ func (e *Engine) Read(ctx context.Context, boardID string, msgID int, v Viewer) 
 	if err != nil {
 		return nil, err
 	}
-	msgs, err := e.Messages(ctx, b)
+	msgs, err := e.Messages(ctx, b, v.Lang)
 	if err != nil {
 		return nil, err
 	}
@@ -272,7 +273,7 @@ func (e *Engine) Post(ctx context.Context, boardID string, v Viewer, subject, bo
 		return 0, ErrBadPost
 	}
 	if replyTo != 0 {
-		msgs, err := e.Messages(ctx, b)
+		msgs, err := e.Messages(ctx, b, v.Lang)
 		if err != nil {
 			return 0, err
 		}

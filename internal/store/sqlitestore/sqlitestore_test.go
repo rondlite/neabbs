@@ -311,6 +311,25 @@ func TestPendingQueue(t *testing.T) {
 	}
 }
 
+func TestSetLang(t *testing.T) {
+	s := open(t)
+	ctx := context.Background()
+	p, err := s.CreatePlayer(ctx, "fp1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p.Lang != "nl" {
+		t.Fatalf("default lang should be nl, got %q", p.Lang)
+	}
+	if err := s.SetLang(ctx, "fp1", "en"); err != nil {
+		t.Fatal(err)
+	}
+	p, _ = s.PlayerByFingerprint(ctx, "fp1")
+	if p.Lang != "en" {
+		t.Fatalf("lang not persisted: %q", p.Lang)
+	}
+}
+
 func TestAdminBit(t *testing.T) {
 	s := open(t)
 	ctx := context.Background()

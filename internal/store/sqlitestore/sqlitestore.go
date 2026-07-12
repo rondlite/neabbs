@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS players (
 	admin        INTEGER NOT NULL DEFAULT 0,
 	heat         INTEGER NOT NULL DEFAULT 0,
 	heat_at      INTEGER NOT NULL DEFAULT 0,
+	lang         TEXT    NOT NULL DEFAULT 'nl',
 	created_at   INTEGER NOT NULL,
 	last_seen    INTEGER NOT NULL
 );
@@ -103,6 +104,7 @@ func Open(path string) (*Store, error) {
 		`ALTER TABLE posts ADD COLUMN pending INTEGER NOT NULL DEFAULT 0`,
 		`ALTER TABLE players ADD COLUMN heat INTEGER NOT NULL DEFAULT 0`,
 		`ALTER TABLE players ADD COLUMN heat_at INTEGER NOT NULL DEFAULT 0`,
+		`ALTER TABLE players ADD COLUMN lang TEXT NOT NULL DEFAULT 'nl'`,
 	} {
 		if _, err := db.Exec(mig); err != nil && !strings.Contains(err.Error(), "duplicate column") {
 			db.Close()
@@ -121,7 +123,7 @@ func Open(path string) (*Store, error) {
 
 func (s *Store) Close() error { return s.db.Close() }
 
-const playerCols = "fingerprint, handle, this_member, level, flags, banned, speed, minutes_used, minutes_day, admin, heat, heat_at, created_at, last_seen"
+const playerCols = "fingerprint, handle, this_member, level, flags, banned, speed, minutes_used, minutes_day, admin, heat, heat_at, lang, created_at, last_seen"
 
 func scanPlayer(row interface{ Scan(...any) error }) (*store.Player, error) {
 	var p store.Player
@@ -129,7 +131,7 @@ func scanPlayer(row interface{ Scan(...any) error }) (*store.Player, error) {
 	var flagsJSON string
 	var created, seen, heatAt int64
 	err := row.Scan(&p.Fingerprint, &handle, &p.ThisMember, &p.Level, &flagsJSON,
-		&p.Banned, &p.Speed, &p.MinutesUsed, &p.MinutesDay, &p.Admin, &p.Heat, &heatAt, &created, &seen)
+		&p.Banned, &p.Speed, &p.MinutesUsed, &p.MinutesDay, &p.Admin, &p.Heat, &heatAt, &p.Lang, &created, &seen)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, store.ErrNotFound
 	}
@@ -188,6 +190,11 @@ func (s *Store) TouchLastSeen(ctx context.Context, fp string) error {
 
 func (s *Store) SetBanned(ctx context.Context, fp string, banned bool) error {
 	_, err := s.db.ExecContext(ctx, "UPDATE players SET banned = ? WHERE fingerprint = ?", banned, fp)
+	return err
+}
+
+func (s *Store) SetLang(ctx context.Context, fp, lang string) error {
+	_, err := s.db.ExecContext(ctx, "UPDATE players SET lang = ? WHERE fingerprint = ?", lang, fp)
 	return err
 }
 

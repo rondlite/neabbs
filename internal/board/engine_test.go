@@ -20,25 +20,25 @@ func testContent() *content.Set {
 			{
 				ID: "algemeen", Name: "ALGEMEEN", Area: content.AreaPublic, Writable: true,
 				Messages: []content.Message{
-					{ID: 1, Author: "sysop", Level: 0, Subject: "welkom", Body: "hallo"},
-					{ID: 2, Author: "sysop", Level: 0, Subject: "regels", Body: "wees aardig"},
+					{ID: 1, Author: "sysop", Level: 0, Subject: content.L{NL: "welkom"}, Body: content.L{NL: "hallo"}},
+					{ID: 2, Author: "sysop", Level: 0, Subject: content.L{NL: "regels"}, Body: content.L{NL: "wees aardig"}},
 				},
 			},
 			{
 				ID: "this-board", Name: "THIS BOARD", Area: content.AreaThis, MinLevel: 0, Writable: true,
 				Messages: []content.Message{
-					{ID: 142, Author: "sysop", Level: 0, Subject: "welkom nieuwe leden", Body: "dit is this"},
-					{ID: 150, Author: "route66", Level: 2, Subject: "modempool", Body: "geheim-2", GrantsFlag: "saw_modempool"},
-					{ID: 152, Author: "phantom", Level: 6, Subject: "de echte ingang naar node 9", Body: "geheim-6"},
-					{ID: 153, Author: "phantom", Level: 7, Subject: "supergeheim", Body: "x",
+					{ID: 142, Author: "sysop", Level: 0, Subject: content.L{NL: "welkom nieuwe leden"}, Body: content.L{NL: "dit is this"}},
+					{ID: 150, Author: "route66", Level: 2, Subject: content.L{NL: "modempool"}, Body: content.L{NL: "geheim-2"}, GrantsFlag: "saw_modempool"},
+					{ID: 152, Author: "phantom", Level: 6, Subject: content.L{NL: "de echte ingang naar node 9"}, Body: content.L{NL: "geheim-6"}},
+					{ID: 153, Author: "phantom", Level: 7, Subject: content.L{NL: "supergeheim"}, Body: content.L{NL: "x"},
 						SubjectVisible: boolp(false), AuthorVisible: boolp(false)},
-					{ID: 154, Author: "ghost", Level: 8, Subject: "bestaat niet", Body: "x", Hidden: true},
+					{ID: 154, Author: "ghost", Level: 8, Subject: content.L{NL: "bestaat niet"}, Body: content.L{NL: "x"}, Hidden: true},
 				},
 			},
 			{
 				ID: "phreak", Name: "#PHREAK", Area: content.AreaThis, MinLevel: 3, Writable: true,
 				Messages: []content.Message{
-					{ID: 300, Author: "blueboxer", Level: 3, Subject: "toonfrequenties", Body: "2600Hz"},
+					{ID: 300, Author: "blueboxer", Level: 3, Subject: content.L{NL: "toonfrequenties"}, Body: content.L{NL: "2600Hz"}},
 				},
 			},
 		},
