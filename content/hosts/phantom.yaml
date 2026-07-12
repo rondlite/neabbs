@@ -7,11 +7,17 @@ address: "phantom.thuis.nl"
 min_level: 6
 requires_flag: "phantom_thuis_spoor"
 locked: true
-banner: |
-  privemachine. geen banner, geen naam.
-  als je hier bent weet je van wie.
+banner:
+  nl: |
+    privemachine. geen banner, geen naam.
+    als je hier bent weet je van wie.
 
-  login:
+    login:
+  en: |
+    private machine. no banner, no name.
+    if you are here, you know whose it is.
+
+    login:
 crack:
   method: password
   password_flag: "phantom_account"
@@ -21,37 +27,66 @@ files:
   - name: "wie.txt"
     min_level: 7
     grants_flag: "keizer_spoor"
-    body: |
-      dus je hebt het gehaald tot mijn eigen machine.
+    body:
+      nl: |
+        dus je hebt het gehaald tot mijn eigen machine.
 
-      ik was phantom. ik vond de dingen het eerst en ik zei het
-      minst. toen de scene doodbloedde en iedereen z'n modem
-      opborg, bleef er één iemand die de boel niet liet vallen.
-      de beheerder. de sysop. hij hield de machines warm lang
-      nadat het zin had.
+        ik was phantom. ik vond de dingen het eerst en ik zei het
+        minst. toen de scene doodbloedde en iedereen z'n modem
+        opborg, bleef er één iemand die de boel niet liet vallen.
+        de beheerder. de sysop. hij hield de machines warm lang
+        nadat het zin had.
 
-      toen ik er niet meer was, deed hij iets vreemds en moois:
-      hij hield mijn nachtelijke login open. elke nacht, 03:41,
-      een lege sessie. zijn manier om te zeggen: ik ben je niet
-      vergeten.
+        toen ik er niet meer was, deed hij iets vreemds en moois:
+        hij hield mijn nachtelijke login open. elke nacht, 03:41,
+        een lege sessie. zijn manier om te zeggen: ik ben je niet
+        vergeten.
 
-      wie hij was, en wat er daarna gebeurde, staat op de
-      bewaarnode (bewaar.node.this.nl). ga kijken. hij verdient
-      het dat iemand het leest.
+        wie hij was, en wat er daarna gebeurde, staat op de
+        bewaarnode (bewaar.node.this.nl). ga kijken. hij verdient
+        het dat iemand het leest.
+      en: |
+        so you made it all the way to my own machine.
+
+        i was phantom. i found things first and i said the
+        least. when the scene bled out and everyone put their
+        modem away, there was one person who didn't let it all
+        drop. the administrator. the sysop. he kept the machines
+        warm long after it made any sense.
+
+        when i was gone, he did something strange and beautiful:
+        he kept my nightly login open. every night, 03:41,
+        an empty session. his way of saying: i haven't forgotten
+        you.
+
+        who he was, and what happened after, is on the
+        bewaarnode (bewaar.node.this.nl). go look. he deserves
+        to have someone read it.
   - name: "sleutel.txt"
     min_level: 7
     grants_flag: "bewaar_sleutel"
-    body: |
-      [voor wie doorgaat naar de bewaarnode]
+    body:
+      nl: |
+        [voor wie doorgaat naar de bewaarnode]
 
-      de bewaarnode staat op slot met de naam van de beheerder,
-      niet die van mij. dit briefje is die naam, in de vorm die
-      de node accepteert. draag het met respect.
+        de bewaarnode staat op slot met de naam van de beheerder,
+        niet die van mij. dit briefje is die naam, in de vorm die
+        de node accepteert. draag het met respect.
+      en: |
+        [for whoever goes on to the bewaarnode]
+
+        the bewaarnode is locked with the administrator's name,
+        not mine. this note is that name, in the form the
+        node accepts. carry it with respect.
   - name: ".laatste"
     min_level: 7
-    body: |
-      # het laatste wat phantom schreef, ongedateerd
-      "niets gaat echt weg zolang iemand de lijn openhoudt."
+    body:
+      nl: |
+        # het laatste wat phantom schreef, ongedateerd
+        "niets gaat echt weg zolang iemand de lijn openhoudt."
+      en: |
+        # the last thing phantom wrote, undated
+        "nothing truly goes away as long as someone keeps the line open."
 effects:
   on_first_crack:
     grant_level: 7

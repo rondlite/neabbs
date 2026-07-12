@@ -1,5 +1,7 @@
 id: computers
-name: "COMPUTERS & TECHNIEK"
+name:
+  nl: "COMPUTERS & TECHNIEK"
+  en: "COMPUTERS & TECHNOLOGY"
 area: public
 min_level: 0
 writable: true
@@ -8,74 +10,131 @@ messages:
     author: "sysop"
     level: 0
     date: "02-05-26"
-    subject: "welkom op het techniekboard"
-    body: |
-      Hier praten we over ijzer en software. MSX, Commodore, Atari,
-      CP/M, en dat nieuwerwetse MS-DOS. Moderne apparaten mag ook,
-      maar verwacht meewarige blikken.
+    subject:
+      nl: "welkom op het techniekboard"
+      en: "welcome to the tech board"
+    body:
+      nl: |
+        Hier praten we over ijzer en software. MSX, Commodore, Atari,
+        CP/M, en dat nieuwerwetse MS-DOS. Moderne apparaten mag ook,
+        maar verwacht meewarige blikken.
+      en: |
+        Here we talk about hardware and software. MSX, Commodore, Atari,
+        CP/M, and that newfangled MS-DOS. Modern devices are allowed too,
+        but expect pitying looks.
   - id: 2
     author: "cpm_fan"
     level: 0
     date: "03-05-26"
-    subject: "WordStar-vingers"
-    body: |
-      Betrapte mezelf erop dat ik in een modern programma ctrl-K ctrl-D
-      intikte om op te slaan. Sommige dingen gaan nooit weg. Wie kent
-      nog meer van die reflexen?
+    subject:
+      nl: "WordStar-vingers"
+      en: "WordStar fingers"
+    body:
+      nl: |
+        Betrapte mezelf erop dat ik in een modern programma ctrl-K ctrl-D
+        intikte om op te slaan. Sommige dingen gaan nooit weg. Wie kent
+        nog meer van die reflexen?
+      en: |
+        Caught myself typing ctrl-K ctrl-D in a modern program to save.
+        Some things never go away. Who else still has reflexes like
+        that?
   - id: 3
     author: "soldeerbout"
     level: 0
     date: "04-05-26"
-    subject: "modem repareren, iemand schema's?"
-    body: |
-      Heb een oude 1200 baud modem van zolder. Voeding doet niks meer.
-      Iemand nog documentatie of schema's? Er staat "Tulip Computers"
-      op de behuizing maar dat zegt vast niks.
+    subject:
+      nl: "modem repareren, iemand schema's?"
+      en: "repairing a modem, anyone have schematics?"
+    body:
+      nl: |
+        Heb een oude 1200 baud modem van zolder. Voeding doet niks meer.
+        Iemand nog documentatie of schema's? Er staat "Tulip Computers"
+        op de behuizing maar dat zegt vast niks.
+      en: |
+        Got an old 1200 baud modem from the attic. Power supply is dead.
+        Anyone got documentation or schematics? It says "Tulip Computers"
+        on the casing but that probably means nothing.
   - id: 4
     author: "msx_marco"
     level: 0
     date: "05-05-26"
-    subject: "re: modem repareren, iemand schema's?"
+    subject:
+      nl: "re: modem repareren, iemand schema's?"
+      en: "re: repairing a modem, anyone have schematics?"
     reply_to: 3
-    body: |
-      Kijk in de bestandensectie, daar heeft de sysop handleidingen
-      neergezet. Condensator C4 is bij die dingen altijd de boosdoener.
+    body:
+      nl: |
+        Kijk in de bestandensectie, daar heeft de sysop handleidingen
+        neergezet. Condensator C4 is bij die dingen altijd de boosdoener.
+      en: |
+        Look in the files section, the sysop has put manuals there.
+        Capacitor C4 is always the culprit with those things.
   - id: 5
     author: "basicode"
     level: 0
     date: "06-05-26"
-    subject: "BASICODE nostalgie"
-    body: |
-      Wie nam er vroeger BASICODE op van de radio? Cassetterecorder
-      klaar, wachten op de piep van Hobbyscoop... En dan drie keer
-      opnieuw omdat de buurman de stofzuiger aanzette.
+    subject:
+      nl: "BASICODE nostalgie"
+      en: "BASICODE nostalgia"
+    body:
+      nl: |
+        Wie nam er vroeger BASICODE op van de radio? Cassetterecorder
+        klaar, wachten op de piep van Hobbyscoop... En dan drie keer
+        opnieuw omdat de buurman de stofzuiger aanzette.
+      en: |
+        Who used to record BASICODE off the radio? Cassette recorder
+        ready, waiting for the beep from Hobbyscoop... And then three
+        times over because the neighbor switched on the vacuum cleaner.
   - id: 6
     author: "nachtuil"
     level: 0
     date: "08-05-26"
-    subject: "snelheid van dit systeem"
-    body: |
-      Mooi dat de sysop de lijnsnelheid authentiek heeft gehouden.
-      2400 baud bij het inbellen, net als tegen het eind. Al gaan er
-      geruchten dat er ooit een upgrade-programma bestond voor vaste
-      bellers dat je nog sneller liet gaan.
+    subject:
+      nl: "snelheid van dit systeem"
+      en: "speed of this system"
+    body:
+      nl: |
+        Mooi dat de sysop de lijnsnelheid authentiek heeft gehouden.
+        2400 baud bij het inbellen, net als tegen het eind. Al gaan er
+        geruchten dat er ooit een upgrade-programma bestond voor vaste
+        bellers dat je nog sneller liet gaan.
+      en: |
+        Nice that the sysop kept the line speed authentic. 2400 baud
+        when you dial in, just like toward the end. Though there are
+        rumors that there once was an upgrade program for regular
+        callers that let you go even faster.
   - id: 7
     author: "soldeerbout"
     level: 0
     date: "10-05-26"
-    subject: "re: snelheid van dit systeem"
+    subject:
+      nl: "re: snelheid van dit systeem"
+      en: "re: speed of this system"
     reply_to: 6
-    body: |
-      Klopt, dat bestond echt. Je moest een modemcode intikken in het
-      hoofdmenu. Welke weet ik niet meer — het was gewoon de naam van
-      de snelheid die je wilde. 9600 als ik me niet vergis, dat was
-      hier het maximum.
+    body:
+      nl: |
+        Klopt, dat bestond echt. Je moest een modemcode intikken in het
+        hoofdmenu. Welke weet ik niet meer — het was gewoon de naam van
+        de snelheid die je wilde. 9600 als ik me niet vergis, dat was
+        hier het maximum.
+      en: |
+        Correct, that really existed. You had to type a modem code in the
+        main menu. Which one I don't remember — it was simply the name of
+        the speed you wanted. 9600 if I'm not mistaken, that was the
+        maximum here.
   - id: 8
     author: "msx_marco"
     level: 0
     date: "11-05-26"
-    subject: "MSX-2 diskdrive maakt herrie"
-    body: |
-      Mijn NMS 8250 klinkt als een koffiemolen bij het opstarten.
-      Riempje vervangen helpt maar tijdelijk. Tips welkom. Niet zeggen
-      dat ik hem weg moet doen, dat gebeurt niet.
+    subject:
+      nl: "MSX-2 diskdrive maakt herrie"
+      en: "MSX-2 disk drive making a racket"
+    body:
+      nl: |
+        Mijn NMS 8250 klinkt als een koffiemolen bij het opstarten.
+        Riempje vervangen helpt maar tijdelijk. Tips welkom. Niet zeggen
+        dat ik hem weg moet doen, dat gebeurt niet.
+      en: |
+        My NMS 8250 sounds like a coffee grinder on startup. Replacing
+        the belt only helps temporarily. Tips welcome. Don't tell me to
+        get rid of it, that's not happening.

@@ -35,6 +35,7 @@ func (m *Model) toggleLang(arg string) (tea.Model, tea.Cmd) {
 		return m, m.out(m.tr("kon taal niet opslaan.", "could not save language."))
 	}
 	m.deps.Player.Lang = target
+	m.printer.lang = target
 	if target == content.LangEN {
 		return m, m.out("Language set to English. Type 'language nl' to switch back.")
 	}
@@ -45,7 +46,14 @@ func (m *Model) toggleLang(arg string) (tea.Model, tea.Cmd) {
 // player. English falls back to Dutch when a translation isn't supplied yet,
 // so partial translation never renders blank.
 func (m *Model) tr(nl, en string) string {
-	if m.lang() == content.LangEN && en != "" {
+	return trl(m.lang(), nl, en)
+}
+
+// trl is the lang-parameterized form for free render helpers that receive a
+// language string instead of the Model. English falls back to Dutch when a
+// translation isn't supplied yet.
+func trl(lang, nl, en string) string {
+	if content.NormalizeLang(lang) == content.LangEN && en != "" {
 		return en
 	}
 	return nl

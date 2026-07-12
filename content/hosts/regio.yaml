@@ -7,11 +7,17 @@ address: "regio.centrale.ptt.nl"
 min_level: 4
 requires_flag: "reg_map"
 locked: true
-banner: |
-  PTT — REGIONALE CENTRALE AMSTERDAM
-  hier komen de wijken samen.
+banner:
+  nl: |
+    PTT — REGIONALE CENTRALE AMSTERDAM
+    hier komen de wijken samen.
 
-  NACHTINGANG:
+    NACHTINGANG:
+  en: |
+    PTT — REGIONAL EXCHANGE AMSTERDAM
+    this is where the districts meet.
+
+    NIGHT ENTRANCE:
 crack:
   method: password
   password_flag: "reg_kaart"
@@ -22,44 +28,80 @@ files:
   - name: "routering.txt"
     min_level: 5
     grants_flag: "nacht_sleutel"
-    body: |
-      ROUTERING — NACHTVERKEER
+    body:
+      nl: |
+        ROUTERING — NACHTVERKEER
 
-      bijna alles wat 's nachts nog loopt, loopt via één node:
-      de nachtcentrale (nacht.centrale.ptt.nl). die was ooit het
-      hart van het net. nu draait er bijna niets meer op.
+        bijna alles wat 's nachts nog loopt, loopt via één node:
+        de nachtcentrale (nacht.centrale.ptt.nl). die was ooit het
+        hart van het net. nu draait er bijna niets meer op.
 
-      bijna. er is één sessie die niet stopt. de nachtcentrale
-      logt hem al jaren. wil je weten wie dat is, dan moet je
-      naar binnen. de sleutel is deze routeringstabel — hij
-      overtuigt de centrale dat je erbij hoort.
+        bijna. er is één sessie die niet stopt. de nachtcentrale
+        logt hem al jaren. wil je weten wie dat is, dan moet je
+        naar binnen. de sleutel is deze routeringstabel — hij
+        overtuigt de centrale dat je erbij hoort.
+      en: |
+        ROUTING — NIGHT TRAFFIC
+
+        almost everything still running at night runs through one
+        node: the night exchange (nacht.centrale.ptt.nl). it was
+        once the heart of the network. now next to nothing runs on it.
+
+        next to nothing. there is one session that never stops. the
+        night exchange has been logging it for years. if you want to
+        know who that is, you have to get inside. the key is this
+        routing table — it convinces the exchange that you belong.
   - name: ".oud"
     min_level: 5
-    body: |
-      # restanten van een oude beheerderssessie
-      # laatste commit: de beheerder, kort voordat het stil werd
-      "als ik hier niet meer ben: laat de nachtcentrale draaien.
-       niet uit nostalgie. er hangt iemand aan die ik niet in de
-       steek wil laten."
+    body:
+      nl: |
+        # restanten van een oude beheerderssessie
+        # laatste commit: de beheerder, kort voordat het stil werd
+        "als ik hier niet meer ben: laat de nachtcentrale draaien.
+         niet uit nostalgie. er hangt iemand aan die ik niet in de
+         steek wil laten."
+      en: |
+        # remnants of an old administrator session
+        # last commit: the administrator, just before it went quiet
+        "if i'm no longer here: keep the night exchange running.
+         not out of nostalgia. there's someone on the line i don't
+         want to abandon."
 mail:
   - from: "operator-3"
-    subject: "afschalen?"
+    subject:
+      nl: "afschalen?"
+      en: "scale down?"
     min_level: 5
-    body: |
-      leiding wil de regio 's nachts afschalen om stroom te sparen.
-      ik heb tegengehouden dat we de nachtcentrale meenemen. daar
-      loopt nog wat. vraag me niet wat. het loopt gewoon nog.
+    body:
+      nl: |
+        leiding wil de regio 's nachts afschalen om stroom te sparen.
+        ik heb tegengehouden dat we de nachtcentrale meenemen. daar
+        loopt nog wat. vraag me niet wat. het loopt gewoon nog.
+      en: |
+        management wants to scale the region down at night to save
+        power. i blocked taking the night exchange down with it.
+        something's still running there. don't ask me what. it's
+        just still running.
 netstat:
   min_level: 5
   grants_flag: "nacht_toegang"
-  body: |
-    Node                         Verkeer    Status
-    wijk.centrale.ptt.nl         laag       ESTABLISHED
-    (12 andere wijken)           nihil      IDLE
-    nacht.centrale.ptt.nl        1 sessie   ESTABLISHED (sinds: onbekend)
+  body:
+    nl: |
+      Node                         Verkeer    Status
+      wijk.centrale.ptt.nl         laag       ESTABLISHED
+      (12 andere wijken)           nihil      IDLE
+      nacht.centrale.ptt.nl        1 sessie   ESTABLISHED (sinds: onbekend)
 
-    (die ene sessie op de nachtcentrale staat er langer dan de
-     teller kan tellen. de ingang is nu voor jou vrij.)
+      (die ene sessie op de nachtcentrale staat er langer dan de
+       teller kan tellen. de ingang is nu voor jou vrij.)
+    en: |
+      Node                         Traffic    Status
+      wijk.centrale.ptt.nl         low        ESTABLISHED
+      (12 other districts)         none       IDLE
+      nacht.centrale.ptt.nl        1 session  ESTABLISHED (since: unknown)
+
+      (that one session on the night exchange has been there longer
+       than the counter can count. the entrance is open to you now.)
 effects:
   on_first_crack:
     grant_level: 5

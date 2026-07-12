@@ -7,9 +7,16 @@ hidden_commands:
     effects:
       set_this_member: true
       grant_flags: ["entered_this"]
-    response: |
-      ... even geduld ...
+    response:
+      nl: |
+        ... even geduld ...
 
-      ... lijn wordt omgelegd ...
+        ... lijn wordt omgelegd ...
 
-      DOORVERBINDEN NAAR: THIS
+        DOORVERBINDEN NAAR: THIS
+      en: |
+        ... one moment ...
+
+        ... line is being rerouted ...
+
+        CONNECTING TO: THIS

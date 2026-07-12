@@ -2,223 +2,419 @@ files:
   - name: "welkom.txt"
     date: "02-05-26"
     size: "1K"
-    desc: "Lees mij eerst"
-    body: |
-      Welkom in de bestandensectie van NEABBS.
+    desc:
+      nl: "Lees mij eerst"
+      en: "Read me first"
+    body:
+      nl: |
+        Welkom in de bestandensectie van NEABBS.
 
-      Vroeger stonden hier programma's die u met XMODEM binnenhaalde
-      en waar u vervolgens een avond mee bezig was omdat de laatste
-      blokken corrupt waren. Tegenwoordig staan hier teksten. Lezen
-      gaat sneller dan downloaden. Vooruitgang bestaat.
+        Vroeger stonden hier programma's die u met XMODEM binnenhaalde
+        en waar u vervolgens een avond mee bezig was omdat de laatste
+        blokken corrupt waren. Tegenwoordig staan hier teksten. Lezen
+        gaat sneller dan downloaden. Vooruitgang bestaat.
 
-      -- de sysop
+        -- de sysop
+      en: |
+        Welcome to the files section of NEABBS.
+
+        This used to hold programs you pulled in over XMODEM and then
+        spent an evening on because the last few blocks were corrupt.
+        These days it holds texts. Reading is faster than downloading.
+        Progress is real.
+
+        -- the sysop
 
   - name: "modem-abc.txt"
     date: "03-05-26"
     size: "4K"
-    desc: "Modemhandleiding voor beginners (1984)"
-    body: |
-      HET MODEM-ABC (herdruk uit 1984)
+    desc:
+      nl: "Modemhandleiding voor beginners (1984)"
+      en: "Modem manual for beginners (1984)"
+    body:
+      nl: |
+        HET MODEM-ABC (herdruk uit 1984)
 
-      Een modem (MOdulator-DEModulator) zet computersignalen om in
-      piepjes die door de telefoonlijn passen, en andersom.
+        Een modem (MOdulator-DEModulator) zet computersignalen om in
+        piepjes die door de telefoonlijn passen, en andersom.
 
-      Snelheden door de jaren:
-        300 baud   - rustig meelezen (begin jaren '80)
-        1200 baud  - de standaard, 120 tekens per seconde
-        2400 baud  - waar NEABBS tegenwoordig op opent
-        9600 baud  - het snelste dat deze lijnen aan het eind van
-                     de jaren '80 haalden. voor wie het durft.
+        Snelheden door de jaren:
+          300 baud   - rustig meelezen (begin jaren '80)
+          1200 baud  - de standaard, 120 tekens per seconde
+          2400 baud  - waar NEABBS tegenwoordig op opent
+          9600 baud  - het snelste dat deze lijnen aan het eind van
+                       de jaren '80 haalden. voor wie het durft.
 
-      Tip van de redactie: sommige systemen accepteren een
-      snelheids-verzoek gewoon als commando in het hoofdmenu. Gewoon
-      de gewenste snelheid intikken. Brutalen hebben de halve wereld.
+        Tip van de redactie: sommige systemen accepteren een
+        snelheids-verzoek gewoon als commando in het hoofdmenu. Gewoon
+        de gewenste snelheid intikken. Brutalen hebben de halve wereld.
 
-      Vergeet niet uw modem 's nachts uit te zetten. Uw telefoon-
-      rekening dankt u.
+        Vergeet niet uw modem 's nachts uit te zetten. Uw telefoon-
+        rekening dankt u.
+      en: |
+        THE MODEM ABC (reprint from 1984)
+
+        A modem (MOdulator-DEModulator) turns computer signals into
+        beeps that fit through the telephone line, and back again.
+
+        Speeds over the years:
+          300 baud   - reading along at leisure (early '80s)
+          1200 baud  - the standard, 120 characters per second
+          2400 baud  - what NEABBS opens on these days
+          9600 baud  - the fastest these lines managed at the end of
+                       the '80s. for those who dare.
+
+        Tip from the editors: some systems accept a speed request
+        simply as a command in the main menu. Just type in the desired
+        speed. Fortune favors the bold.
+
+        Don't forget to switch off your modem at night. Your phone
+        bill thanks you.
 
   - name: "hayes-codes.txt"
     date: "03-05-26"
     size: "2K"
-    desc: "AT-commando's spiekbrief"
-    body: |
-      HAYES AT-COMMANDO'S — SPIEKBRIEF
+    desc:
+      nl: "AT-commando's spiekbrief"
+      en: "AT commands cheat sheet"
+    body:
+      nl: |
+        HAYES AT-COMMANDO'S — SPIEKBRIEF
 
-      ATDT 020-......   toon-kiezen (moderne centrales)
-      ATDP 020-......   puls-kiezen (voor de oude wijken)
-      ATA               opnemen
-      ATH               ophangen (de vriendelijke manier)
-      ATZ               reset (de wanhopige manier)
-      +++               ontsnappen als alles vastzit
+        ATDT 020-......   toon-kiezen (moderne centrales)
+        ATDP 020-......   puls-kiezen (voor de oude wijken)
+        ATA               opnemen
+        ATH               ophangen (de vriendelijke manier)
+        ATZ               reset (de wanhopige manier)
+        +++               ontsnappen als alles vastzit
 
-      NO CARRIER        het verdrietigste bericht dat bestaat
+        NO CARRIER        het verdrietigste bericht dat bestaat
+      en: |
+        HAYES AT COMMANDS — CHEAT SHEET
+
+        ATDT 020-......   tone dialing (modern exchanges)
+        ATDP 020-......   pulse dialing (for the old neighborhoods)
+        ATA               answer
+        ATH               hang up (the friendly way)
+        ATZ               reset (the desperate way)
+        +++               escape when everything is stuck
+
+        NO CARRIER        the saddest message there is
 
   - name: "netiquette.txt"
     date: "04-05-26"
     size: "2K"
-    desc: "Omgangsvormen op de lijnen (1985)"
-    body: |
-      NETIQUETTE VOOR BBS-GEBRUIKERS (1985)
+    desc:
+      nl: "Omgangsvormen op de lijnen (1985)"
+      en: "Manners on the lines (1985)"
+    body:
+      nl: |
+        NETIQUETTE VOOR BBS-GEBRUIKERS (1985)
 
-      1. HOOFDLETTERS IS SCHREEUWEN. Doe het niet.
-      2. Quote spaarzaam. Wij weten wat er hierboven stond.
-      3. Een smiley :-) voorkomt tandartsbezoek.
-      4. De sysop is een mens. Meestal.
-      5. Bezet de lijn niet langer dan nodig; er wachten anderen.
-         (Regel 5 is in 2026 minder urgent, maar principes zijn
-         principes.)
+        1. HOOFDLETTERS IS SCHREEUWEN. Doe het niet.
+        2. Quote spaarzaam. Wij weten wat er hierboven stond.
+        3. Een smiley :-) voorkomt tandartsbezoek.
+        4. De sysop is een mens. Meestal.
+        5. Bezet de lijn niet langer dan nodig; er wachten anderen.
+           (Regel 5 is in 2026 minder urgent, maar principes zijn
+           principes.)
+      en: |
+        NETIQUETTE FOR BBS USERS (1985)
+
+        1. CAPITAL LETTERS IS SHOUTING. Don't do it.
+        2. Quote sparingly. We know what was written above.
+        3. A smiley :-) saves a trip to the dentist.
+        4. The sysop is a human being. Usually.
+        5. Don't hold the line longer than necessary; others are waiting.
+           (Rule 5 is less urgent in 2026, but principles are
+           principles.)
 
   - name: "ascii-schatkist.txt"
     date: "05-05-26"
     size: "3K"
-    desc: "ASCII-kunst uit de oude doos"
-    body: |
-      ASCII-SCHATKIST — bewaard gebleven werk van onze huisartiesten
+    desc:
+      nl: "ASCII-kunst uit de oude doos"
+      en: "ASCII art from the old days"
+    body:
+      nl: |
+        ASCII-SCHATKIST — bewaard gebleven werk van onze huisartiesten
 
-          |\_/|        ____________________
-          (o o)       |  MIAUW. IK BEWAAK  |
-         =(Y)=        |  DEZE BESTANDEN.   |
-          |_|_|        --------------------
+            |\_/|        ____________________
+            (o o)       |  MIAUW. IK BEWAAK  |
+           =(Y)=        |  DEZE BESTANDEN.   |
+            |_|_|        --------------------
 
-           _________
-          / ======= \
-         / __________\      DE DRAAGBARE COMPUTER:
-        | ___________ |     ALLES ONDER DE 15 KILO
-        | | NEABBS  | |     TELT.
-        | |_________| |
-        \=____________/
+             _________
+            / ======= \
+           / __________\      DE DRAAGBARE COMPUTER:
+          | ___________ |     ALLES ONDER DE 15 KILO
+          | | NEABBS  | |     TELT.
+          | |_________| |
+          \=____________/
 
-      (Inzendingen voor de schatkist: post op ALGEMEEN.)
+        (Inzendingen voor de schatkist: post op ALGEMEEN.)
+      en: |
+        ASCII TREASURE CHEST — surviving work by our house artists
+
+            |\_/|        ____________________
+            (o o)       |  MEOW. I GUARD     |
+           =(Y)=        |  THESE FILES.      |
+            |_|_|        --------------------
+
+             _________
+            / ======= \
+           / __________\      THE PORTABLE COMPUTER:
+          | ___________ |     ANYTHING UNDER 15 KILOS
+          | | NEABBS  | |     COUNTS.
+          | |_________| |
+          \=____________/
+
+        (Submissions for the chest: post on GENERAL.)
 
   - name: "zine-fragment.txt"
     date: "06-05-26"
     size: "3K"
-    desc: "Fragment uit 'De Draadloze' nr. 7 (1985)"
-    body: |
-      [fragment uit "De Draadloze", een elektronisch tijdschrift dat
-       tussen 1984 en 1986 op verschillende systemen circuleerde.
-       De rest van nummer 7 is verloren gegaan.]
+    desc:
+      nl: "Fragment uit 'De Draadloze' nr. 7 (1985)"
+      en: "Fragment from 'De Draadloze' no. 7 (1985)"
+    body:
+      nl: |
+        [fragment uit "De Draadloze", een elektronisch tijdschrift dat
+         tussen 1984 en 1986 op verschillende systemen circuleerde.
+         De rest van nummer 7 is verloren gegaan.]
 
-      ...en dat is precies waarom een bulletin board meer is dan een
-      antwoordapparaat met pretenties. Het is een PLEK. Wie inbelt,
-      komt ergens BINNEN. De goede systemen voelen als een stamkroeg:
-      je kent de stemmen, je kent de stamgasten, je weet welke kruk
-      wiebelt.
+        ...en dat is precies waarom een bulletin board meer is dan een
+        antwoordapparaat met pretenties. Het is een PLEK. Wie inbelt,
+        komt ergens BINNEN. De goede systemen voelen als een stamkroeg:
+        je kent de stemmen, je kent de stamgasten, je weet welke kruk
+        wiebelt.
 
-      En zoals elke goede kroeg heeft elk goed systeem een achterkamer
-      waar de kastelein zijn betere flessen bewaart. Maar daarover
-      een andere keer, als de redactie durft...
+        En zoals elke goede kroeg heeft elk goed systeem een achterkamer
+        waar de kastelein zijn betere flessen bewaart. Maar daarover
+        een andere keer, als de redactie durft...
+      en: |
+        [fragment from "De Draadloze", an electronic magazine that
+         circulated on various systems between 1984 and 1986.
+         The rest of issue 7 has been lost.]
+
+        ...and that is exactly why a bulletin board is more than an
+        answering machine with pretensions. It is a PLACE. Whoever dials
+        in comes INSIDE somewhere. The good systems feel like a regulars'
+        pub: you know the voices, you know the regulars, you know which
+        stool wobbles.
+
+        And like every good pub, every good system has a back room
+        where the landlord keeps his better bottles. But more on that
+        another time, if the editors dare...
 
   - name: "ptt-brief.txt"
     date: "07-05-26"
     size: "1K"
-    desc: "Brief van de PTT (1985, ingelijst)"
-    body: |
-      [afschrift, origineel hangt ingelijst boven de machine]
+    desc:
+      nl: "Brief van de PTT (1985, ingelijst)"
+      en: "Letter from the PTT (1985, framed)"
+    body:
+      nl: |
+        [afschrift, origineel hangt ingelijst boven de machine]
 
-      's-Gravenhage, 14 augustus 1985
+        's-Gravenhage, 14 augustus 1985
 
-      Geachte heer,
+        Geachte heer,
 
-      Naar aanleiding van uw aanvraag betreffende uitbreiding van het
-      aantal telefoonaansluitingen op uw adres delen wij u mede dat
-      levering van 8 (acht) additionele lijnen is voorzien in het
-      vierde kwartaal. Wij vertrouwen erop u hiermede voldoende te
-      hebben geinformeerd.
+        Naar aanleiding van uw aanvraag betreffende uitbreiding van het
+        aantal telefoonaansluitingen op uw adres delen wij u mede dat
+        levering van 8 (acht) additionele lijnen is voorzien in het
+        vierde kwartaal. Wij vertrouwen erop u hiermede voldoende te
+        hebben geinformeerd.
 
-      Hoogachtend,
-      Staatsbedrijf der PTT
+        Hoogachtend,
+        Staatsbedrijf der PTT
 
-      [aantekening in balpen: "beloofd is beloofd. nog steeds niks.
-       - okt '85"]
+        [aantekening in balpen: "beloofd is beloofd. nog steeds niks.
+         - okt '85"]
+      en: |
+        [transcript, original hangs framed above the machine]
+
+        's-Gravenhage, 14 August 1985
+
+        Dear Sir,
+
+        In response to your application concerning an expansion of the
+        number of telephone connections at your address, we inform you
+        that delivery of 8 (eight) additional lines is foreseen in the
+        fourth quarter. We trust we have hereby informed you
+        sufficiently.
+
+        Respectfully,
+        State Enterprise of the PTT
+
+        [note in ballpoint: "a promise is a promise. still nothing.
+         - oct '85"]
 
   - name: "msx-tips.txt"
     date: "08-05-26"
     size: "2K"
-    desc: "MSX-tips van marco"
-    body: |
-      MSX-TIPS — verzameld door msx_marco
+    desc:
+      nl: "MSX-tips van marco"
+      en: "MSX tips from marco"
+    body:
+      nl: |
+        MSX-TIPS — verzameld door msx_marco
 
-      * POKE-1,170 op een MSX-2: niet doen. U bent gewaarschuwd.
-      * Diskdrive-riempjes: elastiekjes van de groenteboer werken
-        precies drie weken.
-      * CALL SYSTEM brengt u terug naar DOS, CTRL+STOP redt u uit
-        bijna alles. Bijna.
-      * Een cassette die niet laadt: volume op 7, toon op maximaal,
-        en bidden tot de god van de magneetkoppen.
+        * POKE-1,170 op een MSX-2: niet doen. U bent gewaarschuwd.
+        * Diskdrive-riempjes: elastiekjes van de groenteboer werken
+          precies drie weken.
+        * CALL SYSTEM brengt u terug naar DOS, CTRL+STOP redt u uit
+          bijna alles. Bijna.
+        * Een cassette die niet laadt: volume op 7, toon op maximaal,
+          en bidden tot de god van de magneetkoppen.
+      en: |
+        MSX TIPS — collected by msx_marco
+
+        * POKE-1,170 on an MSX-2: don't do it. You have been warned.
+        * Disk drive belts: rubber bands from the greengrocer work
+          for exactly three weeks.
+        * CALL SYSTEM takes you back to DOS, CTRL+STOP saves you from
+          almost anything. Almost.
+        * A cassette that won't load: volume on 7, treble on maximum,
+          and pray to the god of magnetic heads.
 
   # ── discovery chain, beat 1: a file clearly not meant to be public ──
   - name: "sysop-notities.txt"
     date: "02-05-26"
     size: "1K"
-    desc: "(verkeerd gearchiveerd?)"
-    body: |
-      NOTITIES BIJ HET HERSTEL — NIET PUBLICEREN
+    desc:
+      nl: "(verkeerd gearchiveerd?)"
+      en: "(misfiled?)"
+    body:
+      nl: |
+        NOTITIES BIJ HET HERSTEL — NIET PUBLICEREN
 
-      - banden 1 t/m 6: leesbaar. boards en bestanden terug.
-      - band 7: de oude sectie. NIET aangesloten. na wat er in
-        maart '86 gebeurd is blijft die verzegeld. geen discussie.
-      - wachtwoordbestand: waardeloos (goed zo).
-      - phantom belde in de laatste nacht nog. als die naam ooit
-        weer op een board verschijnt wil ik het WETEN.
+        - banden 1 t/m 6: leesbaar. boards en bestanden terug.
+        - band 7: de oude sectie. NIET aangesloten. na wat er in
+          maart '86 gebeurd is blijft die verzegeld. geen discussie.
+        - wachtwoordbestand: waardeloos (goed zo).
+        - phantom belde in de laatste nacht nog. als die naam ooit
+          weer op een board verschijnt wil ik het WETEN.
 
-      todo: dit bestand NIET in de publieke lijst zetten
-      todo: koffie
+        todo: dit bestand NIET in de publieke lijst zetten
+        todo: koffie
+      en: |
+        NOTES ON THE RECOVERY — DO NOT PUBLISH
+
+        - tapes 1 through 6: readable. boards and files are back.
+        - tape 7: the old section. NOT connected. after what happened
+          in march '86 it stays sealed. no discussion.
+        - password file: worthless (good thing too).
+        - phantom dialed in on the last night. if that name ever
+          shows up on a board again I want to KNOW about it.
+
+        todo: do NOT put this file in the public list
+        todo: coffee
 
   - name: "kroniek-1.txt"
     date: "10-05-26"
     size: "2K"
-    desc: "Kroniek van NEABBS (deel 1, uit de banden)"
-    body: |
-      KRONIEK VAN NEABBS — DEEL 1 (gereconstrueerd uit de banden)
+    desc:
+      nl: "Kroniek van NEABBS (deel 1, uit de banden)"
+      en: "Chronicle of NEABBS (part 1, from the tapes)"
+    body:
+      nl: |
+        KRONIEK VAN NEABBS — DEEL 1 (gereconstrueerd uit de banden)
 
-      november 1984. De machine draaide in een kelder, naast de cv.
-      Vier lijnen, elke avond vol. Wachtrijen vanaf acht uur.
+        november 1984. De machine draaide in een kelder, naast de cv.
+        Vier lijnen, elke avond vol. Wachtrijen vanaf acht uur.
 
-      Het bleef niet bij vier lijnen. De PTT beloofde uitbreiding en
-      liet op zich wachten; het board groeide toch, lijn na lijn, tot
-      de vierentwintig waar het om bekend werd.
+        Het bleef niet bij vier lijnen. De PTT beloofde uitbreiding en
+        liet op zich wachten; het board groeide toch, lijn na lijn, tot
+        de vierentwintig waar het om bekend werd.
 
-      Wat bleef hangen was de sfeer op de boards. Mensen die elkaar
-      nooit gezien hadden maakten hier ruzie en legden het weer bij,
-      allemaal op 120 tekens per seconde.
+        Wat bleef hangen was de sfeer op de boards. Mensen die elkaar
+        nooit gezien hadden maakten hier ruzie en legden het weer bij,
+        allemaal op 120 tekens per seconde.
 
-      (deel 2 volgt zodra de volgende band leesbaar is)
+        (deel 2 volgt zodra de volgende band leesbaar is)
+      en: |
+        CHRONICLE OF NEABBS — PART 1 (reconstructed from the tapes)
+
+        november 1984. The machine ran in a cellar, next to the boiler.
+        Four lines, full every evening. Queues from eight o'clock on.
+
+        It didn't stop at four lines. The PTT promised expansion and
+        kept everyone waiting; the board grew anyway, line by line, to
+        the twenty-four it became known for.
+
+        What stayed with people was the atmosphere on the boards. People
+        who had never met each other picked fights here and made up
+        again, all at 120 characters per second.
+
+        (part 2 follows as soon as the next tape is readable)
 
   - name: "toekomst-1986.txt"
     date: "11-05-26"
     size: "2K"
-    desc: "Voorspellingen over 'de toekomst' (1986)"
-    body: |
-      HOE ZIET 2026 ERUIT? — voorspellingen van onze bellers (1986)
+    desc:
+      nl: "Voorspellingen over 'de toekomst' (1986)"
+      en: "Predictions about 'the future' (1986)"
+    body:
+      nl: |
+        HOE ZIET 2026 ERUIT? — voorspellingen van onze bellers (1986)
 
-      turbo_ted:  "Modems van 9600 baud. Schrijf het op."
-      mainframe:  "Iedereen een computer in zijn broekzak, en
-                   niemand meer die weet hoe het werkt."
-      zilvervis:  "De PTT bestaat niet meer. Iets moet die lijnen
-                   toch opgeleverd hebben."
-      kermit:     "BBS'en zijn dan musea. Mensen betalen om te
-                   kijken hoe wij nu leven."
-      de_krab:    "Alles wordt sneller en niemand wordt geduldiger."
+        turbo_ted:  "Modems van 9600 baud. Schrijf het op."
+        mainframe:  "Iedereen een computer in zijn broekzak, en
+                     niemand meer die weet hoe het werkt."
+        zilvervis:  "De PTT bestaat niet meer. Iets moet die lijnen
+                     toch opgeleverd hebben."
+        kermit:     "BBS'en zijn dan musea. Mensen betalen om te
+                     kijken hoe wij nu leven."
+        de_krab:    "Alles wordt sneller en niemand wordt geduldiger."
 
-      [red.: wie in 2026 dit leest mag de winnaar aanwijzen op het
-       board ALGEMEEN]
+        [red.: wie in 2026 dit leest mag de winnaar aanwijzen op het
+         board ALGEMEEN]
+      en: |
+        WHAT WILL 2026 LOOK LIKE? — predictions from our callers (1986)
+
+        turbo_ted:  "9600 baud modems. Write it down."
+        mainframe:  "Everyone with a computer in their pocket, and
+                     nobody left who knows how it works."
+        zilvervis:  "The PTT no longer exists. Something must have
+                     delivered those lines after all."
+        kermit:     "BBSes will be museums by then. People pay to
+                     watch how we live now."
+        de_krab:    "Everything gets faster and nobody gets more patient."
+
+        [ed.: whoever reads this in 2026 may name the winner on the
+         board GENERAL]
 
   # ── discovery chain, beat 3: appears once phantom's spoor is gevolgd ──
   - name: "herstel-log.txt"
     date: "12-05-26"
     size: "1K"
-    desc: "logboek band 7 (fragment)"
+    desc:
+      nl: "logboek band 7 (fragment)"
+      en: "logbook tape 7 (fragment)"
     requires_flag: "phantom_spoor"
     grants_flag: "this_invite"
-    body: |
-      HERSTEL-LOGBOEK — BAND 7 (fragment, niet gearchiveerd)
+    body:
+      nl: |
+        HERSTEL-LOGBOEK — BAND 7 (fragment, niet gearchiveerd)
 
-      03:41  band 7 gemonteerd. label: "T.H.I.S."
-      03:44  index leesbaar. sectie reageert op de oude aanroep.
-      03:46  aanroep werkt nog vanaf het HOOFDMENU. gewoon de
-             naam van de sectie intikken. vier letters. meer
-             was het nooit.
-      03:52  verzegeld zoals afgesproken. wie de aanroep kent
-             én weet wat hij zoekt, vindt de deur toch wel.
-      03:53  einde dienst. de nacht is van hen.
+        03:41  band 7 gemonteerd. label: "T.H.I.S."
+        03:44  index leesbaar. sectie reageert op de oude aanroep.
+        03:46  aanroep werkt nog vanaf het HOOFDMENU. gewoon de
+               naam van de sectie intikken. vier letters. meer
+               was het nooit.
+        03:52  verzegeld zoals afgesproken. wie de aanroep kent
+               én weet wat hij zoekt, vindt de deur toch wel.
+        03:53  einde dienst. de nacht is van hen.
+      en: |
+        RECOVERY LOGBOOK — TAPE 7 (fragment, not archived)
+
+        03:41  tape 7 mounted. label: "T.H.I.S."
+        03:44  index readable. section responds to the old call.
+        03:46  the call still works from the MAIN MENU. just type
+               the name of the section. four letters. that's all
+               it ever was.
+        03:52  sealed as agreed. whoever knows the call and knows
+               what they're looking for will find the door anyway.
+        03:53  end of shift. the night is theirs.

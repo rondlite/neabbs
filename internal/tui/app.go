@@ -206,6 +206,7 @@ func New(deps Deps) *Model {
 		minutesLeft: dailyMinutes,
 	}
 	m.printer.cps = m.playerCPS()
+	m.printer.lang = m.lang()
 	return m
 }
 
@@ -261,36 +262,36 @@ func (m *Model) ritual(step ritualStep) tea.Cmd {
 			speed = 2400
 		}
 		busy := m.deps.Registry.LinesBusy()
-		lineBar := fmt.Sprintf("LIJN %s — %d van %d lijnen bezet", lineLabel(m.deps.Sess.Line), busy, presence.Lines)
+		lineBar := fmt.Sprintf(m.tr("LIJN %s — %d van %d lijnen bezet", "LINE %s — %d of %d lines busy"), lineLabel(m.deps.Sess.Line), busy, presence.Lines)
 		banner := fmt.Sprintf("%s\n\n%s\n%s\n\n%s",
 			amber.Render(fmt.Sprintf("CONNECT %d", speed)),
 			m.logo(),
-			dimmed.Render("        heropend na bijna 40 jaar stilte · Amsterdam · sinds 1984"),
+			dimmed.Render(m.tr("        heropend na bijna 40 jaar stilte · Amsterdam · sinds 1984", "        reopened after nearly 40 years of silence · Amsterdam · since 1984")),
 			amberBright.Render(lineBar))
 		return tea.Batch(m.print(banner), delay(700*time.Millisecond, ritUsername))
 	case ritUsername:
 		if p.Handle == "" {
 			m.state = stateHandle
 			m.input.Prompt = "Gebruikersnaam (nieuw): "
-			return m.print("Nieuwe beller gedetecteerd.\nKies een gebruikersnaam (3-16 tekens, a-z 0-9 _ -).")
+			return m.print(m.tr("Nieuwe beller gedetecteerd.\nKies een gebruikersnaam (3-16 tekens, a-z 0-9 _ -).", "New caller detected.\nChoose a username (3-16 characters, a-z 0-9 _ -)."))
 		}
 		return tea.Batch(
-			m.print(fmt.Sprintf("Gebruikersnaam: %s", p.Handle)),
+			m.print(fmt.Sprintf(m.tr("Gebruikersnaam: %s", "Username: %s"), p.Handle)),
 			delay(600*time.Millisecond, ritPassword))
 	case ritPassword:
 		// Login theater: auth is really the SSH key.
-		return tea.Batch(m.print("Wachtwoord: ········"), delay(900*time.Millisecond, ritGranted))
+		return tea.Batch(m.print(m.tr("Wachtwoord: ········", "Password: ········")), delay(900*time.Millisecond, ritGranted))
 	case ritGranted:
 		_ = m.deps.Store.RecordCall(context.Background(), p.Handle, time.Now())
 		used, err := m.deps.Store.AddMinutes(context.Background(), p.Fingerprint, today(), 0)
 		if err == nil {
 			m.minutesLeft = dailyMinutes - used
 		}
-		lines := []string{"Toegang verleend.", ""}
+		lines := []string{m.tr("Toegang verleend.", "Access granted."), ""}
 		if m.minutesLeft > 0 {
-			lines = append(lines, fmt.Sprintf("U heeft nog %d minuten vandaag.", m.minutesLeft))
+			lines = append(lines, fmt.Sprintf(m.tr("U heeft nog %d minuten vandaag.", "You have %d minutes left today."), m.minutesLeft))
 		} else {
-			lines = append(lines, "U heeft uw beltegoed voor vandaag verbruikt. De sysop kijkt toe.")
+			lines = append(lines, m.tr("U heeft uw beltegoed voor vandaag verbruikt. De sysop kijkt toe.", "You've used up your call time for today. The sysop is watching."))
 		}
 		return tea.Batch(m.print(strings.Join(lines, "\n")), delay(500*time.Millisecond, ritBulletins))
 	case ritBulletins:
@@ -320,7 +321,7 @@ func (m *Model) ritual(step ritualStep) tea.Cmd {
 // renderCallers merges real calls (newest first) with the seeded 1980s list.
 func (m *Model) renderCallers() string {
 	var b strings.Builder
-	b.WriteString("LAATSTE BELLERS\n")
+	b.WriteString(m.tr("LAATSTE BELLERS\n", "LATEST CALLERS\n"))
 	b.WriteString(strings.Repeat("-", 40) + "\n")
 	n := 0
 	real, _ := m.deps.Store.LastCallers(context.Background(), 10)
@@ -386,15 +387,15 @@ func (m *Model) unreadCounts() []struct {
 func (m *Model) renderUnread() string {
 	counts := m.unreadCounts()
 	if len(counts) == 0 {
-		return "Geen nieuwe berichten sinds uw laatste bezoek."
+		return m.tr("Geen nieuwe berichten sinds uw laatste bezoek.", "No new messages since your last visit.")
 	}
 	var b strings.Builder
-	b.WriteString("NIEUWE BERICHTEN SINDS UW LAATSTE BEZOEK\n")
+	b.WriteString(m.tr("NIEUWE BERICHTEN SINDS UW LAATSTE BEZOEK\n", "NEW MESSAGES SINCE YOUR LAST VISIT\n"))
 	b.WriteString(strings.Repeat("-", 40) + "\n")
 	for _, c := range counts {
-		b.WriteString(fmt.Sprintf("  %-12s %3d nieuw\n", strings.ToUpper(c.Board.ID), len(c.Unread)))
+		b.WriteString(fmt.Sprintf(m.tr("  %-12s %3d nieuw\n", "  %-12s %3d new\n"), strings.ToUpper(c.Board.ID), len(c.Unread)))
 	}
-	b.WriteString("\nDruk Q in het menu voor een quickscan.")
+	b.WriteString(m.tr("\nDruk Q in het menu voor een quickscan.", "\nPress Q in the menu for a quickscan."))
 	return b.String()
 }
 
@@ -416,19 +417,19 @@ func boxLine(content string, style lipgloss.Style) string {
 
 func (m *Model) renderMenu() string {
 	now := time.Now().Format("15:04")
-	title := " NEABBS · HOOFDMENU"
-	info := fmt.Sprintf("LIJN %s · %s ", lineLabel(m.deps.Sess.Line), now)
+	title := m.tr(" NEABBS · HOOFDMENU", " NEABBS · MAIN MENU")
+	info := fmt.Sprintf(m.tr("LIJN %s · %s ", "LINE %s · %s "), lineLabel(m.deps.Sess.Line), now)
 	gap := menuWidth - lipgloss.Width(title) - lipgloss.Width(info)
 	if gap < 1 {
 		gap = 1
 	}
 
 	rows := []string{
-		" [B] Berichtenboards      [W] Wie is er op de lijnen",
-		" [F] Bestanden            [C] Babbelbox",
-		" [S] Sysop oproepen       [I] Colofon",
-		" [Q] Quickscan nieuwe berichten",
-		" [U] Uitloggen",
+		m.tr(" [B] Berichtenboards      [W] Wie is er op de lijnen", " [B] Message boards       [W] Who's on the lines"),
+		m.tr(" [F] Bestanden            [C] Babbelbox", " [F] Files                [C] Chat box"),
+		m.tr(" [S] Sysop oproepen       [I] Colofon", " [S] Page sysop           [I] About"),
+		m.tr(" [Q] Quickscan nieuwe berichten", " [Q] Quickscan new messages"),
+		m.tr(" [U] Uitloggen", " [U] Log out"),
 	}
 	// The door stays discovered once found: members see the THIS entry.
 	if m.deps.Player.ThisMember {
@@ -444,9 +445,9 @@ func (m *Model) renderMenu() string {
 		b.WriteString(boxLine(r, menuHot) + "\n")
 	}
 	b.WriteString(menuBorder.Render("╚"+strings.Repeat("═", menuWidth)+"╝") + "\n")
-	b.WriteString(dimmed.Render(" Ook: praat <tekst> — roep iets naar alle lijnen") + "\n")
+	b.WriteString(dimmed.Render(m.tr(" Ook: praat <tekst> — roep iets naar alle lijnen", " Also: praat <text> — shout something to all lines")) + "\n")
 	if m.minutesLeft <= 0 {
-		b.WriteString(dimmed.Render(" De sysop tikt op zijn horloge. Uw beltijd is om.") + "\n")
+		b.WriteString(dimmed.Render(m.tr(" De sysop tikt op zijn horloge. Uw beltijd is om.", " The sysop taps his watch. Your call time is up.")) + "\n")
 	}
 	return b.String()
 }
@@ -535,7 +536,7 @@ func (m *Model) menuLine(line string) (tea.Model, tea.Cmd) {
 		}
 		cmds := []tea.Cmd{}
 		if err := m.applyEffects(hc.Effects); err != nil {
-			return m, m.print("Er knettert iets op de lijn. Probeer later opnieuw.")
+			return m, m.print(m.tr("Er knettert iets op de lijn. Probeer later opnieuw.", "Something's crackling on the line. Try again later."))
 		}
 		if r := hc.Response.Get(m.lang()); r != "" {
 			cmds = append(cmds, m.print(r))
@@ -549,7 +550,7 @@ func (m *Model) menuLine(line string) (tea.Model, tea.Cmd) {
 
 	// Unknown input — identical whether gibberish or a hidden command the
 	// player isn't eligible for. Never confirm existence.
-	return m, m.print("Onbekende keuze.")
+	return m, m.print(m.tr("Onbekende keuze.", "Unknown choice."))
 }
 
 // enterThisMsg switches to THIS mode after the doorverbinden beat.
@@ -597,21 +598,21 @@ func (m *Model) applyEffects(e content.Effects) error {
 // show only as "lijn bezet" — membership never leaks here.
 func (m *Model) renderWho() string {
 	var b strings.Builder
-	b.WriteString("WIE IS ER OP DE LIJNEN\n")
+	b.WriteString(m.tr("WIE IS ER OP DE LIJNEN\n", "WHO'S ON THE LINES\n"))
 	b.WriteString(strings.Repeat("-", 44) + "\n")
 	for _, s := range m.deps.Registry.All() {
 		handle, area, inThis := s.Snapshot()
 		switch {
 		case inThis:
-			b.WriteString(fmt.Sprintf("  LIJN %-3s lijn bezet\n", lineLabel(s.Line)))
+			b.WriteString(fmt.Sprintf(m.tr("  LIJN %-3s lijn bezet\n", "  LINE %-3s line busy\n"), lineLabel(s.Line)))
 		default:
 			if handle == "" {
-				handle = "(inloggen...)"
+				handle = m.tr("(inloggen...)", "(logging in...)")
 			}
 			if area == "" {
-				area = "hoofdmenu"
+				area = m.tr("hoofdmenu", "main menu")
 			}
-			b.WriteString(fmt.Sprintf("  LIJN %-3s %-16s %s\n", lineLabel(s.Line), handle, area))
+			b.WriteString(fmt.Sprintf(m.tr("  LIJN %-3s %-16s %s\n", "  LINE %-3s %-16s %s\n"), lineLabel(s.Line), handle, area))
 		}
 	}
 	return b.String()
@@ -621,11 +622,11 @@ func (m *Model) renderWho() string {
 func (m *Model) praat(msg string) (tea.Model, tea.Cmd) {
 	msg = text.CleanLine(msg)
 	if msg == "" {
-		return m, m.print("Gebruik: praat <tekst>")
+		return m, m.print(m.tr("Gebruik: praat <tekst>", "Usage: praat <text>"))
 	}
 	m.refillMinuteBudgets()
 	if m.praatBudget <= 0 {
-		return m, m.print("Rustig aan — één praatje per minuut.")
+		return m, m.print(m.tr("Rustig aan — één praatje per minuut.", "Easy now — one shout per minute."))
 	}
 	m.praatBudget--
 	line := fmt.Sprintf("»» %s (lijn %s): %s", m.deps.Player.Handle, lineLabel(m.deps.Sess.Line), msg)
@@ -646,25 +647,26 @@ func (m *Model) refillMinuteBudgets() {
 // out at 9600 by the end of the '80s, so a fast caller can renegotiate up.
 func (m *Model) upgradeSpeed() (tea.Model, tea.Cmd) {
 	if m.deps.Player.Speed >= 9600 {
-		return m, m.print("Uw modem loopt al op 9600 baud. Sneller kan de lijn niet.")
+		return m, m.print(m.tr("Uw modem loopt al op 9600 baud. Sneller kan de lijn niet.", "Your modem is already at 9600 baud. The line can't go faster."))
 	}
 	if err := m.deps.Store.SetSpeed(context.Background(), m.deps.Player.Fingerprint, 9600); err != nil {
-		return m, m.print("Er knettert iets op de lijn. Probeer later opnieuw.")
+		return m, m.print(m.tr("Er knettert iets op de lijn. Probeer later opnieuw.", "Something's crackling on the line. Try again later."))
 	}
 	m.deps.Player.Speed = 9600
 	m.printer.cps = m.playerCPS()
+	m.printer.lang = m.lang()
 	return m, m.print(amberBright.Render("+++ CARRIER RENEGOTIATED +++") +
-		"\nCONNECT 9600\n\nUw modem-upgrade is permanent geregistreerd. Alles gaat nu vier keer zo hard.")
+		"\nCONNECT 9600\n\n" + m.tr("Uw modem-upgrade is permanent geregistreerd. Alles gaat nu vier keer zo hard.", "Your modem upgrade is permanently registered. Everything now runs four times as fast."))
 }
 
 // pageSysop rings the operator. v0: nobody home (period-appropriate wait).
 func (m *Model) pageSysop() (tea.Model, tea.Cmd) {
 	if m.pagedSysop >= 2 {
-		return m, m.print("De bel doet het niet meer. (Max 2 oproepen per sessie.)")
+		return m, m.print(m.tr("De bel doet het niet meer. (Max 2 oproepen per sessie.)", "The bell doesn't work anymore. (Max 2 pages per session.)"))
 	}
 	m.pagedSysop++
 	return m, tea.Batch(
-		m.print("De sysop wordt opgeroepen... tring... tring..."),
+		m.print(m.tr("De sysop wordt opgeroepen... tring... tring...", "Paging the sysop... ring... ring...")),
 		tea.Tick(3*time.Second, func(time.Time) tea.Msg { return sysopNoAnswerMsg{} }))
 }
 
@@ -674,18 +676,18 @@ type sysopNoAnswerMsg struct{}
 func (m *Model) quickscan() string {
 	counts := m.unreadCounts()
 	if len(counts) == 0 {
-		return "Geen nieuwe berichten."
+		return m.tr("Geen nieuwe berichten.", "No new messages.")
 	}
 	ctx := context.Background()
 	var b strings.Builder
-	b.WriteString("QUICKSCAN — alle nieuwe berichten\n")
+	b.WriteString(m.tr("QUICKSCAN — alle nieuwe berichten\n", "QUICKSCAN — all new messages\n"))
 	for _, c := range counts {
 		b.WriteString("\n" + strings.Repeat("=", 62) + "\n")
 		b.WriteString(fmt.Sprintf("%s — %s\n", strings.ToUpper(c.Board.ID), c.Board.Name.Get(m.lang())))
 		for i := range c.Unread {
 			msg := &c.Unread[i]
 			b.WriteString(strings.Repeat("-", 62) + "\n")
-			b.WriteString(fmt.Sprintf("#%d van %s: %s\n\n", msg.ID, msg.Author, msg.Subject))
+			b.WriteString(fmt.Sprintf(m.tr("#%d van %s: %s\n\n", "#%d from %s: %s\n\n"), msg.ID, msg.Author, msg.Subject))
 			b.WriteString(strings.TrimRight(msg.Body, "\n") + "\n")
 			_ = m.deps.Store.SetLastRead(ctx, m.deps.Player.Fingerprint, c.Board.ID, msg.ID)
 			if msg.GrantsFlag != "" {
@@ -694,7 +696,7 @@ func (m *Model) quickscan() string {
 			}
 		}
 	}
-	b.WriteString("\nEinde quickscan.")
+	b.WriteString(m.tr("\nEinde quickscan.", "\nEnd of quickscan."))
 	return b.String()
 }
 
@@ -749,7 +751,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, minuteTick()
 	case sysopNoAnswerMsg:
-		return m, m.print("Geen antwoord. De sysop is niet aanwezig.\nLaat een bericht achter op het HULP board.")
+		return m, m.print(m.tr("Geen antwoord. De sysop is niet aanwezig.\nLaat een bericht achter op het HULP board.", "No answer. The sysop isn't in.\nLeave a message on the HULP board."))
 	case PraatMsg:
 		if m.inThis {
 			return m, nil // the public lines don't reach in here
@@ -770,23 +772,23 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case KickMsg:
 		reason := msg.Reason
 		if reason == "" {
-			reason = "TOEGANG INGETROKKEN."
+			reason = m.tr("TOEGANG INGETROKKEN.", "ACCESS REVOKED.")
 		}
 		return m, tea.Sequence(tea.Println(reason), tea.Quit)
 	case WhisperMsg:
 		// Whispers only surface inside THIS; nothing leaks to the public BBS.
 		if m.inThis {
-			m.thisPrint(green.Render(fmt.Sprintf("« %s fluistert: %s", msg.From, msg.Line)))
+			m.thisPrint(green.Render(fmt.Sprintf(m.tr("« %s fluistert: %s", "« %s whispers: %s"), msg.From, msg.Line)))
 		}
 		return m, nil
 	case genDraftedMsg:
 		if msg.err != nil {
-			return m, m.out("Genereren mislukt: " + msg.err.Error())
+			return m, m.out(m.tr("Genereren mislukt: ", "Generation failed: ") + msg.err.Error())
 		}
 		if msg.n == 0 {
-			return m, m.out("De LLM leverde geen bruikbare concepten.")
+			return m, m.out(m.tr("De LLM leverde geen bruikbare concepten.", "The LLM produced no usable drafts."))
 		}
-		return m, m.out(fmt.Sprintf("%d concept(en) klaar voor %s. Bekijk met: sysop pending", msg.n, msg.board))
+		return m, m.out(fmt.Sprintf(m.tr("%d concept(en) klaar voor %s. Bekijk met: sysop pending", "%d draft(s) ready for %s. View with: sysop pending"), msg.n, msg.board))
 	case chat.Event:
 		if m.state == stateChat {
 			return m, tea.Println(msg.Line)
@@ -825,7 +827,7 @@ func (m *Model) key(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		switch {
 		case m.composing():
 			m.resetCompose()
-			return m, tea.Println("Geannuleerd.")
+			return m, tea.Println(m.tr("Geannuleerd.", "Cancelled."))
 		case m.state == stateChat:
 			return m.leaveChat()
 		case m.state == stateTalk:
@@ -975,7 +977,7 @@ func (m *Model) checkPromotion() (tea.Model, tea.Cmd) {
 		if m.inThis {
 			style = green
 		}
-		lines = append(lines, style.Render(fmt.Sprintf("*** PROMOTIE — THIS-%d toegekend ***", fresh.Level)))
+		lines = append(lines, style.Render(fmt.Sprintf(m.tr("*** PROMOTIE — THIS-%d toegekend ***", "*** PROMOTION — THIS-%d granted ***"), fresh.Level)))
 	}
 	l, err := m.deps.Boards.Listing(context.Background(), m.boardID, m.viewer())
 	if err != nil {
@@ -996,20 +998,20 @@ func (m *Model) checkPromotion() (tea.Model, tea.Cmd) {
 
 func (m *Model) pickHandle(h string) (tea.Model, tea.Cmd) {
 	if !text.ValidHandle(h) {
-		return m, m.print("Ongeldige naam. 3-16 tekens, alleen a-z 0-9 _ -. Probeer opnieuw.")
+		return m, m.print(m.tr("Ongeldige naam. 3-16 tekens, alleen a-z 0-9 _ -. Probeer opnieuw.", "Invalid name. 3-16 characters, only a-z 0-9 _ -. Try again."))
 	}
 	err := m.deps.Store.SetHandle(context.Background(), m.deps.Player.Fingerprint, h)
 	if errors.Is(err, store.ErrHandleTaken) {
-		return m, m.print("Die naam is al bezet. Probeer een andere.")
+		return m, m.print(m.tr("Die naam is al bezet. Probeer een andere.", "That name is taken. Try another."))
 	}
 	if err != nil {
-		return m, m.print("Opslaan mislukt, probeer opnieuw.")
+		return m, m.print(m.tr("Opslaan mislukt, probeer opnieuw.", "Save failed, try again."))
 	}
 	m.deps.Player.Handle = h
 	m.deps.Sess.SetHandle(h)
 	m.state = stateRitual
 	m.input.Prompt = "> "
-	return m, tea.Batch(m.print(fmt.Sprintf("Aangenaam, %s.", h)), delay(500*time.Millisecond, ritPassword))
+	return m, tea.Batch(m.print(fmt.Sprintf(m.tr("Aangenaam, %s.", "Pleased to meet you, %s."), h)), delay(500*time.Millisecond, ritPassword))
 }
 
 // ─── boards area ───────────────────────────────────────────────────────────
@@ -1044,7 +1046,7 @@ func (m *Model) boardsLine(line string) (tea.Model, tea.Cmd) {
 	case "reply":
 		nr, err := strconv.Atoi(arg)
 		if err != nil {
-			return m, m.print("Gebruik: reply <nr>")
+			return m, m.print(m.tr("Gebruik: reply <nr>", "Usage: reply <nr>"))
 		}
 		return m.startCompose(nr)
 	case "status":
@@ -1056,16 +1058,16 @@ func (m *Model) boardsLine(line string) (tea.Model, tea.Cmd) {
 	if len(fields) == 1 {
 		return m.openBoard(cmd)
 	}
-	return m, m.print("Onbekende keuze.")
+	return m, m.print(m.tr("Onbekende keuze.", "Unknown choice."))
 }
 
 func (m *Model) openBoard(id string) (tea.Model, tea.Cmd) {
 	if id == "" {
-		return m, m.out("Gebruik: board <id>")
+		return m, m.out(m.tr("Gebruik: board <id>", "Usage: board <id>"))
 	}
 	l, err := m.deps.Boards.Listing(context.Background(), id, m.viewer())
 	if err != nil {
-		return m, m.out("Onbekend board.")
+		return m, m.out(m.tr("Onbekend board.", "Unknown board."))
 	}
 	m.boardID = id
 	if m.inThis {
@@ -1081,16 +1083,16 @@ func (m *Model) renderStatus() string {
 	p := m.deps.Player
 	up := time.Since(m.start).Round(time.Second)
 	out := []string{
-		fmt.Sprintf("Gebruiker : %s", p.Handle),
-		fmt.Sprintf("Lid sinds : %s", p.CreatedAt.Format("02-01-2006")),
+		fmt.Sprintf(m.tr("Gebruiker : %s", "User      : %s"), p.Handle),
+		fmt.Sprintf(m.tr("Lid sinds : %s", "Joined    : %s"), p.CreatedAt.Format("02-01-2006")),
 		fmt.Sprintf("Online    : %s", up),
-		fmt.Sprintf("Lijn      : %s", lineLabel(m.deps.Sess.Line)),
-		fmt.Sprintf("Beltijd   : nog %d minuten vandaag", max(0, m.minutesLeft)),
+		fmt.Sprintf(m.tr("Lijn      : %s", "Line      : %s"), lineLabel(m.deps.Sess.Line)),
+		fmt.Sprintf(m.tr("Beltijd   : nog %d minuten vandaag", "Call time : %d minutes left today"), max(0, m.minutesLeft)),
 	}
 	// THIS clearance is only ever shown to members (non-members must see
 	// zero evidence THIS exists).
 	if p.ThisMember {
-		out = append(out, fmt.Sprintf("THIS      : niveau %d, %d vlaggen", p.Level, len(p.Flags)))
+		out = append(out, fmt.Sprintf(m.tr("THIS      : niveau %d, %d vlaggen", "THIS      : level %d, %d flags"), p.Level, len(p.Flags)))
 	}
 	return strings.Join(out, "\n")
 }
@@ -1098,56 +1100,56 @@ func (m *Model) renderStatus() string {
 // readMessage handles `read <nr>` in the current board context.
 func (m *Model) readMessage(arg string) (tea.Model, tea.Cmd) {
 	if m.boardID == "" {
-		return m, m.out("Open eerst een board: board <id>")
+		return m, m.out(m.tr("Open eerst een board: board <id>", "Open a board first: board <id>"))
 	}
 	nr, err := strconv.Atoi(arg)
 	if err != nil {
-		return m, m.out("Gebruik: read <nr>")
+		return m, m.out(m.tr("Gebruik: read <nr>", "Usage: read <nr>"))
 	}
 	msg, err := m.deps.Boards.Read(context.Background(), m.boardID, nr, m.viewer())
 	var ec board.ErrClearance
 	switch {
 	case errors.As(err, &ec):
 		// Locked things respond specifically: name the required clearance.
-		return m, m.out(fmt.Sprintf("TOEGANG GEWEIGERD — THIS-%d vereist.", ec.Need))
+		return m, m.out(fmt.Sprintf(m.tr("TOEGANG GEWEIGERD — THIS-%d vereist.", "ACCESS DENIED — THIS-%d required."), ec.Need))
 	case err != nil:
-		return m, m.out("Geen bericht met dat nummer.")
+		return m, m.out(m.tr("Geen bericht met dat nummer.", "No message with that number."))
 	}
 	_ = m.deps.Store.SetLastRead(context.Background(), m.deps.Player.Fingerprint, m.boardID, msg.ID)
 	if msg.GrantsFlag != "" {
 		m.refreshPlayer()
 	}
-	return m, m.out(renderMessage(m.boardID, msg))
+	return m, m.out(renderMessage(m.boardID, msg, m.lang()))
 }
 
 // startCompose begins the post/reply composer (ESC cancels).
 func (m *Model) startCompose(replyTo int) (tea.Model, tea.Cmd) {
 	if m.boardID == "" {
-		return m, m.out("Open eerst een board: board <id>")
+		return m, m.out(m.tr("Open eerst een board: board <id>", "Open a board first: board <id>"))
 	}
 	b := m.deps.Boards.VisibleBoardByID(m.boardID, m.viewer())
 	if b == nil {
 		m.boardID = ""
-		return m, m.out("Onbekend board.")
+		return m, m.out(m.tr("Onbekend board.", "Unknown board."))
 	}
 	if !b.Writable {
-		return m, m.out("Dit board is alleen-lezen.")
+		return m, m.out(m.tr("Dit board is alleen-lezen.", "This board is read-only."))
 	}
 	m.compose.replyTo = replyTo
 	m.compose.back = m.state
 	m.state = stateComposeSubject
 	m.input.Prompt = "Onderwerp: "
-	return m, m.out("Nieuw bericht. ESC annuleert.")
+	return m, m.out(m.tr("Nieuw bericht. ESC annuleert.", "New message. ESC cancels."))
 }
 
 func (m *Model) composeSubject(line string) (tea.Model, tea.Cmd) {
 	if line == "" {
-		return m, m.out("Onderwerp mag niet leeg zijn.")
+		return m, m.out(m.tr("Onderwerp mag niet leeg zijn.", "Subject can't be empty."))
 	}
 	m.compose.subject = line
 	m.state = stateComposeBody
 	m.input.Prompt = "| "
-	return m, m.out("Tekst. Sluit af met '.' op een eigen regel (of ctrl-d).")
+	return m, m.out(m.tr("Tekst. Sluit af met '.' op een eigen regel (of ctrl-d).", "Text. Finish with '.' on its own line (or ctrl-d)."))
 }
 
 func (m *Model) composeBody(line string) (tea.Model, tea.Cmd) {
@@ -1163,7 +1165,7 @@ func (m *Model) composeBody(line string) (tea.Model, tea.Cmd) {
 func (m *Model) finishBody() (tea.Model, tea.Cmd) {
 	if len(m.compose.lines) == 0 {
 		m.resetCompose()
-		return m, m.out("Leeg bericht, geannuleerd.")
+		return m, m.out(m.tr("Leeg bericht, geannuleerd.", "Empty message, cancelled."))
 	}
 	b := m.deps.Boards.VisibleBoardByID(m.boardID, m.viewer())
 	if b != nil && b.Area == content.AreaThis && m.deps.Player.Level > 0 {
@@ -1180,7 +1182,7 @@ func (m *Model) composeLevel(line string) (tea.Model, tea.Cmd) {
 	}
 	lvl, err := strconv.Atoi(line)
 	if err != nil || lvl < 0 || lvl > m.deps.Player.Level {
-		return m, m.out(fmt.Sprintf("Kies een niveau van 0 t/m %d.", m.deps.Player.Level))
+		return m, m.out(fmt.Sprintf(m.tr("Kies een niveau van 0 t/m %d.", "Choose a level from 0 to %d."), m.deps.Player.Level))
 	}
 	return m.submitPost(lvl)
 }
@@ -1191,12 +1193,12 @@ func (m *Model) submitPost(level int) (tea.Model, tea.Cmd) {
 	m.resetCompose()
 	if err != nil {
 		if errors.Is(err, board.ErrNoMessage) {
-			return m, m.out("Geen bericht met dat nummer.")
+			return m, m.out(m.tr("Geen bericht met dat nummer.", "No message with that number."))
 		}
-		return m, m.out("Plaatsen mislukt.")
+		return m, m.out(m.tr("Plaatsen mislukt.", "Post failed."))
 	}
 	_ = m.deps.Store.SetLastRead(context.Background(), m.deps.Player.Fingerprint, m.boardID, id)
-	return m, m.out(fmt.Sprintf("Geplaatst als bericht #%d.", id))
+	return m, m.out(fmt.Sprintf(m.tr("Geplaatst als bericht #%d.", "Posted as message #%d."), id))
 }
 
 // ─── file area ─────────────────────────────────────────────────────────────
@@ -1224,11 +1226,11 @@ func (m *Model) filesLine(line string) (tea.Model, tea.Cmd) {
 		return m.backToMenu()
 	case "lees", "read":
 		if len(fields) < 2 {
-			return m, m.print("Gebruik: lees <nr>")
+			return m, m.print(m.tr("Gebruik: lees <nr>", "Usage: lees <nr>"))
 		}
 		nr, err := strconv.Atoi(fields[1])
 		if err != nil || nr < 1 || nr > len(files) {
-			return m, m.print("Geen bestand met dat nummer.")
+			return m, m.print(m.tr("Geen bestand met dat nummer.", "No file with that number."))
 		}
 		f := &files[nr-1]
 		if f.GrantsFlag != "" {
@@ -1241,7 +1243,7 @@ func (m *Model) filesLine(line string) (tea.Model, tea.Cmd) {
 	case "logout":
 		return m.quit()
 	}
-	return m, m.print("Onbekende keuze.")
+	return m, m.print(m.tr("Onbekende keuze.", "Unknown choice."))
 }
 
 // ─── babbel (chat) ─────────────────────────────────────────────────────────
@@ -1252,7 +1254,7 @@ func (m *Model) enterChat() (tea.Model, tea.Cmd) {
 	m.deps.Sess.SetArea("babbelbox", false)
 	recent := m.deps.Chat.Join(m.deps.Sess)
 	var b strings.Builder
-	b.WriteString("DE BABBELBOX — praat met alle lijnen. ESC om te vertrekken.\n")
+	b.WriteString(m.tr("DE BABBELBOX — praat met alle lijnen. ESC om te vertrekken.\n", "THE CHAT BOX — talk to all lines. ESC to leave.\n"))
 	b.WriteString(strings.Repeat("-", 62) + "\n")
 	tail := recent
 	if len(tail) > 15 {
@@ -1278,7 +1280,7 @@ func (m *Model) chatLine(line string) (tea.Model, tea.Cmd) {
 	}
 	m.refillMinuteBudgets()
 	if m.chatBudget <= 0 {
-		return m, tea.Println(dimmed.Render("* rustig aan — max 6 berichten per minuut"))
+		return m, tea.Println(dimmed.Render(m.tr("* rustig aan — max 6 berichten per minuut", "* easy now — max 6 messages per minute")))
 	}
 	m.chatBudget--
 	m.deps.Chat.Say(m.deps.Sess, line)
@@ -1293,7 +1295,7 @@ func (m *Model) enterThis() (tea.Model, tea.Cmd) {
 	// Too much heat: the line is being watched. Refuse until it cools off
 	// (heat decays on its own). Stay on the public BBS, no altscreen switch.
 	if h := m.currentHeat(); h >= store.HeatLockout {
-		return m, m.print("de verbinding valt weg. er wordt meegeluisterd op deze lijn.\nlaat het even rusten en probeer het straks opnieuw.")
+		return m, m.print(m.tr("de verbinding valt weg. er wordt meegeluisterd op deze lijn.\nlaat het even rusten en probeer het straks opnieuw.", "the connection drops. someone's listening in on this line.\nlet it rest and try again later."))
 	}
 	m.state = stateThis
 	m.inThis = true
@@ -1424,7 +1426,7 @@ func (m *Model) thisLine(line string) (tea.Model, tea.Cmd) {
 	case "reply":
 		nr, err := strconv.Atoi(arg)
 		if err != nil {
-			return m, m.out("gebruik: reply <nr>")
+			return m, m.out(m.tr("gebruik: reply <nr>", "usage: reply <nr>"))
 		}
 		return m.startCompose(nr)
 	case "status":
@@ -1453,32 +1455,32 @@ func (m *Model) currentHost() *content.Host {
 func (m *Model) renderScan() string {
 	hosts := m.deps.World.Scan(m.viewer(), m.hasFlag)
 	if len(hosts) == 0 {
-		return "scan: geen hosts binnen bereik. dat verandert."
+		return m.tr("scan: geen hosts binnen bereik. dat verandert.", "scan: no hosts in range. that'll change.")
 	}
 	var b strings.Builder
-	b.WriteString("SCAN — bereikbare hosts\n")
+	b.WriteString(m.tr("SCAN — bereikbare hosts\n", "SCAN — reachable hosts\n"))
 	for _, h := range hosts {
 		mark := ""
 		if h.Locked {
-			mark = "  [vergrendeld]"
+			mark = m.tr("  [vergrendeld]", "  [locked]")
 		}
 		b.WriteString(fmt.Sprintf("  %-24s%s\n", h.Address, mark))
 	}
-	b.WriteString("gebruik: connect <adres>")
+	b.WriteString(m.tr("gebruik: connect <adres>", "usage: connect <address>"))
 	return b.String()
 }
 
 func (m *Model) connectHost(addr string) (tea.Model, tea.Cmd) {
 	if addr == "" {
-		return m, m.out("gebruik: connect <adres>")
+		return m, m.out(m.tr("gebruik: connect <adres>", "usage: connect <address>"))
 	}
 	h, err := m.deps.World.Connect(addr, m.viewer(), m.hasFlag)
 	if err != nil {
 		// Unknown and above-clearance addresses answer identically.
-		return m, m.out("connect: geen route naar host.")
+		return m, m.out(m.tr("connect: geen route naar host.", "connect: no route to host."))
 	}
 	m.hostAddr = h.Address
-	out := []string{fmt.Sprintf("VERBONDEN MET %s", strings.ToUpper(h.Address))}
+	out := []string{fmt.Sprintf(m.tr("VERBONDEN MET %s", "CONNECTED TO %s"), strings.ToUpper(h.Address))}
 	if banner := h.Banner.Get(m.lang()); banner != "" {
 		out = append(out, "", strings.TrimRight(banner, "\n"))
 	}
@@ -1488,7 +1490,7 @@ func (m *Model) connectHost(addr string) (tea.Model, tea.Cmd) {
 	// Shared world: a breachable host wears the trail of who got in before you.
 	if h.Locked {
 		if bi, err := m.deps.Store.BreachInfo(context.Background(), h.ID); err == nil && bi.Count > 0 {
-			line := fmt.Sprintf("sporen: %d operator(s) zijn hier binnen geweest. eerste: %s", bi.Count, bi.FirstHandle)
+			line := fmt.Sprintf(m.tr("sporen: %d operator(s) zijn hier binnen geweest. eerste: %s", "traces: %d operator(s) have been in here before. first: %s"), bi.Count, bi.FirstHandle)
 			if !bi.FirstAt.IsZero() {
 				line += " (" + bi.FirstAt.Format("02-01-06") + ")"
 			}
@@ -1500,16 +1502,16 @@ func (m *Model) connectHost(addr string) (tea.Model, tea.Cmd) {
 
 func (m *Model) disconnectHost() (tea.Model, tea.Cmd) {
 	if m.hostAddr == "" {
-		return m, m.out("je bent nergens mee verbonden.")
+		return m, m.out(m.tr("je bent nergens mee verbonden.", "you're not connected to anything."))
 	}
 	addr := m.hostAddr
 	m.hostAddr = ""
-	out := fmt.Sprintf("verbinding met %s verbroken.", addr)
+	out := fmt.Sprintf(m.tr("verbinding met %s verbroken.", "disconnected from %s."), addr)
 	if m.traceHost != "" {
 		// A clean disconnect beats the trace. That's the whole game.
 		m.traceHost = ""
 		m.traceUntil = time.Time{}
-		out += "\ntrace afgebroken. netjes op tijd."
+		out += m.tr("\ntrace afgebroken. netjes op tijd.", "\ntrace aborted. right on time.")
 	}
 	return m, m.out(out)
 }
@@ -1519,10 +1521,10 @@ func (m *Model) disconnectHost() (tea.Model, tea.Cmd) {
 func (m *Model) crackHost() (tea.Model, tea.Cmd) {
 	h := m.currentHost()
 	if h == nil {
-		return m, m.out("crack: niet verbonden. eerst connect <adres>.")
+		return m, m.out(m.tr("crack: niet verbonden. eerst connect <adres>.", "crack: not connected. connect <address> first."))
 	}
 	if h.Locked && h.Crack != nil && h.Crack.Method == "wordlist" {
-		m.thisPrint("woordenlijst geladen. draaien maar...\n[########________________________]")
+		m.thisPrint(m.tr("woordenlijst geladen. draaien maar...", "wordlist loaded. let's run it...") + "\n[########________________________]")
 		return m, tea.Tick(1500*time.Millisecond, func(time.Time) tea.Msg {
 			return crackRunMsg{hostAddr: h.Address}
 		})
@@ -1535,7 +1537,7 @@ func (m *Model) runCrack(h *content.Host) (tea.Model, tea.Cmd) {
 	ctx := context.Background()
 	res, err := m.deps.World.Crack(ctx, h, m.viewer(), m.hasFlag)
 	if err != nil {
-		return m, m.out("crack: er knettert iets. probeer opnieuw.")
+		return m, m.out(m.tr("crack: er knettert iets. probeer opnieuw.", "crack: something's crackling. try again."))
 	}
 	if !res.Success {
 		return m, m.out(res.Msg)
@@ -1543,12 +1545,12 @@ func (m *Model) runCrack(h *content.Host) (tea.Model, tea.Cmd) {
 	// The shared trail: record that this operator has been here (idempotent;
 	// the first breacher is never overwritten).
 	_ = m.deps.Store.RecordBreach(ctx, h.ID, m.deps.Player.Handle, time.Now())
-	out := []string{green.Render("*** TOEGANG VERLEEND ***")}
+	out := []string{green.Render(m.tr("*** TOEGANG VERLEEND ***", "*** ACCESS GRANTED ***"))}
 	if res.First && res.Effects != nil {
 		oldLevel := m.deps.Player.Level
 		if err := m.applyEffects(*res.Effects); err == nil {
 			if m.deps.Player.Level > oldLevel {
-				out = append(out, green.Render(fmt.Sprintf("*** PROMOTIE — THIS-%d toegekend ***", m.deps.Player.Level)))
+				out = append(out, green.Render(fmt.Sprintf(m.tr("*** PROMOTIE — THIS-%d toegekend ***", "*** PROMOTION — THIS-%d granted ***"), m.deps.Player.Level)))
 			}
 			if res.Effects.Broadcast != "" {
 				line := strings.ReplaceAll(res.Effects.Broadcast, "{handle}", m.deps.Player.Handle)
@@ -1565,14 +1567,14 @@ func (m *Model) runCrack(h *content.Host) (tea.Model, tea.Cmd) {
 		}
 		m.traceHost = h.ID
 		m.traceUntil = time.Now().Add(time.Duration(secs) * time.Second)
-		warn := fmt.Sprintf("waarschuwing: traceerpoging gestart. je hebt %d seconden. 'disconnect' verbreekt schoon, 'wipe' wist ook je sporen.", secs)
+		warn := fmt.Sprintf(m.tr("waarschuwing: traceerpoging gestart. je hebt %d seconden. 'disconnect' verbreekt schoon, 'wipe' wist ook je sporen.", "warning: trace attempt started. you have %d seconds. 'disconnect' breaks clean, 'wipe' also erases your tracks."), secs)
 		if routed {
-			warn += "\n(trace loopt om via " + m.routeVia + ".)"
+			warn += m.tr("\n(trace loopt om via ", "\n(trace rerouted via ") + m.routeVia + ".)"
 		}
 		out = append(out, warn)
 		cmd = traceTick()
 	}
-	out = append(out, "tik 'ls' voor de inhoud.")
+	out = append(out, m.tr("tik 'ls' voor de inhoud.", "type 'ls' for the contents."))
 	m.thisPrint(strings.Join(out, "\n"))
 	return m, cmd
 }
@@ -1595,12 +1597,12 @@ func (m *Model) traceTicked() (tea.Model, tea.Cmd) {
 		_ = m.deps.World.TraceExpired(context.Background(), h, m.deps.Player.Fingerprint)
 	}
 	heat := m.addHeat(store.HeatCaught)
-	msg := green.Render("*** VERBINDING VERBROKEN — je bent bijna getraceerd. ***") +
-		"\nterug op de thuisnode. die host wil je 10 minuten niet zien."
+	msg := green.Render(m.tr("*** VERBINDING VERBROKEN — je bent bijna getraceerd. ***", "*** CONNECTION DROPPED — you were nearly traced. ***")) +
+		m.tr("\nterug op de thuisnode. die host wil je 10 minuten niet zien.", "\nback on the home node. that host doesn't want to see you for 10 minutes.")
 	if heat >= store.HeatLockout {
-		msg += "\nje profiel staat nu bovenaan bij beveiliging. laat het even rusten."
+		msg += m.tr("\nje profiel staat nu bovenaan bij beveiliging. laat het even rusten.", "\nyour profile is now at the top of security's list. let it rest a while.")
 	} else {
-		msg += "\ntip: 'wipe' schoont je sporen op."
+		msg += m.tr("\ntip: 'wipe' schoont je sporen op.", "\ntip: 'wipe' cleans up your tracks.")
 	}
 	m.thisPrint(msg)
 	return m, nil
@@ -1631,14 +1633,14 @@ func (m *Model) wipeTracks() (tea.Model, tea.Cmd) {
 	}
 	before := m.currentHeat()
 	if !tracing && before == 0 {
-		return m, m.out("wipe: geen sporen om te wissen.")
+		return m, m.out(m.tr("wipe: geen sporen om te wissen.", "wipe: no tracks to scrub."))
 	}
 	after := m.addHeat(-store.HeatWipe)
 	var out string
 	if tracing {
-		out = "logs gewist. trace afgebroken — je was hier nooit."
+		out = m.tr("logs gewist. trace afgebroken — je was hier nooit.", "logs scrubbed. trace aborted — you were never here.")
 	} else {
-		out = "logs gewist."
+		out = m.tr("logs gewist.", "logs scrubbed.")
 	}
 	if before > 0 {
 		out += fmt.Sprintf(" (heat %d → %d)", before, after)
@@ -1649,7 +1651,7 @@ func (m *Model) wipeTracks() (tea.Model, tea.Cmd) {
 func (m *Model) lsHost(showHidden, long bool) (tea.Model, tea.Cmd) {
 	h := m.currentHost()
 	if h == nil {
-		return m, m.out("ls: niet verbonden. eerst connect <adres>.")
+		return m, m.out(m.tr("ls: niet verbonden. eerst connect <adres>.", "ls: not connected. connect <address> first."))
 	}
 	rows, err := m.deps.World.Ls(context.Background(), h, m.viewer())
 	if err != nil {
@@ -1672,14 +1674,14 @@ func (m *Model) lsHost(showHidden, long bool) (tea.Model, tea.Cmd) {
 		}
 	}
 	if shown == 0 {
-		b.WriteString("(leeg)\n")
+		b.WriteString(m.tr("(leeg)", "(empty)") + "\n")
 	}
 	// Diegetic discovery: a cracked host advertises its other readouts.
 	if len(h.Mail) > 0 {
-		b.WriteString(dimmed.Render("  (er staat post — 'mail')") + "\n")
+		b.WriteString(dimmed.Render(m.tr("  (er staat post — 'mail')", "  (there's mail — 'mail')")) + "\n")
 	}
 	if h.Netstat != nil {
-		b.WriteString(dimmed.Render("  (actieve verbindingen — 'netstat')") + "\n")
+		b.WriteString(dimmed.Render(m.tr("  (actieve verbindingen — 'netstat')", "  (active connections — 'netstat')")) + "\n")
 	}
 	return m, m.out(strings.TrimRight(b.String(), "\n"))
 }
@@ -1688,27 +1690,27 @@ func (m *Model) lsHost(showHidden, long bool) (tea.Model, tea.Cmd) {
 func (m *Model) mailHost(arg string) (tea.Model, tea.Cmd) {
 	h := m.currentHost()
 	if h == nil {
-		return m, m.out("mail: niet verbonden.")
+		return m, m.out(m.tr("mail: niet verbonden.", "mail: not connected."))
 	}
 	if arg != "" {
 		idx, err := strconv.Atoi(arg)
 		if err != nil {
-			return m, m.out("gebruik: mail <nr>")
+			return m, m.out(m.tr("gebruik: mail <nr>", "usage: mail <nr>"))
 		}
 		msg, err := m.deps.World.ReadMail(context.Background(), h, idx, m.viewer())
 		var ec world.ErrClearance
 		switch {
 		case errors.As(err, &ec):
-			return m, m.out(fmt.Sprintf("TOEGANG GEWEIGERD — THIS-%d vereist.", ec.Need))
+			return m, m.out(fmt.Sprintf(m.tr("TOEGANG GEWEIGERD — THIS-%d vereist.", "ACCESS DENIED — THIS-%d required."), ec.Need))
 		case errors.Is(err, world.ErrLocked):
 			return m, m.out(m.lockedHint(h))
 		case err != nil:
-			return m, m.out("mail: geen bericht met dat nummer.")
+			return m, m.out(m.tr("mail: geen bericht met dat nummer.", "mail: no message with that number."))
 		}
 		if msg.GrantsFlag != "" {
 			m.refreshPlayer()
 		}
-		return m, m.out(fmt.Sprintf("Van      : %s\nOnderwerp: %s\n%s\n%s",
+		return m, m.out(fmt.Sprintf(m.tr("Van      : %s\nOnderwerp: %s\n%s\n%s", "From     : %s\nSubject  : %s\n%s\n%s"),
 			msg.From, msg.Subject.Get(m.lang()), strings.Repeat("-", 40), strings.TrimRight(msg.Body.Get(m.lang()), "\n")))
 	}
 	rows, err := m.deps.World.Mail(context.Background(), h, m.viewer())
@@ -1716,10 +1718,10 @@ func (m *Model) mailHost(arg string) (tea.Model, tea.Cmd) {
 		return m, m.out(m.lockedHint(h))
 	}
 	if len(rows) == 0 {
-		return m, m.out("geen post.")
+		return m, m.out(m.tr("geen post.", "no mail."))
 	}
 	var b strings.Builder
-	b.WriteString("SPOEL — post op deze host\n")
+	b.WriteString(m.tr("SPOEL — post op deze host\n", "SPOOL — mail on this host\n"))
 	for _, r := range rows {
 		if r.Redacted {
 			b.WriteString(redactStyle.Render(fmt.Sprintf("  %2d  %-14s [THIS-%d]", r.Index, r.From, r.Level)) + "\n")
@@ -1727,7 +1729,7 @@ func (m *Model) mailHost(arg string) (tea.Model, tea.Cmd) {
 			b.WriteString(fmt.Sprintf("  %2d  %-14s %s\n", r.Index, r.From, r.Subject))
 		}
 	}
-	b.WriteString("gebruik: mail <nr>")
+	b.WriteString(m.tr("gebruik: mail <nr>", "usage: mail <nr>"))
 	return m, m.out(b.String())
 }
 
@@ -1735,22 +1737,22 @@ func (m *Model) mailHost(arg string) (tea.Model, tea.Cmd) {
 func (m *Model) netstatHost() (tea.Model, tea.Cmd) {
 	h := m.currentHost()
 	if h == nil {
-		return m, m.out("netstat: niet verbonden.")
+		return m, m.out(m.tr("netstat: niet verbonden.", "netstat: not connected."))
 	}
 	view, err := m.deps.World.Netstat(context.Background(), h, m.viewer())
 	var ec world.ErrClearance
 	switch {
 	case errors.As(err, &ec):
-		return m, m.out(fmt.Sprintf("TOEGANG GEWEIGERD — THIS-%d vereist.", ec.Need))
+		return m, m.out(fmt.Sprintf(m.tr("TOEGANG GEWEIGERD — THIS-%d vereist.", "ACCESS DENIED — THIS-%d required."), ec.Need))
 	case errors.Is(err, world.ErrLocked):
 		return m, m.out(m.lockedHint(h))
 	case err != nil:
-		return m, m.out("netstat: geen actieve verbindingen.")
+		return m, m.out(m.tr("netstat: geen actieve verbindingen.", "netstat: no active connections."))
 	}
 	if view.GrantsFlag != "" {
 		m.refreshPlayer()
 	}
-	return m, m.out("ACTIEVE VERBINDINGEN\n" + strings.Repeat("-", 40) + "\n" + strings.TrimRight(view.Body.Get(m.lang()), "\n"))
+	return m, m.out(m.tr("ACTIEVE VERBINDINGEN", "ACTIVE CONNECTIONS") + "\n" + strings.Repeat("-", 40) + "\n" + strings.TrimRight(view.Body.Get(m.lang()), "\n"))
 }
 
 // routeHost launders the next crack's trace through a host you already own,
@@ -1759,41 +1761,41 @@ func (m *Model) routeHost(arg string) (tea.Model, tea.Cmd) {
 	switch arg {
 	case "":
 		if m.routeVia == "" {
-			return m, m.out("route: direct (geen omweg). gebruik: route <adres van een gekraakte host>")
+			return m, m.out(m.tr("route: direct (geen omweg). gebruik: route <adres van een gekraakte host>", "route: direct (no detour). usage: route <address of a cracked host>"))
 		}
-		return m, m.out("route: via " + m.routeVia)
+		return m, m.out(m.tr("route: via ", "route: via ") + m.routeVia)
 	case "uit", "off", "direct":
 		m.routeVia = ""
-		return m, m.out("route: direct.")
+		return m, m.out(m.tr("route: direct.", "route: direct."))
 	}
 	h, err := m.deps.World.Connect(arg, m.viewer(), m.hasFlag)
 	if err != nil {
-		return m, m.out("route: geen route naar host.")
+		return m, m.out(m.tr("route: geen route naar host.", "route: no route to host."))
 	}
 	if ok, _ := m.deps.World.Unlocked(context.Background(), h, m.deps.Player.Fingerprint); !ok {
-		return m, m.out("route: die host is nog niet van jou. kraak hem eerst.")
+		return m, m.out(m.tr("route: die host is nog niet van jou. kraak hem eerst.", "route: that host isn't yours yet. crack it first."))
 	}
 	m.routeVia = h.Address
-	return m, m.out("route: verkeer loopt nu via " + h.Address + ". traces krijgen het moeilijker.")
+	return m, m.out(fmt.Sprintf(m.tr("route: verkeer loopt nu via %s. traces krijgen het moeilijker.", "route: traffic now runs via %s. traces will have a harder time."), h.Address))
 }
 
 func (m *Model) catHost(name string) (tea.Model, tea.Cmd) {
 	h := m.currentHost()
 	if h == nil {
-		return m, m.out("cat: niet verbonden. eerst connect <adres>.")
+		return m, m.out(m.tr("cat: niet verbonden. eerst connect <adres>.", "cat: not connected. connect <address> first."))
 	}
 	if name == "" {
-		return m, m.out("gebruik: cat <bestand>")
+		return m, m.out(m.tr("gebruik: cat <bestand>", "usage: cat <file>"))
 	}
 	f, err := m.deps.World.Cat(context.Background(), h, name, m.viewer())
 	var ec world.ErrClearance
 	switch {
 	case errors.As(err, &ec):
-		return m, m.out(fmt.Sprintf("TOEGANG GEWEIGERD — THIS-%d vereist.", ec.Need))
+		return m, m.out(fmt.Sprintf(m.tr("TOEGANG GEWEIGERD — THIS-%d vereist.", "ACCESS DENIED — THIS-%d required."), ec.Need))
 	case errors.Is(err, world.ErrLocked):
 		return m, m.out(m.lockedHint(h))
 	case err != nil:
-		return m, m.out("cat: bestand niet gevonden.")
+		return m, m.out(m.tr("cat: bestand niet gevonden.", "cat: file not found."))
 	}
 	if f.GrantsFlag != "" {
 		m.refreshPlayer()
@@ -1807,14 +1809,14 @@ func (m *Model) lockedHint(h *content.Host) string {
 	if h.Crack != nil && h.Crack.HintOnFail != "" {
 		return h.Crack.HintOnFail
 	}
-	return "toegang vergrendeld."
+	return m.tr("toegang vergrendeld.", "access locked.")
 }
 
 // renderThisWho lists members currently online: handle + THIS-level.
 // Only visible inside THIS; the public user list never shows membership.
 func (m *Model) renderThisWho() string {
 	var b strings.Builder
-	b.WriteString("WIE — leden online\n")
+	b.WriteString(m.tr("WIE — leden online\n", "WHO — members online\n"))
 	n := 0
 	ctx := context.Background()
 	for _, s := range m.deps.Registry.All() {
@@ -1826,15 +1828,15 @@ func (m *Model) renderThisWho() string {
 		if err != nil || !p.ThisMember {
 			continue
 		}
-		place := "buiten"
+		place := m.tr("buiten", "outside")
 		if inside {
-			place = "binnen"
+			place = m.tr("binnen", "inside")
 		}
 		b.WriteString(fmt.Sprintf("  %-16s THIS-%d  %s\n", handle, p.Level, place))
 		n++
 	}
 	if n == 0 {
-		b.WriteString("  (niemand — of niemand die zich laat zien)\n")
+		b.WriteString(m.tr("  (niemand — of niemand die zich laat zien)\n", "  (nobody — or nobody showing themselves)\n"))
 	}
 	return strings.TrimRight(b.String(), "\n")
 }
@@ -1843,11 +1845,11 @@ func (m *Model) renderThisWho() string {
 func (m *Model) wall(msg string) (tea.Model, tea.Cmd) {
 	msg = text.CleanLine(msg)
 	if msg == "" {
-		return m, m.out("gebruik: wall <tekst>")
+		return m, m.out(m.tr("gebruik: wall <tekst>", "usage: wall <text>"))
 	}
 	m.refillMinuteBudgets()
 	if m.wallBudget <= 0 {
-		return m, m.out("wall: rustig. één per minuut.")
+		return m, m.out(m.tr("wall: rustig. één per minuut.", "wall: easy. one per minute."))
 	}
 	m.wallBudget--
 	line := fmt.Sprintf("*** %s: %s", m.deps.Player.Handle, msg)
@@ -1868,10 +1870,10 @@ type npcReplyMsg struct {
 func (m *Model) startTalk() (tea.Model, tea.Cmd) {
 	h := m.currentHost()
 	if h == nil {
-		return m, m.out("talk: niet verbonden.")
+		return m, m.out(m.tr("talk: niet verbonden.", "talk: not connected."))
 	}
 	if h.NPC == nil {
-		return m, m.out("talk: hier is niemand om mee te praten.")
+		return m, m.out(m.tr("talk: hier is niemand om mee te praten.", "talk: there's no one here to talk to."))
 	}
 	if ok, err := m.deps.World.Unlocked(context.Background(), h, m.deps.Player.Fingerprint); err == nil && !ok {
 		return m, m.out(m.lockedHint(h))
@@ -1879,7 +1881,7 @@ func (m *Model) startTalk() (tea.Model, tea.Cmd) {
 	// Daily cap check (shared across NPCs).
 	used, err := m.deps.Store.AddNPCTurns(context.Background(), m.deps.Player.Fingerprint, today(), 0)
 	if err == nil && used >= llm.MaxTurnsPerDay {
-		return m, m.out("talk: je hebt vandaag genoeg gekletst. morgen weer.")
+		return m, m.out(m.tr("talk: je hebt vandaag genoeg gekletst. morgen weer.", "talk: you've chatted enough for today. come back tomorrow."))
 	}
 	npc := h.NPC
 	m.talk.host = h.ID
@@ -1889,7 +1891,7 @@ func (m *Model) startTalk() (tea.Model, tea.Cmd) {
 	m.talk.system = llm.BuildSystemPrompt(m.deps.Content.Prompts["npc"], npc, m.hasFlag, m.lang())
 	// A hot player draws wary NPCs — beveiliging has been asking around.
 	if m.currentHeat() >= store.HeatHot {
-		m.talk.system += "\n\nLET OP: deze beller heeft recent veel alarm veroorzaakt; beveiliging is naar hem op zoek. Wees achterdochtig en waarschuw hem, maar blijf in karakter."
+		m.talk.system += m.tr("\n\nLET OP: deze beller heeft recent veel alarm veroorzaakt; beveiliging is naar hem op zoek. Wees achterdochtig en waarschuw hem, maar blijf in karakter.", "\n\nNOTE: this caller has set off a lot of alarms recently; security is looking for them. Be suspicious and warn them, but stay in character.")
 	}
 	m.state = stateTalk
 	m.input.Prompt = fmt.Sprintf("%s> ", npc.Name)
@@ -1898,7 +1900,7 @@ func (m *Model) startTalk() (tea.Model, tea.Cmd) {
 	if greeting == "" {
 		greeting = fmt.Sprintf(m.tr("%s kijkt op.", "%s looks up."), npc.Name)
 	}
-	return m, m.out(fmt.Sprintf(m.tr("[gesprek met %s — 'weg' beeindigt]\n%s: %s", "[talking to %s — 'weg' ends it]\n%s: %s"),
+	return m, m.out(fmt.Sprintf(m.tr("[gesprek met %s — 'weg' beeindigt]\n%s: %s", "[talking to %s — 'exit' ends it]\n%s: %s"),
 		npc.Name, npc.Name, greeting))
 }
 
@@ -1921,13 +1923,13 @@ func (m *Model) talkLine(line string) (tea.Model, tea.Cmd) {
 		return m.endTalk(nil)
 	}
 	if m.talk.sessTurns >= llm.MaxTurnsPerSession {
-		return m, m.out(fmt.Sprintf("%s: genoeg voor nu. wegwezen.", npc.Name))
+		return m, m.out(fmt.Sprintf(m.tr("%s: genoeg voor nu. wegwezen.", "%s: enough for now. clear off."), npc.Name))
 	}
 	m.talk.sessTurns++
 	_, _ = m.deps.Store.AddNPCTurns(context.Background(), m.deps.Player.Fingerprint, today(), 1)
 
 	user := text.CleanLine(line)
-	m.thisPrint(green.Render("jij: " + user))
+	m.thisPrint(green.Render(m.tr("jij: ", "you: ") + user))
 	m.talk.history = append(m.talk.history, llm.Message{Role: "user", Content: user})
 
 	// If the LLM is disabled, answer immediately with the canned fallback.
@@ -1977,7 +1979,7 @@ func (m *Model) deliverNPC(npc *content.NPC, reply string, viaLLM bool) tea.Cmd 
 }
 
 func (m *Model) endTalk(npc *content.NPC) (tea.Model, tea.Cmd) {
-	name := "iemand"
+	name := m.tr("iemand", "someone")
 	if npc != nil {
 		name = npc.Name
 	}
@@ -1985,7 +1987,7 @@ func (m *Model) endTalk(npc *content.NPC) (tea.Model, tea.Cmd) {
 	m.talk.history = nil
 	m.state = stateThis
 	m.input.Prompt = "> "
-	return m, m.out(fmt.Sprintf("[je verbreekt het gesprek met %s]", name))
+	return m, m.out(fmt.Sprintf(m.tr("[je verbreekt het gesprek met %s]", "[you break off the conversation with %s]"), name))
 }
 
 // renderThisBoards lists only THIS-area boards (the public boards live on
@@ -2002,9 +2004,9 @@ func (m *Model) renderThisBoards() string {
 		n++
 	}
 	if n == 0 {
-		b.WriteString("  (niets — dat zegt genoeg)\n")
+		b.WriteString(m.tr("  (niets — dat zegt genoeg)\n", "  (nothing — which says enough)\n"))
 	}
-	b.WriteString("gebruik: board <id>")
+	b.WriteString(m.tr("gebruik: board <id>", "usage: board <id>"))
 	return b.String()
 }
 

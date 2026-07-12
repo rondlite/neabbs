@@ -38,6 +38,19 @@ const sysopHelp = `SYSOP — moderatie
   sysop nee <id>         verwerp een concept
   sysop help             deze lijst`
 
+const sysopHelpEN = `SYSOP — moderation
+  sysop who              all lines, with fingerprint and THIS-presence
+  sysop zeg <tekst>      broadcast to everyone (public and THIS)
+  sysop wis <nr>         delete message <nr> in the current board
+  sysop ban <handle>     ban a player (drops live sessions at once)
+  sysop unban <handle>   lift a ban
+  sysop reset <handle>   wipe THIS-progress (playtest; drops sessions)
+  sysop gen <board> [n]  have the LLM write n drafts (queue)
+  sysop pending          show drafts awaiting review
+  sysop ok <id>          publish a draft
+  sysop nee <id>         reject a draft
+  sysop help             this list`
+
 // sysopCmd dispatches the sysop-only verbs. It is only reached for players
 // with Admin set (see handleLine), so it never leaks to ordinary callers.
 func (m *Model) sysopCmd(line string, fields []string) (tea.Model, tea.Cmd) {
@@ -47,7 +60,7 @@ func (m *Model) sysopCmd(line string, fields []string) (tea.Model, tea.Cmd) {
 	}
 	switch sub {
 	case "", "help", "?":
-		return m, m.out(sysopHelp)
+		return m, m.out(m.tr(sysopHelp, sysopHelpEN))
 	case "who", "wie":
 		return m, m.out(m.renderSysopWho())
 	case "zeg", "say", "omroep":
@@ -103,7 +116,7 @@ func (m *Model) sysopCmd(line string, fields []string) (tea.Model, tea.Cmd) {
 		}
 		return m.sysopReview(arg, false)
 	}
-	return m, m.out("Onbekend sysop-commando. Probeer: sysop help")
+	return m, m.out(m.tr("Onbekend sysop-commando. Probeer: sysop help", "Unknown sysop command. Try: sysop help"))
 }
 
 // renderSysopWho is the elevated user list: unlike the public `who`, it shows
@@ -111,17 +124,17 @@ func (m *Model) sysopCmd(line string, fields []string) (tea.Model, tea.Cmd) {
 // caller is inside THIS. Sysop-only, so the THIS leak is intentional.
 func (m *Model) renderSysopWho() string {
 	var b strings.Builder
-	b.WriteString(fmt.Sprintf("SYSOP — ALLE LIJNEN (%d bezet)\n", m.deps.Registry.Count()))
+	b.WriteString(fmt.Sprintf(m.tr("SYSOP — ALLE LIJNEN (%d bezet)\n", "SYSOP — ALL LINES (%d busy)\n"), m.deps.Registry.Count()))
 	b.WriteString(strings.Repeat("-", 60) + "\n")
-	b.WriteString(fmt.Sprintf("  %-4s %-16s %-16s %s\n", "LIJN", "HANDLE", "VINGERAFDRUK", "PLEK"))
+	b.WriteString(fmt.Sprintf("  %-4s %-16s %-16s %s\n", m.tr("LIJN", "LINE"), "HANDLE", m.tr("VINGERAFDRUK", "FINGERPRINT"), m.tr("PLEK", "SPOT")))
 	for _, s := range m.deps.Registry.All() {
 		handle, area, inThis := s.Snapshot()
 		if handle == "" {
-			handle = "(inloggen...)"
+			handle = m.tr("(inloggen...)", "(logging in...)")
 		}
 		plek := area
 		if plek == "" {
-			plek = "hoofdmenu"
+			plek = m.tr("hoofdmenu", "main menu")
 		}
 		if inThis {
 			plek = "THIS » " + plek
@@ -144,11 +157,11 @@ func fpShort(fp string) string {
 // sysopBroadcast shouts a sysop announcement to every session.
 func (m *Model) sysopBroadcast(msg string) (tea.Model, tea.Cmd) {
 	if msg == "" {
-		return m, m.out("Gebruik: sysop zeg <tekst>")
+		return m, m.out(m.tr("Gebruik: sysop zeg <tekst>", "Usage: sysop zeg <tekst>"))
 	}
 	line := "*** SYSOP: " + msg
 	m.deps.Registry.Broadcast(SysopMsg{Line: line}, nil)
-	return m, m.out("Omgeroepen naar alle lijnen.")
+	return m, m.out(m.tr("Omgeroepen naar alle lijnen.", "Broadcast to all lines."))
 }
 
 // sysopBan bans or unbans a player by handle. A ban takes the ban bit (so
@@ -157,20 +170,20 @@ func (m *Model) sysopBroadcast(msg string) (tea.Model, tea.Cmd) {
 // still return with a fresh key — this is a speed bump, not a wall.
 func (m *Model) sysopBan(handle string, ban bool) (tea.Model, tea.Cmd) {
 	if handle == "" {
-		return m, m.out("Gebruik: sysop ban <handle>")
+		return m, m.out(m.tr("Gebruik: sysop ban <handle>", "Usage: sysop ban <handle>"))
 	}
 	target, err := m.deps.Store.PlayerByHandle(context.Background(), handle)
 	if err != nil {
-		return m, m.out("Geen speler met die naam.")
+		return m, m.out(m.tr("Geen speler met die naam.", "No player by that name."))
 	}
 	if ban && target.Fingerprint == m.deps.Player.Fingerprint {
-		return m, m.out("Je kunt jezelf niet bannen.")
+		return m, m.out(m.tr("Je kunt jezelf niet bannen.", "You cannot ban yourself."))
 	}
 	if err := m.deps.Store.SetBanned(context.Background(), target.Fingerprint, ban); err != nil {
-		return m, m.out("Actie mislukt.")
+		return m, m.out(m.tr("Actie mislukt.", "Action failed."))
 	}
 	if !ban {
-		return m, m.out(fmt.Sprintf("%s is niet langer verbannen.", target.Handle))
+		return m, m.out(fmt.Sprintf(m.tr("%s is niet langer verbannen.", "%s is no longer banned."), target.Handle))
 	}
 	// Drop any live sessions on that fingerprint.
 	kicked := 0
@@ -180,7 +193,7 @@ func (m *Model) sysopBan(handle string, ban bool) (tea.Model, tea.Cmd) {
 			kicked++
 		}
 	}
-	return m, m.out(fmt.Sprintf("%s verbannen. %d live sessie(s) verbroken.", target.Handle, kicked))
+	return m, m.out(fmt.Sprintf(m.tr("%s verbannen. %d live sessie(s) verbroken.", "%s banned. %d live session(s) dropped."), target.Handle, kicked))
 }
 
 // sysopReset wipes a player's THIS arc for replay (a playtest tool) and kicks
@@ -188,14 +201,14 @@ func (m *Model) sysopBan(handle string, ban bool) (tea.Model, tea.Cmd) {
 // state. Membership is kept, so they land back at THIS-0.
 func (m *Model) sysopReset(handle string) (tea.Model, tea.Cmd) {
 	if handle == "" {
-		return m, m.out("Gebruik: sysop reset <handle>")
+		return m, m.out(m.tr("Gebruik: sysop reset <handle>", "Usage: sysop reset <handle>"))
 	}
 	target, err := m.deps.Store.PlayerByHandle(context.Background(), handle)
 	if err != nil {
-		return m, m.out("Geen speler met die naam.")
+		return m, m.out(m.tr("Geen speler met die naam.", "No player by that name."))
 	}
 	if err := m.deps.Store.ResetProgress(context.Background(), target.Fingerprint, target.Handle); err != nil {
-		return m, m.out("Reset mislukt.")
+		return m, m.out(m.tr("Reset mislukt.", "Reset failed."))
 	}
 	kicked := 0
 	for _, s := range m.deps.Registry.All() {
@@ -204,32 +217,32 @@ func (m *Model) sysopReset(handle string) (tea.Model, tea.Cmd) {
 			kicked++
 		}
 	}
-	return m, m.out(fmt.Sprintf("%s: THIS-arc gereset (niveau 0, vlaggen/hosts/heat/sporen gewist). %d sessie(s) verbroken.", target.Handle, kicked))
+	return m, m.out(fmt.Sprintf(m.tr("%s: THIS-arc gereset (niveau 0, vlaggen/hosts/heat/sporen gewist). %d sessie(s) verbroken.", "%s: THIS-arc reset (level 0, flags/hosts/heat/traces wiped). %d session(s) dropped."), target.Handle, kicked))
 }
 
 // sysopDelete removes a player-authored post in the current board. YAML-seeded
 // content (ID < 10000) is immutable and reported as such.
 func (m *Model) sysopDelete(arg string) (tea.Model, tea.Cmd) {
 	if m.boardID == "" {
-		return m, m.out("Open eerst een board: board <id>")
+		return m, m.out(m.tr("Open eerst een board: board <id>", "Open a board first: board <id>"))
 	}
 	nr, err := strconv.Atoi(arg)
 	if err != nil {
-		return m, m.out("Gebruik: sysop wis <nr>")
+		return m, m.out(m.tr("Gebruik: sysop wis <nr>", "Usage: sysop wis <nr>"))
 	}
 	deleted, err := m.deps.Store.DeletePost(context.Background(), m.boardID, nr)
 	if err != nil {
-		return m, m.out("Verwijderen mislukt.")
+		return m, m.out(m.tr("Verwijderen mislukt.", "Delete failed."))
 	}
 	if !deleted {
 		if nr < 10000 {
-			return m, m.out(fmt.Sprintf("#%d is vaste content — alleen door bellers geplaatste berichten kunnen weg.", nr))
+			return m, m.out(fmt.Sprintf(m.tr("#%d is vaste content — alleen door bellers geplaatste berichten kunnen weg.", "#%d is fixed content — only messages posted by callers can be removed."), nr))
 		}
-		return m, m.out(fmt.Sprintf("Geen bericht #%d in dit board.", nr))
+		return m, m.out(fmt.Sprintf(m.tr("Geen bericht #%d in dit board.", "No message #%d in this board."), nr))
 	}
 	// Reprint the listing so the sysop sees the result.
 	l, lerr := m.deps.Boards.Listing(context.Background(), m.boardID, m.viewer())
-	out := fmt.Sprintf("Bericht #%d verwijderd.\n", nr)
+	out := fmt.Sprintf(m.tr("Bericht #%d verwijderd.\n", "Message #%d deleted.\n"), nr)
 	if lerr == nil {
 		out += "\n" + renderListing(l, m.lang())
 	}
@@ -249,11 +262,11 @@ type genDraftedMsg struct {
 // live. Honours the "review before use" rule the offline genposts tool set.
 func (m *Model) sysopGen(board string, n int) (tea.Model, tea.Cmd) {
 	if !m.deps.LLM.Enabled() {
-		return m, m.out("LLM staat uit — genereren kan niet (zet LLM_BASE_URL/MODEL/API_KEY).")
+		return m, m.out(m.tr("LLM staat uit — genereren kan niet (zet LLM_BASE_URL/MODEL/API_KEY).", "LLM is off — cannot generate (set LLM_BASE_URL/MODEL/API_KEY)."))
 	}
 	b := m.deps.Content.BoardByID(board)
 	if b == nil {
-		return m, m.out("Gebruik: sysop gen <board> [n] — onbekend board.")
+		return m, m.out(m.tr("Gebruik: sysop gen <board> [n] — onbekend board.", "Usage: sysop gen <board> [n] — unknown board."))
 	}
 	if n < 1 {
 		n = 1
@@ -303,7 +316,7 @@ func (m *Model) sysopGen(board string, n int) (tea.Model, tea.Cmd) {
 		return genDraftedMsg{board: boardID, n: saved}
 	}
 	return m, tea.Batch(
-		m.out(fmt.Sprintf("Concepten aanvragen bij de LLM voor %s (%d)… dit kan even duren.", boardID, n)),
+		m.out(fmt.Sprintf(m.tr("Concepten aanvragen bij de LLM voor %s (%d)… dit kan even duren.", "Requesting drafts from the LLM for %s (%d)… this may take a moment."), boardID, n)),
 		gen)
 }
 
@@ -311,18 +324,18 @@ func (m *Model) sysopGen(board string, n int) (tea.Model, tea.Cmd) {
 func (m *Model) sysopPending() (tea.Model, tea.Cmd) {
 	posts, err := m.deps.Store.PendingPosts(context.Background())
 	if err != nil {
-		return m, m.out("Kon de wachtrij niet ophalen.")
+		return m, m.out(m.tr("Kon de wachtrij niet ophalen.", "Could not fetch the queue."))
 	}
 	if len(posts) == 0 {
-		return m, m.out("Geen concepten in de wachtrij.")
+		return m, m.out(m.tr("Geen concepten in de wachtrij.", "No drafts in the queue."))
 	}
 	var b strings.Builder
-	b.WriteString(fmt.Sprintf("CONCEPTEN OP REVIEW (%d)\n", len(posts)))
+	b.WriteString(fmt.Sprintf(m.tr("CONCEPTEN OP REVIEW (%d)\n", "DRAFTS AWAITING REVIEW (%d)\n"), len(posts)))
 	b.WriteString(strings.Repeat("-", 60) + "\n")
 	for _, p := range posts {
 		b.WriteString(fmt.Sprintf("  #%-6d %-10s %-12.12s %.32s\n", p.ID, p.BoardID, p.Author, p.Subject))
 	}
-	b.WriteString("\nsysop ok <id> publiceert · sysop nee <id> verwerpt")
+	b.WriteString(m.tr("\nsysop ok <id> publiceert · sysop nee <id> verwerpt", "\nsysop ok <id> publishes · sysop nee <id> rejects"))
 	return m, m.out(b.String())
 }
 
@@ -331,9 +344,9 @@ func (m *Model) sysopReview(arg string, publish bool) (tea.Model, tea.Cmd) {
 	id, err := strconv.Atoi(arg)
 	if err != nil {
 		if publish {
-			return m, m.out("Gebruik: sysop ok <id>")
+			return m, m.out(m.tr("Gebruik: sysop ok <id>", "Usage: sysop ok <id>"))
 		}
-		return m, m.out("Gebruik: sysop nee <id>")
+		return m, m.out(m.tr("Gebruik: sysop nee <id>", "Usage: sysop nee <id>"))
 	}
 	var ok bool
 	if publish {
@@ -342,13 +355,13 @@ func (m *Model) sysopReview(arg string, publish bool) (tea.Model, tea.Cmd) {
 		ok, err = m.deps.Store.DeletePendingPost(context.Background(), id)
 	}
 	if err != nil {
-		return m, m.out("Actie mislukt.")
+		return m, m.out(m.tr("Actie mislukt.", "Action failed."))
 	}
 	if !ok {
-		return m, m.out(fmt.Sprintf("Geen concept #%d in de wachtrij.", id))
+		return m, m.out(fmt.Sprintf(m.tr("Geen concept #%d in de wachtrij.", "No draft #%d in the queue."), id))
 	}
 	if publish {
-		return m, m.out(fmt.Sprintf("#%d gepubliceerd.", id))
+		return m, m.out(fmt.Sprintf(m.tr("#%d gepubliceerd.", "#%d published."), id))
 	}
-	return m, m.out(fmt.Sprintf("#%d verworpen.", id))
+	return m, m.out(fmt.Sprintf(m.tr("#%d verworpen.", "#%d rejected."), id))
 }

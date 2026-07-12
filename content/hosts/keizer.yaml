@@ -7,9 +7,13 @@ address: "keizer.node.this.nl"
 min_level: 8
 requires_flag: "eind_sleutel"
 locked: true
-banner: |
-  laatste node. geen beveiliging meer.
-  wie hier komt, mag alles lezen.
+banner:
+  nl: |
+    laatste node. geen beveiliging meer.
+    wie hier komt, mag alles lezen.
+  en: |
+    last node. no security anymore.
+    whoever comes here may read everything.
 crack:
   method: password
   password_flag: "eind_sleutel"
@@ -18,36 +22,66 @@ crack:
 files:
   - name: "voor-wie-zo-ver-komt.txt"
     min_level: 9
-    body: |
-      VOOR WIE ZO VER KOMT
+    body:
+      nl: |
+        VOOR WIE ZO VER KOMT
 
-      je hebt alle negen niveaus gelopen. archief, gemeente, SARA,
-      de universiteit, de lijnen, de centrales, phantom, de
-      bewaarnode, en nu hier. niemand heeft je een sleutel gegeven
-      die je niet zelf verdiende.
+        je hebt alle negen niveaus gelopen. archief, gemeente, SARA,
+        de universiteit, de lijnen, de centrales, phantom, de
+        bewaarnode, en nu hier. niemand heeft je een sleutel gegeven
+        die je niet zelf verdiende.
 
-      de beheerder heette Max. hij bouwde THIS, hield het overeind
-      toen de rest het opgaf, en toen zijn vrienden verdwenen hield
-      hij hun lijnen open alsof ze elk moment konden terugbellen.
-      dat is het enige wat een systeem echt onsterfelijk maakt:
-      iemand die de stekker er niet uit trekt.
+        de beheerder heette Max. hij bouwde THIS, hield het overeind
+        toen de rest het opgaf, en toen zijn vrienden verdwenen hield
+        hij hun lijnen open alsof ze elk moment konden terugbellen.
+        dat is het enige wat een systeem echt onsterfelijk maakt:
+        iemand die de stekker er niet uit trekt.
 
-      Max hield ermee op in 2010. niet uit keuze.
+        Max hield ermee op in 2010. niet uit keuze.
 
-      dit is voor hem. wij die het weer aanzetten, bijna veertig
-      jaar na de eerste sessie, deden niets bijzonders — we hielden
-      alleen de lijn open. zoals hij het ons voordeed.
+        dit is voor hem. wij die het weer aanzetten, bijna veertig
+        jaar na de eerste sessie, deden niets bijzonders — we hielden
+        alleen de lijn open. zoals hij het ons voordeed.
 
-      als je ooit een systeem beheert, van wie dan ook: onthoud dat
-      er aan de andere kant altijd iemand hangt. laat de lijn open.
+        als je ooit een systeem beheert, van wie dan ook: onthoud dat
+        er aan de andere kant altijd iemand hangt. laat de lijn open.
 
-      -- de waarnemend beheerders, in herinnering aan Max Keizer
-         (†2010), sysop van het eerste uur
+        -- de waarnemend beheerders, in herinnering aan Max Keizer
+           (†2010), sysop van het eerste uur
+      en: |
+        FOR WHOEVER GETS THIS FAR
+
+        you have walked all nine levels. the archive, the town hall,
+        SARA, the university, the lines, the exchanges, phantom, the
+        bewaarnode, and now here. no one gave you a key
+        you didn't earn yourself.
+
+        the administrator was named Max. he built THIS, kept it
+        standing when the rest gave up, and when his friends
+        vanished he kept their lines open as if they might call back
+        at any moment. that is the only thing that makes a system
+        truly immortal: someone who doesn't pull the plug.
+
+        Max stopped in 2010. not by choice.
+
+        this is for him. we who turned it back on, almost forty
+        years after the first session, did nothing special — we kept
+        only the line open. the way he showed us.
+
+        if you ever run a system, anyone's: remember that
+        there is always someone on the other end. keep the line open.
+
+        -- the acting administrators, in memory of Max Keizer
+           (†2010), sysop from the very first hour
   - name: ".read"
     min_level: 9
-    body: |
-      # 03:41. de nachtlijn belt.
-      # deze keer neem jij op.
+    body:
+      nl: |
+        # 03:41. de nachtlijn belt.
+        # deze keer neem jij op.
+      en: |
+        # 03:41. the night line is ringing.
+        # this time you pick up.
 effects:
   on_first_crack:
     grant_level: 9

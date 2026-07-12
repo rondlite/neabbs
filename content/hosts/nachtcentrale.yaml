@@ -7,11 +7,17 @@ address: "nacht.centrale.ptt.nl"
 min_level: 5
 requires_flag: "nacht_toegang"
 locked: true
-banner: |
-  PTT TELECOMMUNICATIE — NACHTCENTRALE
-  Onbevoegd gebruik is strafbaar (art. 138a WvS).
+banner:
+  nl: |
+    PTT TELECOMMUNICATIE — NACHTCENTRALE
+    Onbevoegd gebruik is strafbaar (art. 138a WvS).
 
-  == systeem in nachtdienst sinds: --:-- ==
+    == systeem in nachtdienst sinds: --:-- ==
+  en: |
+    PTT TELECOMMUNICATIONS — NIGHT EXCHANGE
+    Unauthorised use is a criminal offence (art. 138a WvS).
+
+    == system on night duty since: --:-- ==
 crack:
   method: password
   password_flag: "nacht_sleutel"
@@ -21,36 +27,65 @@ files:
   - name: "sessielog.txt"
     min_level: 6
     grants_flag: "phantom_thuis_spoor"
-    body: |
-      SESSIELOG — LANGSTLOPENDE VERBINDING
+    body:
+      nl: |
+        SESSIELOG — LANGSTLOPENDE VERBINDING
 
-      sessie #1 geopend: 14-03-1986 03:41
-      sessie #1 gesloten: —
-      onderbroken en handmatig hersteld: talloze keren
+        sessie #1 geopend: 14-03-1986 03:41
+        sessie #1 gesloten: —
+        onderbroken en handmatig hersteld: talloze keren
 
-      de verbinding komt elke nacht terug op hetzelfde tijdstip,
-      van hetzelfde nummer. het nummer staat op naam van een
-      account dat al lang dood zou moeten zijn: phantom.
+        de verbinding komt elke nacht terug op hetzelfde tijdstip,
+        van hetzelfde nummer. het nummer staat op naam van een
+        account dat al lang dood zou moeten zijn: phantom.
 
-      hij logt in, doet niets, en hangt weer op. al bijna veertig
-      jaar. iemand houdt zijn lijn open. of iets.
+        hij logt in, doet niets, en hangt weer op. al bijna veertig
+        jaar. iemand houdt zijn lijn open. of iets.
 
-      wie hij was staat op zijn eigen machine: phantom.thuis.nl.
+        wie hij was staat op zijn eigen machine: phantom.thuis.nl.
+      en: |
+        SESSION LOG — LONGEST-RUNNING CONNECTION
+
+        session #1 opened: 14-03-1986 03:41
+        session #1 closed: —
+        dropped and manually restored: countless times
+
+        the connection comes back every night at the same time,
+        from the same number. the number is registered to an
+        account that should have been dead long ago: phantom.
+
+        he logs in, does nothing, and hangs up again. for almost
+        forty years now. someone keeps his line open. or something.
+
+        who he was is on his own machine: phantom.thuis.nl.
   - name: ".stil"
     min_level: 6
-    body: |
-      # nachtwacht, met de hand bijgehouden
-      # ik heb sessie #1 nooit durven sluiten.
-      # het voelt als de laatste die nog weet dat wij bestonden.
+    body:
+      nl: |
+        # nachtwacht, met de hand bijgehouden
+        # ik heb sessie #1 nooit durven sluiten.
+        # het voelt als de laatste die nog weet dat wij bestonden.
+      en: |
+        # night watch, kept by hand
+        # i've never dared to close session #1.
+        # it feels like the last one that still knows we existed.
 mail:
   - from: "phantom"
-    subject: "(geen onderwerp)"
+    subject:
+      nl: "(geen onderwerp)"
+      en: "(no subject)"
     min_level: 6
-    body: |
-      [automatisch bericht, elke nacht opnieuw verstuurd, altijd leeg
-       op één regel na]
+    body:
+      nl: |
+        [automatisch bericht, elke nacht opnieuw verstuurd, altijd leeg
+         op één regel na]
 
-      nog wakker?
+        nog wakker?
+      en: |
+        [automated message, resent every night, always empty
+         but for one line]
+
+        still awake?
 effects:
   on_first_crack:
     grant_level: 6

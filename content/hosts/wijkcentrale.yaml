@@ -7,11 +7,17 @@ address: "wijk.centrale.ptt.nl"
 min_level: 3
 requires_flag: "phreak_invite"
 locked: true
-banner: |
-  PTT TELECOMMUNICATIE — WIJKCENTRALE WEST
-  Strowger-schakelaars · nachtdienst
+banner:
+  nl: |
+    PTT TELECOMMUNICATIE — WIJKCENTRALE WEST
+    Strowger-schakelaars · nachtdienst
 
-  TOONKIEZER ACTIEF —
+    TOONKIEZER ACTIEF —
+  en: |
+    PTT TELECOMMUNICATIONS — DISTRICT EXCHANGE WEST
+    Strowger switches · night duty
+
+    TONE DIALLER ACTIVE —
 crack:
   method: wordlist
   password_flag: "toon_reeks"
@@ -21,42 +27,75 @@ files:
   - name: "schakelplan.txt"
     min_level: 4
     grants_flag: "reg_kaart"
-    body: |
-      SCHAKELPLAN WIJK-WEST → BOVENLIGGEND
+    body:
+      nl: |
+        SCHAKELPLAN WIJK-WEST → BOVENLIGGEND
 
-      elke wijkcentrale hangt onder een regionale centrale. die van
-      ons: regio.centrale.ptt.nl. daar lopen alle wijken samen.
+        elke wijkcentrale hangt onder een regionale centrale. die van
+        ons: regio.centrale.ptt.nl. daar lopen alle wijken samen.
 
-      de sleutel om daar binnen te komen is dit schakelplan zelf —
-      wie de nummering van de wijken kent, komt door de nachtingang.
-      je hebt hem nu. verlies hem niet.
+        de sleutel om daar binnen te komen is dit schakelplan zelf —
+        wie de nummering van de wijken kent, komt door de nachtingang.
+        je hebt hem nu. verlies hem niet.
+      en: |
+        SWITCHING PLAN DISTRICT-WEST → UPSTREAM
+
+        every district exchange sits under a regional exchange. ours:
+        regio.centrale.ptt.nl. that's where all the districts meet.
+
+        the key to get in there is this switching plan itself —
+        whoever knows the numbering of the districts gets through the
+        night entrance. you have it now. don't lose it.
   - name: ".tap"
     min_level: 4
-    body: |
-      # meeluister-logboek (hoort hier niet, staat er toch)
-      02:14  lijn 7  — modem, 1200 baud, iemand draait rekentijd
-      03:40  lijn 2  — stilte, maar de lijn staat wel open
-      03:41  lijn 2  — nog steeds open. staat al jaren open?
+    body:
+      nl: |
+        # meeluister-logboek (hoort hier niet, staat er toch)
+        02:14  lijn 7  — modem, 1200 baud, iemand draait rekentijd
+        03:40  lijn 2  — stilte, maar de lijn staat wel open
+        03:41  lijn 2  — nog steeds open. staat al jaren open?
+      en: |
+        # wiretap logbook (doesn't belong here, here anyway)
+        02:14  line 7  — modem, 1200 baud, someone's running compute time
+        03:40  line 2  — silence, but the line is open
+        03:41  line 2  — still open. been open for years?
 mail:
   - from: "nachtwacht"
-    subject: "die ene lijn"
+    subject:
+      nl: "die ene lijn"
+      en: "that one line"
     min_level: 4
-    body: |
-      collega van de dagdienst vroeg waarom lijn 2 's nachts open
-      blijft staan. ik heb gezegd: laat maar, doet niemand kwaad.
-      eerlijk gezegd durf ik hem niet af te sluiten. het voelt of
-      er iemand aan hangt.
+    body:
+      nl: |
+        collega van de dagdienst vroeg waarom lijn 2 's nachts open
+        blijft staan. ik heb gezegd: laat maar, doet niemand kwaad.
+        eerlijk gezegd durf ik hem niet af te sluiten. het voelt of
+        er iemand aan hangt.
+      en: |
+        a colleague on the day shift asked why line 2 stays open at
+        night. i said: leave it, it does no harm to anyone. honestly
+        i don't dare shut it down. it feels like someone's on the
+        other end.
 netstat:
   min_level: 4
   grants_flag: "reg_map"
-  body: |
-    Lijn  Bestemming                 Status
-    1     gemeente-vax               DOWN (overdag)
-    2     ????                       OPEN (permanent — zie .tap)
-    7     rekencentrum.sara.nl       ESTABLISHED
-    ->    regio.centrale.ptt.nl      UPLINK
+  body:
+    nl: |
+      Lijn  Bestemming                 Status
+      1     gemeente-vax               DOWN (overdag)
+      2     ????                       OPEN (permanent — zie .tap)
+      7     rekencentrum.sara.nl       ESTABLISHED
+      ->    regio.centrale.ptt.nl      UPLINK
 
-    (de uplink naar de regio staat open zodra jij dat wilt.)
+      (de uplink naar de regio staat open zodra jij dat wilt.)
+    en: |
+      Line  Destination                Status
+      1     gemeente-vax               DOWN (daytime)
+      2     ????                       OPEN (permanent — see .tap)
+      7     rekencentrum.sara.nl       ESTABLISHED
+      ->    regio.centrale.ptt.nl      UPLINK
+
+      (the uplink to the region is open the moment you want it.)
 effects:
   on_first_crack:
     grant_level: 4

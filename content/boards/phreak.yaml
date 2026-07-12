@@ -1,7 +1,9 @@
 # #phreak — the reward for finishing the THIS-0→3 arc. Contains hooks and
 # foreshadowing for THIS-4+ content that doesn't exist yet.
 id: phreak
-name: "#PHREAK"
+name:
+  nl: "#PHREAK"
+  en: "#PHREAK"
 area: this
 min_level: 3
 writable: true
@@ -10,70 +12,129 @@ messages:
     author: "blueboxer"
     level: 3
     date: "05-86"
-    subject: "je bent er"
-    body: |
-      als je dit leest heb je de hele keten gelopen. gemeente, SARA,
-      de universiteit. dat is geen gokwerk meer, dat is vakwerk.
+    subject:
+      nl: "je bent er"
+      en: "you made it"
+    body:
+      nl: |
+        als je dit leest heb je de hele keten gelopen. gemeente, SARA,
+        de universiteit. dat is geen gokwerk meer, dat is vakwerk.
 
-      hier praten we over de lijnen zelf. niet over wat erop staat,
-      maar over hoe het netwerk klinkt. welkom in de mooiste hoek
-      van THIS.
+        hier praten we over de lijnen zelf. niet over wat erop staat,
+        maar over hoe het netwerk klinkt. welkom in de mooiste hoek
+        van THIS.
+      en: |
+        if you're reading this you've walked the whole chain. the city,
+        SARA, the university. that's no longer guesswork, that's craft.
+
+        here we talk about the lines themselves. not about what's on
+        them, but about how the network sounds. welcome to the finest
+        corner of THIS.
   - id: 202
     author: "route66"
     level: 3
     date: "05-86"
-    subject: "2600 hertz en wat erna kwam"
-    body: |
-      de oude truc: een toon van 2600 hertz op het juiste moment en
-      de centrale denkt dat je hebt opgehangen terwijl je er nog zit.
-      werkte in amerika, werkte hier half.
+    subject:
+      nl: "2600 hertz en wat erna kwam"
+      en: "2600 hertz and what came after"
+    body:
+      nl: |
+        de oude truc: een toon van 2600 hertz op het juiste moment en
+        de centrale denkt dat je hebt opgehangen terwijl je er nog zit.
+        werkte in amerika, werkte hier half.
 
-      wat NA 2600 kwam is interessanter, en staat op de nachtcentrale
-      (nacht.centrale.ptt.nl). die zit op THIS-5. nog even geduld.
+        wat NA 2600 kwam is interessanter, en staat op de nachtcentrale
+        (nacht.centrale.ptt.nl). die zit op THIS-5. nog even geduld.
+      en: |
+        the old trick: a 2600 hertz tone at the right moment and the
+        exchange thinks you've hung up while you're still on the line.
+        worked in america, worked halfway over here.
+
+        what came AFTER 2600 is more interesting, and it's on the night
+        exchange (nacht.centrale.ptt.nl). that one sits at THIS-5. hold
+        your horses.
   - id: 203
     author: "de_specht"
     level: 3
     date: "06-86"
-    subject: "de modempool die niemand afsloot"
-    body: |
-      route66 had het ooit over een PTT-modempool waar de
-      nummerreeksen nog van klopten. THIS-4 materiaal. het staat
-      op het board zodra iemand van ons de tijd vindt het uit te
-      typen. (leest de beheerder mee? natuurlijk leest de
-      beheerder mee.)
+    subject:
+      nl: "de modempool die niemand afsloot"
+      en: "the modem pool nobody shut down"
+    body:
+      nl: |
+        route66 had het ooit over een PTT-modempool waar de
+        nummerreeksen nog van klopten. THIS-4 materiaal. het staat
+        op het board zodra iemand van ons de tijd vindt het uit te
+        typen. (leest de beheerder mee? natuurlijk leest de
+        beheerder mee.)
+      en: |
+        route66 once mentioned a PTT modem pool where the number
+        ranges still checked out. THIS-4 material. it goes up on the
+        board the moment one of us finds the time to type it out.
+        (is the beheerder reading along? of course the beheerder is
+        reading along.)
   - id: 206
     author: "de_specht"
     level: 3
     date: "07-86"
-    subject: "RE: de modempool die niemand afsloot"
+    subject:
+      nl: "RE: de modempool die niemand afsloot"
+      en: "RE: the modem pool nobody shut down"
     grants_flag: "toon_reeks"
-    body: |
-      goed. ik heb de tijd gevonden. hier is de toonreeks voor de
-      PTT-wijkcentrale (wijk.centrale.ptt.nl), zoals beloofd:
+    body:
+      nl: |
+        goed. ik heb de tijd gevonden. hier is de toonreeks voor de
+        PTT-wijkcentrale (wijk.centrale.ptt.nl), zoals beloofd:
 
-        2600 · 1700+1100 · 700+900 · pauze · 2600
+          2600 · 1700+1100 · 700+900 · pauze · 2600
 
-      draai hem als een woordenlijst op de toonkiezer en de
-      nachtingang klapt open. binnen vind je de weg naar boven —
-      de wijk hangt onder de regio, en de regio onder iets ouds.
+        draai hem als een woordenlijst op de toonkiezer en de
+        nachtingang klapt open. binnen vind je de weg naar boven —
+        de wijk hangt onder de regio, en de regio onder iets ouds.
 
-      dit blijft op #phreak. je weet hoe het zit.
+        dit blijft op #phreak. je weet hoe het zit.
+      en: |
+        alright. i found the time. here's the tone sequence for the
+        PTT district exchange (wijk.centrale.ptt.nl), as promised:
+
+          2600 · 1700+1100 · 700+900 · pauze · 2600
+
+        dial it like a word list on the tone dialer and the night
+        entrance pops open. inside you'll find the way up — the
+        district hangs off the region, and the region off something old.
+
+        this stays on #phreak. you know how it works.
   - id: 204
     author: "phantom"
     level: 4
     date: "07-86"
-    subject: "verder dan hier"
-    body: |
-      [THIS-4. hier hield de kaart ooit op. inmiddels loopt het
-      spoor verder dan wij kwamen. iemand heeft het afgemaakt.
-      misschien was jij dat.]
+    subject:
+      nl: "verder dan hier"
+      en: "further than here"
+    body:
+      nl: |
+        [THIS-4. hier hield de kaart ooit op. inmiddels loopt het
+        spoor verder dan wij kwamen. iemand heeft het afgemaakt.
+        misschien was jij dat.]
+      en: |
+        [THIS-4. this is where the map once ended. by now the trail
+        runs further than we ever got. someone finished it.
+        maybe that was you.]
   - id: 205
     author: "beheerder"
     level: 3
     date: "06-86"
-    subject: "huisregel voor deze hoek"
-    body: |
-      jullie zijn ver gekomen. dat betekent dat jullie weten hoe je
-      een spoor uitwist. gebruik die kennis hier: wat op #phreak
-      staat, blijft op #phreak. de eerste die buiten THIS zijn mond
-      voorbijpraat, zet ik terug op nul. en dat meen ik.
+    subject:
+      nl: "huisregel voor deze hoek"
+      en: "house rule for this corner"
+    body:
+      nl: |
+        jullie zijn ver gekomen. dat betekent dat jullie weten hoe je
+        een spoor uitwist. gebruik die kennis hier: wat op #phreak
+        staat, blijft op #phreak. de eerste die buiten THIS zijn mond
+        voorbijpraat, zet ik terug op nul. en dat meen ik.
+      en: |
+        you've come a long way. that means you know how to wipe a
+        trail. use that knowledge here: what's on #phreak stays on
+        #phreak. the first one to run their mouth outside THIS, i put
+        back to zero. and i mean it.

@@ -4,11 +4,17 @@ id: gemeente-vax
 address: "vax.gemeente.nl"
 min_level: 0
 locked: true
-banner: |
-  GEMEENTE AMSTERDAM — VAX/VMS V4.7
-  Onbevoegd gebruik is strafbaar.
+banner:
+  nl: |
+    GEMEENTE AMSTERDAM — VAX/VMS V4.7
+    Onbevoegd gebruik is strafbaar.
 
-  == nachtdienst actief ==
+    == nachtdienst actief ==
+  en: |
+    MUNICIPALITY OF AMSTERDAM — VAX/VMS V4.7
+    Unauthorised use is a criminal offence.
+
+    == night shift active ==
 crack:
   method: password
   password_flag: "gemeente_pw"
@@ -17,43 +23,77 @@ crack:
 files:
   - name: "personeel.txt"
     min_level: 0
-    body: |
-      INTERNE MEMO — AFD. AUTOMATISERING
+    body:
+      nl: |
+        INTERNE MEMO — AFD. AUTOMATISERING
 
-      collega's,
+        collega's,
 
-      wie er OOK steeds met het testaccount van het rekencentrum
-      werkt: dat is niet de bedoeling. dat account was voor de
-      koppeling met SARA en had ALLANG weg gemoeten.
+        wie er OOK steeds met het testaccount van het rekencentrum
+        werkt: dat is niet de bedoeling. dat account was voor de
+        koppeling met SARA en had ALLANG weg gemoeten.
 
-      en nee, ik noem hier geen wachtwoorden. jullie weten best
-      waar die staan. (op het bord bij de koffie, zoals altijd,
-      tot iemand van beveiliging langsloopt.)
+        en nee, ik noem hier geen wachtwoorden. jullie weten best
+        waar die staan. (op het bord bij de koffie, zoals altijd,
+        tot iemand van beveiliging langsloopt.)
 
-      -- w. druiventak, systeembeheer
+        -- w. druiventak, systeembeheer
+      en: |
+        INTERNAL MEMO — DEPT. AUTOMATION
+
+        colleagues,
+
+        WHOEVER keeps using the computing centre's test account:
+        that is not the intention. that account was for the
+        link with SARA and should have been gone LONG ago.
+
+        and no, I'm not naming any passwords here. you know
+        perfectly well where they are. (on the board by the coffee,
+        as always, until someone from security walks past.)
+
+        -- w. druiventak, systems administration
   - name: "modemlijst.dat"
     min_level: 1
     grants_flag: "found_modemlist"
-    body: |
-      MODEMLIJST KOPPELNET (VERTROUWELIJK)
+    body:
+      nl: |
+        MODEMLIJST KOPPELNET (VERTROUWELIJK)
 
-      SARA rekencentrum . . . rekencentrum.sara.nl
-      belastingen . . . . . . [afgesloten per 01-86]
-      politie meldkamer . . . [nooit aangesloten, gelukkig]
+        SARA rekencentrum . . . rekencentrum.sara.nl
+        belastingen . . . . . . [afgesloten per 01-86]
+        politie meldkamer . . . [nooit aangesloten, gelukkig]
 
-      deze lijst niet printen. (deze lijst is drie keer geprint.)
+        deze lijst niet printen. (deze lijst is drie keer geprint.)
+      en: |
+        MODEM LIST LINK NETWORK (CONFIDENTIAL)
+
+        SARA computing centre . . rekencentrum.sara.nl
+        tax office . . . . . . . [disconnected as of 01-86]
+        police control room . . [never connected, thankfully]
+
+        do not print this list. (this list has been printed three times.)
   - name: "notulen-jan86.txt"
     min_level: 1
     grants_flag: "sara_testaccount"
-    body: |
-      NOTULEN AUTOMATISERINGSOVERLEG, JANUARI 1986 (fragment)
+    body:
+      nl: |
+        NOTULEN AUTOMATISERINGSOVERLEG, JANUARI 1986 (fragment)
 
-      3. beveiliging. dhr. druiventak meldt dat het "wel meevalt"
-         met de inbraakpogingen. het testaccount voor de SARA-
-         koppeling (gebruikersnaam TEST, wachtwoord "koffie86")
-         blijft voorlopig staan "want anders werkt de koppeling
-         niet". besloten dit door te schuiven naar volgend overleg.
-      4. koffieautomaat. uitvoerige discussie, zie bijlage.
+        3. beveiliging. dhr. druiventak meldt dat het "wel meevalt"
+           met de inbraakpogingen. het testaccount voor de SARA-
+           koppeling (gebruikersnaam TEST, wachtwoord "koffie86")
+           blijft voorlopig staan "want anders werkt de koppeling
+           niet". besloten dit door te schuiven naar volgend overleg.
+        4. koffieautomaat. uitvoerige discussie, zie bijlage.
+      en: |
+        MINUTES AUTOMATION MEETING, JANUARY 1986 (fragment)
+
+        3. security. mr. druiventak reports that the break-in
+           attempts are "not so bad". the test account for the SARA
+           link (username TEST, password "koffie86") stays in
+           place for now "because otherwise the link doesn't
+           work". decided to push this to the next meeting.
+        4. coffee machine. extensive discussion, see appendix.
 effects:
   on_first_crack:
     grant_level: 1

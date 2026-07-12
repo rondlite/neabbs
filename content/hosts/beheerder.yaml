@@ -7,31 +7,60 @@ address: "beheerder.sara.nl"
 min_level: 1
 requires_flag: "found_modemlist"
 locked: false
-banner: |
-  persoonlijke machine van de beheerder.
-  geen officieel systeem. geen support. wegwezen.
+banner:
+  nl: |
+    persoonlijke machine van de beheerder.
+    geen officieel systeem. geen support. wegwezen.
+  en: |
+    the sysadmin's personal machine.
+    no official system. no support. get lost.
 npc:
   name: "beheerder"
-  greeting: "wie is daar. het is drie uur 's nachts. dit is mijn PRIVE-machine."
-  fallback: |
-    *de beheerder gromt iets onverstaanbaars en roert in zijn koffie.
-     hij lijkt niet in de stemming. probeer het later, of zoek het zelf uit.*
-  persona: |
-    Een humeurige Nederlandse systeembeheerder van in de vijftig, jaren '80.
-    Rookt te veel, slaapt te weinig, kent elk systeem in de stad. Hij mag de
-    beller eigenlijk wel maar laat dat nooit merken. Klaagt over de PTT, over
-    jonge hackers, over zijn koffieautomaat. Geeft hints mondjesmaat en met
-    tegenzin. Nooit lange lappen tekst.
+  greeting:
+    nl: "wie is daar. het is drie uur 's nachts. dit is mijn PRIVE-machine."
+    en: "who's there. it's three in the morning. this is my PRIVATE machine."
+  fallback:
+    nl: |
+      *de beheerder gromt iets onverstaanbaars en roert in zijn koffie.
+       hij lijkt niet in de stemming. probeer het later, of zoek het zelf uit.*
+    en: |
+      *the sysadmin growls something unintelligible and stirs his coffee.
+       he doesn't seem to be in the mood. try later, or figure it out yourself.*
+  persona:
+    nl: |
+      Een humeurige Nederlandse systeembeheerder van in de vijftig, jaren '80.
+      Rookt te veel, slaapt te weinig, kent elk systeem in de stad. Hij mag de
+      beller eigenlijk wel maar laat dat nooit merken. Klaagt over de PTT, over
+      jonge hackers, over zijn koffieautomaat. Geeft hints mondjesmaat en met
+      tegenzin. Nooit lange lappen tekst.
+    en: |
+      A grumpy Dutch systems administrator in his fifties, 1980s. Smokes too
+      much, sleeps too little, knows every system in the city. He actually
+      rather likes the caller but never lets it show. Complains about the PTT,
+      about young hackers, about his coffee machine. Gives hints sparingly and
+      reluctantly. Never long slabs of text.
   knows_flags:
-    found_modemlist: "De SARA CYBER heeft nog een oud testaccount van de gemeentekoppeling openstaan (gebruikersnaam TEST). Dat had allang dicht gemoeten. Het wachtwoord slingert rond in de notulen van de gemeente."
-    cracked_sara: "Phantom's oude account op hydra bij de UvA staat nog open. Hergebruikte wachtwoord. Zo vonden ze hem uiteindelijk ook."
+    found_modemlist:
+      nl: "De SARA CYBER heeft nog een oud testaccount van de gemeentekoppeling openstaan (gebruikersnaam TEST). Dat had allang dicht gemoeten. Het wachtwoord slingert rond in de notulen van de gemeente."
+      en: "The SARA CYBER still has an old test account from the municipality link open (username TEST). That should have been closed long ago. The password is lying around in the municipality's minutes."
+    cracked_sara:
+      nl: "Phantom's oude account op hydra bij de UvA staat nog open. Hergebruikte wachtwoord. Zo vonden ze hem uiteindelijk ook."
+      en: "Phantom's old account on hydra at the UvA is still open. Reused password. That's how they eventually found him too."
 files:
   - name: "koffie.txt"
     min_level: 1
-    body: |
-      logboek koffieautomaat, week 12:
-      ma - lauw
-      di - lauw
-      wo - kapot
-      do - kapot maar warm (?)
-      vr - vervangen door thee. opstand op de afdeling.
+    body:
+      nl: |
+        logboek koffieautomaat, week 12:
+        ma - lauw
+        di - lauw
+        wo - kapot
+        do - kapot maar warm (?)
+        vr - vervangen door thee. opstand op de afdeling.
+      en: |
+        coffee machine logbook, week 12:
+        mon - lukewarm
+        tue - lukewarm
+        wed - broken
+        thu - broken but warm (?)
+        fri - replaced with tea. revolt on the floor.

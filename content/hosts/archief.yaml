@@ -4,53 +4,98 @@ id: this-archief
 address: "archief.this.nl"
 min_level: 0
 locked: false
-banner: |
-  THIS ARCHIEF — bewaarmachine
-  laatste schrijfactie: 03-86
+banner:
+  nl: |
+    THIS ARCHIEF — bewaarmachine
+    laatste schrijfactie: 03-86
 
-  onbekende terminal. tik 'ls' voor de inhoud.
+    onbekende terminal. tik 'ls' voor de inhoud.
+  en: |
+    THIS ARCHIVE — storage machine
+    last write: 03-86
+
+    unknown terminal. type 'ls' for the contents.
 files:
   - name: "readme.1st"
     min_level: 0
-    body: |
-      dit is de bewaarmachine. hier staat wat te heet was om op
-      een board te zetten en te waardevol om weg te gooien.
+    body:
+      nl: |
+        dit is de bewaarmachine. hier staat wat te heet was om op
+        een board te zetten en te waardevol om weg te gooien.
 
-      lezen doe je met: cat <bestandsnaam>
+        lezen doe je met: cat <bestandsnaam>
 
-      hogere niveaus zien hier meer staan. zo hoort dat.
+        hogere niveaus zien hier meer staan. zo hoort dat.
 
-      voor wie verder wil: niet elke machine laat je zomaar
-      binnen. wat op slot zit maak je open met 'crack'. maar
-      een slot kraken zonder te weten wat erachter zit, dat is
-      hoe je opvalt. eerst lezen, dan pas breken.
+        voor wie verder wil: niet elke machine laat je zomaar
+        binnen. wat op slot zit maak je open met 'crack'. maar
+        een slot kraken zonder te weten wat erachter zit, dat is
+        hoe je opvalt. eerst lezen, dan pas breken.
+      en: |
+        this is the storage machine. here sits what was too hot to
+        put on a board and too valuable to throw away.
+
+        to read, use: cat <filename>
+
+        higher levels see more here. that's how it should be.
+
+        for those who want to go further: not every machine just
+        lets you in. what's locked you open with 'crack'. but
+        cracking a lock without knowing what's behind it, that's
+        how you get noticed. read first, break later.
   - name: "wie-was-wie.txt"
     min_level: 0
-    body: |
-      WIE WAS WIE (onvolledig, met opzet)
+    body:
+      nl: |
+        WIE WAS WIE (onvolledig, met opzet)
 
-      beheerder   - bouwde THIS. humeurig. eerlijk.
-      phantom     - vond alles het eerst. praatte het minst.
-      route66     - kende elke lijn tussen hier en amerika.
-      de_specht   - tikte overal net zo lang op tot het openging.
-      blueboxer   - hoorde tonen die er niet horen te zijn.
+        beheerder   - bouwde THIS. humeurig. eerlijk.
+        phantom     - vond alles het eerst. praatte het minst.
+        route66     - kende elke lijn tussen hier en amerika.
+        de_specht   - tikte overal net zo lang op tot het openging.
+        blueboxer   - hoorde tonen die er niet horen te zijn.
 
-      de rest is niveau. verdien het.
+        de rest is niveau. verdien het.
+      en: |
+        WHO WAS WHO (incomplete, on purpose)
+
+        beheerder   - built THIS. grumpy. honest.
+        phantom     - found everything first. talked the least.
+        route66     - knew every line between here and america.
+        de_specht   - kept tapping away until it opened up.
+        blueboxer   - heard tones that shouldn't be there.
+
+        the rest is level. earn it.
   - name: "modemlijst-oud.dat"
     min_level: 2
-    body: |
-      MODEMLIJST 1985/86 — GEDEELTELIJK HERSTELD
+    body:
+      nl: |
+        MODEMLIJST 1985/86 — GEDEELTELIJK HERSTELD
 
-      020-5551200   universiteit, nachtvenster 01:00-05:00
-      020-5551986   gemeente, "tijdelijk" testnummer sinds '84
-      070-5550023   [doorgestreept: NIET MEER BELLEN]
+        020-5551200   universiteit, nachtvenster 01:00-05:00
+        020-5551986   gemeente, "tijdelijk" testnummer sinds '84
+        070-5550023   [doorgestreept: NIET MEER BELLEN]
 
-      de rest van de band is beschadigd. de nummers doen er ook
-      niet meer toe. waar het om gaat: testnummers blijven
-      eeuwig bestaan. onthoud dat principe.
+        de rest van de band is beschadigd. de nummers doen er ook
+        niet meer toe. waar het om gaat: testnummers blijven
+        eeuwig bestaan. onthoud dat principe.
+      en: |
+        MODEM LIST 1985/86 — PARTIALLY RECOVERED
+
+        020-5551200   university, night window 01:00-05:00
+        020-5551986   municipality, "temporary" test number since '84
+        070-5550023   [struck through: DO NOT CALL ANYMORE]
+
+        the rest of the tape is damaged. the numbers don't matter
+        anymore either. the point is: test numbers last
+        forever. remember that principle.
   - name: "naslag-3.txt"
     min_level: 3
-    body: |
-      [THIS-3 naslagwerk. als je dit leest is de kelder open
-      en weet je waar de volgende deur zit.]
+    body:
+      nl: |
+        [THIS-3 naslagwerk. als je dit leest is de kelder open
+        en weet je waar de volgende deur zit.]
+      en: |
+        [THIS-3 reference. if you're reading this the cellar is open
+        and you know where the next door is.]
 effects: {}

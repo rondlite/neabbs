@@ -1,0 +1,21 @@
+COLOPHON
+
+NEABBS (2026) is a tribute to the Dutch bulletin-board culture
+of the 1980s, and in particular to the systems that, with dozens
+of lines at once, taught a whole generation that a computer can
+be a place.
+
+This system has no connection whatsoever with, and does not claim
+to be the original of, any historical system whatsoever. The names,
+handles and events on the boards are fiction. Any resemblance to
+real persons rests on nostalgia.
+
+In memory of Max Keizer (†2010), sysop from the very first hour.
+Without him there would be nothing to return to.
+
+Technology: one program, written in Go, reachable over SSH.
+No shell, no filesystem, only this. Your key is your identity;
+no passwords are stored because there are no passwords.
+
+Post your memories on GENERAL. The sysop is reading.
+The sysop is always reading.

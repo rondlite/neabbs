@@ -3,7 +3,9 @@
 # hidden count, post-level rules). Playtest with:
 #   neabbs admin promote <handle> <level>
 id: testkelder
-name: "DE TESTKELDER"
+name:
+  nl: "DE TESTKELDER"
+  en: "THE TEST CELLAR"
 area: this
 min_level: 0
 writable: true
@@ -12,41 +14,67 @@ messages:
     author: "sysop"
     level: 0
     date: "01-03-86"
-    subject: "testbericht niveau 0"
-    body: |
-      Dit board bestaat niet. Als je dit leest ben je lid van iets
-      dat ook niet bestaat. Welkom.
+    subject:
+      nl: "testbericht niveau 0"
+      en: "test message level 0"
+    body:
+      nl: |
+        Dit board bestaat niet. Als je dit leest ben je lid van iets
+        dat ook niet bestaat. Welkom.
+      en: |
+        This board does not exist. If you're reading this you're a
+        member of something that doesn't exist either. Welcome.
   - id: 2
     author: "sysop"
     level: 1
     date: "02-03-86"
-    subject: "testbericht niveau 1"
-    body: "Alleen zichtbaar vanaf THIS-1."
+    subject:
+      nl: "testbericht niveau 1"
+      en: "test message level 1"
+    body:
+      nl: "Alleen zichtbaar vanaf THIS-1."
+      en: "Only visible from THIS-1 up."
   - id: 3
     author: "route66"
     level: 3
     date: "05-03-86"
-    subject: "testbericht niveau 3"
-    body: "Alleen zichtbaar vanaf THIS-3."
+    subject:
+      nl: "testbericht niveau 3"
+      en: "test message level 3"
+    body:
+      nl: "Alleen zichtbaar vanaf THIS-3."
+      en: "Only visible from THIS-3 up."
     grants_flag: "test_level3_read"
   - id: 4
     author: "phantom"
     level: 6
     date: "09-03-86"
-    subject: "de deur achter de deur"
-    body: "Alleen zichtbaar vanaf THIS-6."
+    subject:
+      nl: "de deur achter de deur"
+      en: "the door behind the door"
+    body:
+      nl: "Alleen zichtbaar vanaf THIS-6."
+      en: "Only visible from THIS-6 up."
   - id: 5
     author: "phantom"
     level: 7
     date: "09-03-86"
-    subject: "dit onderwerp hoor je niet te zien"
+    subject:
+      nl: "dit onderwerp hoor je niet te zien"
+      en: "you're not supposed to see this subject"
     subject_visible: false
     author_visible: false
-    body: "Volledig geblokkeerde stub tot THIS-7."
+    body:
+      nl: "Volledig geblokkeerde stub tot THIS-7."
+      en: "Fully blocked stub until THIS-7."
   - id: 6
     author: "ghost"
     level: 9
     date: "11-03-86"
-    subject: "onzichtbaar testbericht"
+    subject:
+      nl: "onzichtbaar testbericht"
+      en: "invisible test message"
     hidden: true
-    body: "Telt alleen mee in de verborgen-teller tot THIS-9."
+    body:
+      nl: "Telt alleen mee in de verborgen-teller tot THIS-9."
+      en: "Only counts toward the hidden counter until THIS-9."

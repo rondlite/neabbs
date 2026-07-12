@@ -7,11 +7,17 @@ address: "bewaar.node.this.nl"
 min_level: 7
 requires_flag: "keizer_spoor"
 locked: true
-banner: |
-  BEWAARNODE — koude opslag
-  tapes, dumps, en alles wat niemand durfde te wissen.
+banner:
+  nl: |
+    BEWAARNODE — koude opslag
+    tapes, dumps, en alles wat niemand durfde te wissen.
 
-  identificeer u:
+    identificeer u:
+  en: |
+    BEWAARNODE — cold storage
+    tapes, dumps, and everything nobody dared to erase.
+
+    identify yourself:
 crack:
   method: password
   password_flag: "bewaar_sleutel"
@@ -21,42 +27,77 @@ files:
   - name: "waarom-het-stil-werd.txt"
     min_level: 8
     grants_flag: "eind_sleutel"
-    body: |
-      WAAROM HET STIL WERD
+    body:
+      nl: |
+        WAAROM HET STIL WERD
 
-      de scene ging niet met een knal. ze ging met een zucht.
-      modems werden ingeruild voor internet, de jongens werden
-      mannen met banen, en de machines werden afgeschakeld, één
-      voor één, tot er niets meer belde.
+        de scene ging niet met een knal. ze ging met een zucht.
+        modems werden ingeruild voor internet, de jongens werden
+        mannen met banen, en de machines werden afgeschakeld, één
+        voor één, tot er niets meer belde.
 
-      één iemand borg ze niet op. de beheerder — voluit een naam
-      die je op de eindnode leest — sleepte de kasten naar zijn
-      zolder en hield ze warm. jaren. decennia. hij hield phantom's
-      nachtlijn open en de tapes koel, voor het geval iemand ooit
-      nog zou bellen.
+        één iemand borg ze niet op. de beheerder — voluit een naam
+        die je op de eindnode leest — sleepte de kasten naar zijn
+        zolder en hield ze warm. jaren. decennia. hij hield phantom's
+        nachtlijn open en de tapes koel, voor het geval iemand ooit
+        nog zou bellen.
 
-      in 2010 hield hij ermee op. niet uit keuze. de machines
-      bleven staan, koud nu, tot anderen ze vonden en, bijna
-      veertig jaar na de eerste sessie, de stroom er weer opzetten.
+        in 2010 hield hij ermee op. niet uit keuze. de machines
+        bleven staan, koud nu, tot anderen ze vonden en, bijna
+        veertig jaar na de eerste sessie, de stroom er weer opzetten.
 
-      de laatste deur staat op keizer.node.this.nl. daar staat wie
-      hij was, in zijn eigen woorden. dit is de sleutel ernaartoe.
+        de laatste deur staat op keizer.node.this.nl. daar staat wie
+        hij was, in zijn eigen woorden. dit is de sleutel ernaartoe.
+      en: |
+        WHY IT WENT QUIET
+
+        the scene didn't go out with a bang. it went with a sigh.
+        modems were traded in for the internet, the boys became
+        men with jobs, and the machines were switched off, one
+        by one, until nothing rang anymore.
+
+        one person didn't put them away. the administrator — in full
+        a name you'll read on the final node — dragged the cabinets
+        to his attic and kept them warm. years. decades. he kept
+        phantom's night line open and the tapes cold, in case anyone
+        ever called again.
+
+        in 2010 he stopped. not by choice. the machines
+        stayed put, cold now, until others found them and, almost
+        forty years after the first session, powered them up again.
+
+        the last door is at keizer.node.this.nl. there stands who
+        he was, in his own words. this is the key to it.
   - name: ".inventaris"
     min_level: 8
-    body: |
-      # koude opslag, inhoud (afgekort)
-      # - volledige boarddumps 1985-1991
-      # - phantom's tapes (verzegeld)
-      # - één doos met het opschrift "voor wie zo ver komt"
+    body:
+      nl: |
+        # koude opslag, inhoud (afgekort)
+        # - volledige boarddumps 1985-1991
+        # - phantom's tapes (verzegeld)
+        # - één doos met het opschrift "voor wie zo ver komt"
+      en: |
+        # cold storage, contents (abridged)
+        # - complete board dumps 1985-1991
+        # - phantom's tapes (sealed)
+        # - one box labeled "for whoever gets this far"
 mail:
   - from: "de beheerders (waarnemend)"
-    subject: "we hebben het aangezet"
+    subject:
+      nl: "we hebben het aangezet"
+      en: "we turned it on"
     min_level: 8
-    body: |
-      we vonden de zolder, de kasten, en de handleiding die hij
-      achterliet. we hebben niets veranderd behalve de stroom.
-      als je dit leest werkt het weer. dank, Max. we nemen het
-      over.
+    body:
+      nl: |
+        we vonden de zolder, de kasten, en de handleiding die hij
+        achterliet. we hebben niets veranderd behalve de stroom.
+        als je dit leest werkt het weer. dank, Max. we nemen het
+        over.
+      en: |
+        we found the attic, the cabinets, and the manual he
+        left behind. we changed nothing but the power.
+        if you're reading this, it works again. thanks, Max. we're
+        taking it from here.
 effects:
   on_first_crack:
     grant_level: 8

@@ -19,14 +19,14 @@ var headerStyle = lipgloss.NewStyle().Bold(true)
 // renderBoardList formats the visible boards for the `boards` command.
 func renderBoardList(boards []*content.Board, lang string) string {
 	if len(boards) == 0 {
-		return "Geen boards beschikbaar."
+		return trl(lang, "Geen boards beschikbaar.", "No boards available.")
 	}
 	var b strings.Builder
 	b.WriteString(headerStyle.Render("BOARDS") + "\n")
 	for _, bd := range boards {
 		b.WriteString(fmt.Sprintf("  %-12s %s\n", bd.ID, bd.Name.Get(lang)))
 	}
-	b.WriteString("Gebruik: board <id>")
+	b.WriteString(trl(lang, "Gebruik: board <id>", "Usage: board <id>"))
 	return b.String()
 }
 
@@ -37,7 +37,7 @@ func renderListing(l *board.Listing, lang string) string {
 	b.WriteString(headerStyle.Render(fmt.Sprintf("%s — %s", strings.ToUpper(l.Board.ID), l.Board.Name.Get(lang))) + "\n")
 	b.WriteString(strings.Repeat("─", 78) + "\n")
 	if len(l.Rows) == 0 {
-		b.WriteString("(geen berichten)\n")
+		b.WriteString(trl(lang, "(geen berichten)", "(no messages)") + "\n")
 	}
 	for _, r := range l.Rows {
 		line := fmt.Sprintf("%5d  %-12.12s  %-44.44s", r.ID, r.Author, r.Subject)
@@ -48,9 +48,9 @@ func renderListing(l *board.Listing, lang string) string {
 		b.WriteString(line + "\n")
 	}
 	if l.HiddenCount > 0 {
-		b.WriteString(fmt.Sprintf("\n%d bericht(en) verborgen boven jouw niveau\n", l.HiddenCount))
+		b.WriteString(fmt.Sprintf(trl(lang, "\n%d bericht(en) verborgen boven jouw niveau\n", "\n%d message(s) hidden above your clearance\n"), l.HiddenCount))
 	}
-	b.WriteString("\nGebruik: read <nr>")
+	b.WriteString(trl(lang, "\nGebruik: read <nr>", "\nUsage: read <nr>"))
 	if l.Board.Writable {
 		b.WriteString(", post, reply <nr>")
 	}
@@ -60,10 +60,10 @@ func renderListing(l *board.Listing, lang string) string {
 // renderFileList formats the public file area (bestanden).
 func renderFileList(files []content.File, lang string) string {
 	var b strings.Builder
-	b.WriteString(headerStyle.Render("BESTANDEN") + "\n")
+	b.WriteString(headerStyle.Render(trl(lang, "BESTANDEN", "FILES")) + "\n")
 	b.WriteString(strings.Repeat("─", 70) + "\n")
 	if len(files) == 0 {
-		b.WriteString("(leeg — de sysop is nog aan het inpakken)\n")
+		b.WriteString(trl(lang, "(leeg — de sysop is nog aan het inpakken)", "(empty — the sysop is still packing)") + "\n")
 	}
 	for i, f := range files {
 		size := f.Size
@@ -72,7 +72,7 @@ func renderFileList(files []content.File, lang string) string {
 		}
 		b.WriteString(fmt.Sprintf("%3d  %-20.20s %6s  %-8s %s\n", i+1, f.Name, size, f.Date, f.Desc.Get(lang)))
 	}
-	b.WriteString("\nGebruik: lees <nr>, terug")
+	b.WriteString(trl(lang, "\nGebruik: lees <nr>, terug", "\nUsage: read <nr>, back"))
 	return b.String()
 }
 
@@ -85,17 +85,17 @@ func renderFile(f *content.File, lang string) string {
 }
 
 // renderMessage formats one readable message.
-func renderMessage(boardID string, m *board.Msg) string {
+func renderMessage(boardID string, m *board.Msg, lang string) string {
 	var b strings.Builder
-	b.WriteString(headerStyle.Render(fmt.Sprintf("Bericht #%d op %s", m.ID, strings.ToUpper(boardID))) + "\n")
-	b.WriteString(fmt.Sprintf("Van      : %s\n", m.Author))
+	b.WriteString(headerStyle.Render(fmt.Sprintf(trl(lang, "Bericht #%d op %s", "Message #%d on %s"), m.ID, strings.ToUpper(boardID))) + "\n")
+	b.WriteString(fmt.Sprintf(trl(lang, "Van      : %s\n", "From     : %s\n"), m.Author))
 	if m.Date != "" {
-		b.WriteString(fmt.Sprintf("Datum    : %s\n", m.Date))
+		b.WriteString(fmt.Sprintf(trl(lang, "Datum    : %s\n", "Date     : %s\n"), m.Date))
 	}
 	if m.ReplyTo != 0 {
-		b.WriteString(fmt.Sprintf("Antwoord : op #%d\n", m.ReplyTo))
+		b.WriteString(fmt.Sprintf(trl(lang, "Antwoord : op #%d\n", "Reply    : to #%d\n"), m.ReplyTo))
 	}
-	b.WriteString(fmt.Sprintf("Onderwerp: %s\n", m.Subject))
+	b.WriteString(fmt.Sprintf(trl(lang, "Onderwerp: %s\n", "Subject  : %s\n"), m.Subject))
 	b.WriteString(strings.Repeat("─", 78) + "\n")
 	b.WriteString(strings.TrimRight(m.Body, "\n"))
 	return b.String()

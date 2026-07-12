@@ -24,7 +24,8 @@ type printer struct {
 	cells    []cell // raw tokenised into visible runes + atomic escapes
 	revealed int    // how many cells are shown
 	queue    []page
-	more     bool // waiting at a -- Meer? -- prompt
+	more     bool   // waiting at a -- Meer? -- prompt
+	lang     string // display language for the pager prompt ("nl"/"en")
 }
 
 // cell is one reveal unit: a single visible rune, or a whole ANSI escape
@@ -158,7 +159,7 @@ func (p *printer) moreKey(k string) tea.Cmd {
 // view renders the partially revealed block (and pager prompt).
 func (p *printer) view() string {
 	if p.more {
-		return dimmed.Render("-- Meer? (J/n) --")
+		return dimmed.Render(trl(p.lang, "-- Meer? (J/n) --", "-- More? (Y/n) --"))
 	}
 	if p.raw == "" {
 		return ""

@@ -6,11 +6,17 @@ address: "hydra.uva.nl"
 min_level: 2
 requires_flag: "sara_userlist"
 locked: true
-banner: |
-  UNIVERSITEIT VAN AMSTERDAM — VAKGROEP INFORMATICA
-  HYDRA · 4.2BSD UNIX
+banner:
+  nl: |
+    UNIVERSITEIT VAN AMSTERDAM — VAKGROEP INFORMATICA
+    HYDRA · 4.2BSD UNIX
 
-  login:
+    login:
+  en: |
+    UNIVERSITY OF AMSTERDAM — DEPARTMENT OF COMPUTER SCIENCE
+    HYDRA · 4.2BSD UNIX
+
+    login:
 crack:
   method: password
   password_flag: "phantom_account"
@@ -19,27 +25,49 @@ crack:
 files:
   - name: ".plan"
     min_level: 2
-    body: |
-      [phantom's .plan bestand, nooit opgeschoond]
+    body:
+      nl: |
+        [phantom's .plan bestand, nooit opgeschoond]
 
-      als je dit leest zit je op hydra en heb je mijn oude account
-      gevonden. mooi. dat betekent dat je de weg kent.
+        als je dit leest zit je op hydra en heb je mijn oude account
+        gevonden. mooi. dat betekent dat je de weg kent.
 
-      het wachtwoord dat je net gebruikte werkt ook op andere
-      plekken. hergebruik is de grootste zwakte die er is, en ook
-      de mijne. onthoud dat als les, niet als uitnodiging.
+        het wachtwoord dat je net gebruikte werkt ook op andere
+        plekken. hergebruik is de grootste zwakte die er is, en ook
+        de mijne. onthoud dat als les, niet als uitnodiging.
+      en: |
+        [phantom's .plan file, never cleaned up]
+
+        if you're reading this you're on hydra and you've found my
+        old account. good. that means you know the way.
+
+        the password you just used works in other places too.
+        reuse is the biggest weakness there is, and it was mine as
+        well. remember that as a lesson, not as an invitation.
   - name: "motd.txt"
     min_level: 3
-    body: |
-      HYDRA — mededelingen
+    body:
+      nl: |
+        HYDRA — mededelingen
 
-      welkom op niveau drie. je hebt de hele gemeentelijke keten
-      gelopen: archief, gemeente, SARA, en nu hier. dat is geen
-      klein werk.
+        welkom op niveau drie. je hebt de hele gemeentelijke keten
+        gelopen: archief, gemeente, SARA, en nu hier. dat is geen
+        klein werk.
 
-      hierna wordt het stiller en ouder. de #phreak-hoek is nu
-      voor jou open. daar staat wat wij achterlieten voor wie
-      zo ver kwam. verder dan dat reikten wij ook niet meer.
+        hierna wordt het stiller en ouder. de #phreak-hoek is nu
+        voor jou open. daar staat wat wij achterlieten voor wie
+        zo ver kwam. verder dan dat reikten wij ook niet meer.
+      en: |
+        HYDRA — announcements
+
+        welcome to level three. you've walked the whole municipal
+        chain: archive, city hall, SARA, and now here. that's no
+        small feat.
+
+        from here on it gets quieter and older. the #phreak corner
+        is open to you now. that's where we left what we left for
+        whoever got this far. we didn't reach any further than that
+        ourselves.
 effects:
   on_first_crack:
     grant_level: 3

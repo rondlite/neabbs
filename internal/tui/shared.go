@@ -15,15 +15,15 @@ import (
 func (m *Model) renderLeaderboard() string {
 	rows, err := m.deps.Store.Leaderboard(context.Background(), 15)
 	if err != nil {
-		return "roem: kon de lijst niet ophalen."
+		return m.tr("roem: kon de lijst niet ophalen.", "fame: could not fetch the board.")
 	}
 	if len(rows) == 0 {
-		return "roem: nog niemand op het bord. wees de eerste."
+		return m.tr("roem: nog niemand op het bord. wees de eerste.", "fame: nobody on the board yet. be the first.")
 	}
 	var b strings.Builder
-	b.WriteString("ROEM — de beruchtste operators\n")
+	b.WriteString(m.tr("ROEM — de beruchtste operators\n", "FAME — the most notorious operators\n"))
 	b.WriteString(strings.Repeat("-", 44) + "\n")
-	b.WriteString(fmt.Sprintf("  %-3s %-16s %-7s %s\n", "#", "HANDLE", "NIVEAU", "HOSTS"))
+	b.WriteString(fmt.Sprintf("  %-3s %-16s %-7s %s\n", "#", "HANDLE", m.tr("NIVEAU", "LEVEL"), "HOSTS"))
 	for i, r := range rows {
 		mark := ""
 		if r.Handle == m.deps.Player.Handle {
@@ -40,15 +40,15 @@ func (m *Model) renderLeaderboard() string {
 func (m *Model) whisper(rest string) (tea.Model, tea.Cmd) {
 	fields := strings.SplitN(strings.TrimSpace(rest), " ", 2)
 	if len(fields) < 2 || strings.TrimSpace(fields[1]) == "" {
-		return m, m.out("gebruik: fluister <handle> <tekst>")
+		return m, m.out(m.tr("gebruik: fluister <handle> <tekst>", "usage: whisper <handle> <text>"))
 	}
 	target := fields[0]
 	line := text.CleanLine(fields[1])
 	if line == "" {
-		return m, m.out("gebruik: fluister <handle> <tekst>")
+		return m, m.out(m.tr("gebruik: fluister <handle> <tekst>", "usage: whisper <handle> <text>"))
 	}
 	if strings.EqualFold(target, m.deps.Player.Handle) {
-		return m, m.out("fluister: tegen jezelf praten telt niet.")
+		return m, m.out(m.tr("fluister: tegen jezelf praten telt niet.", "whisper: talking to yourself doesn't count."))
 	}
 	delivered := false
 	for _, s := range m.deps.Registry.All() {
@@ -59,7 +59,7 @@ func (m *Model) whisper(rest string) (tea.Model, tea.Cmd) {
 		}
 	}
 	if !delivered {
-		return m, m.out("fluister: die operator is nu niet in het systeem.")
+		return m, m.out(m.tr("fluister: die operator is nu niet in het systeem.", "whisper: that operator is not in the system right now."))
 	}
 	return m, m.out(green.Render(fmt.Sprintf("» aan %s: %s", target, line)))
 }
@@ -78,13 +78,13 @@ func (m *Model) renderGhosts() string {
 		}
 		where := area
 		if where == "" {
-			where = "ergens in het systeem"
+			where = m.tr("ergens in het systeem", "somewhere in the system")
 		}
 		others = append(others, fmt.Sprintf("  %-16s %s", handle, where))
 	}
 	if len(others) == 0 {
-		return "je bent nu de enige die binnen is. het is stil op de lijnen."
+		return m.tr("je bent nu de enige die binnen is. het is stil op de lijnen.", "you're the only one inside right now. the lines are quiet.")
 	}
-	return "OPERATORS IN HET SYSTEEM\n" + strings.Repeat("-", 44) + "\n" +
-		strings.Join(others, "\n") + "\n(fluister <handle> <tekst> om er een aan te spreken)"
+	return m.tr("OPERATORS IN HET SYSTEEM", "OPERATORS IN THE SYSTEM") + "\n" + strings.Repeat("-", 44) + "\n" +
+		strings.Join(others, "\n") + m.tr("\n(fluister <handle> <tekst> om er een aan te spreken)", "\n(whisper <handle> <text> to reach one)")
 }

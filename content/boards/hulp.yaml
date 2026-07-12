@@ -1,5 +1,7 @@
 id: hulp
-name: "HULP — vragen over het systeem"
+name:
+  nl: "HULP — vragen over het systeem"
+  en: "HELP — questions about the system"
 area: public
 min_level: 0
 writable: true
@@ -8,65 +10,114 @@ messages:
     author: "sysop"
     level: 0
     date: "02-05-26"
-    subject: "hoe werkt dit allemaal"
-    body: |
-      Hoofdmenu: druk op de letter tussen de haken. Cijfers werken
-      ook (met Enter). In de boards tikt u commando's: board <naam>,
-      read <nr>, post, reply <nr>, terug.
+    subject:
+      nl: "hoe werkt dit allemaal"
+      en: "how does all this work"
+    body:
+      nl: |
+        Hoofdmenu: druk op de letter tussen de haken. Cijfers werken
+        ook (met Enter). In de boards tikt u commando's: board <naam>,
+        read <nr>, post, reply <nr>, terug.
 
-      Lange teksten pauzeren met -- Meer? --. J of Enter gaat verder,
-      N kapt af. Een toets indrukken terwijl de tekst binnenkomt slaat
-      het getik over — net als vroeger.
+        Lange teksten pauzeren met -- Meer? --. J of Enter gaat verder,
+        N kapt af. Een toets indrukken terwijl de tekst binnenkomt slaat
+        het getik over — net als vroeger.
+      en: |
+        Main menu: press the letter between the brackets. Numbers work
+        too (with Enter). In the boards you type commands: board <name>,
+        read <nr>, post, reply <nr>, back.
+
+        Long texts pause with -- More? --. Y or Enter continues,
+        N cuts it off. Pressing a key while the text is coming in skips
+        the scrolling — just like the old days.
   - id: 2
     author: "mieke"
     level: 0
     date: "04-05-26"
-    subject: "hoe verstuur ik een berichtje naar iedereen?"
-    body: |
-      Ik zag iemand iets roepen dat op alle lijnen verscheen. Hoe doe
-      je dat?
+    subject:
+      nl: "hoe verstuur ik een berichtje naar iedereen?"
+      en: "how do I send a little message to everyone?"
+    body:
+      nl: |
+        Ik zag iemand iets roepen dat op alle lijnen verscheen. Hoe doe
+        je dat?
+      en: |
+        I saw someone shout something that appeared on all the lines. How
+        do you do that?
   - id: 3
     author: "sysop"
     level: 0
     date: "04-05-26"
-    subject: "re: hoe verstuur ik een berichtje naar iedereen?"
+    subject:
+      nl: "re: hoe verstuur ik een berichtje naar iedereen?"
+      en: "re: how do I send a little message to everyone?"
     reply_to: 2
-    body: |
-      Tik in het hoofdmenu: praat gevolgd door uw tekst. Eén per
-      minuut, want vroeger kostte bellen geld en tegenwoordig kost
-      aandacht geld.
+    body:
+      nl: |
+        Tik in het hoofdmenu: praat gevolgd door uw tekst. Eén per
+        minuut, want vroeger kostte bellen geld en tegenwoordig kost
+        aandacht geld.
+      en: |
+        In the main menu, type: praat followed by your text. One per
+        minute, because back then calling cost money and these days
+        attention costs money.
   - id: 4
     author: "nachtuil"
     level: 0
     date: "06-05-26"
-    subject: "beltijd op?"
-    body: |
-      Er staat dat ik nog 0 minuten heb vandaag, maar ik kan gewoon
-      doorgaan. Is dat de bedoeling?
+    subject:
+      nl: "beltijd op?"
+      en: "out of call time?"
+    body:
+      nl: |
+        Er staat dat ik nog 0 minuten heb vandaag, maar ik kan gewoon
+        doorgaan. Is dat de bedoeling?
+      en: |
+        It says I have 0 minutes left today, but I can just keep going.
+        Is that intentional?
   - id: 5
     author: "sysop"
     level: 0
     date: "06-05-26"
-    subject: "re: beltijd op?"
+    subject:
+      nl: "re: beltijd op?"
+      en: "re: out of call time?"
     reply_to: 4
-    body: |
-      De teller is echt, de consequenties zijn dat voorlopig niet.
-      Vroeger gooide het systeem u er keihard af. Ik ben milder
-      geworden. Voorlopig.
+    body:
+      nl: |
+        De teller is echt, de consequenties zijn dat voorlopig niet.
+        Vroeger gooide het systeem u er keihard af. Ik ben milder
+        geworden. Voorlopig.
+      en: |
+        The counter is real, the consequences are not — for now.
+        Back then the system would kick you off hard. I have grown
+        milder. For now.
   - id: 6
     author: "cpm_fan"
     level: 0
     date: "09-05-26"
-    subject: "mijn naam is bezet"
-    body: |
-      Wilde mijn oude handle terug maar die is al in gebruik. Kan de
-      sysop daar iets aan doen?
+    subject:
+      nl: "mijn naam is bezet"
+      en: "my name is taken"
+    body:
+      nl: |
+        Wilde mijn oude handle terug maar die is al in gebruik. Kan de
+        sysop daar iets aan doen?
+      en: |
+        I wanted my old handle back but it's already in use. Can the
+        sysop do anything about that?
   - id: 7
     author: "sysop"
     level: 0
     date: "09-05-26"
-    subject: "re: mijn naam is bezet"
+    subject:
+      nl: "re: mijn naam is bezet"
+      en: "re: my name is taken"
     reply_to: 6
-    body: |
-      Nee. Wie het eerst belt, die het eerst maalt. Dat was in 1985 zo
-      en dat is nu zo.
+    body:
+      nl: |
+        Nee. Wie het eerst belt, die het eerst maalt. Dat was in 1985 zo
+        en dat is nu zo.
+      en: |
+        No. First to dial, first served. That was the rule in 1985
+        and it's the rule now.

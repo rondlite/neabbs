@@ -1,0 +1,21 @@
+┌──────────────────────────────────────────────────────────────┐
+│  BULLETIN 1/2                                    02-05-2026  │
+└──────────────────────────────────────────────────────────────┘
+
+  NEABBS IS BACK
+
+  Somewhere at the end of the '80s the last connection here
+  dropped. Nobody hung up; the line just went quiet.
+  For almost forty years it stayed dark.
+
+  Max Keizer, who built NEABBS and for years kept it running as
+  sysop, passed away in 2010. This re-release has been carefully
+  assembled from surviving tapes — as a tribute to him, and to
+  everyone who ever pulled an all-nighter here.
+
+  Everything has been left as it was as much as possible. The
+  boards, the files, the chatbox, the 24 lines.
+
+  Welcome back. Or simply: welcome.
+
+                                     -- the caretakers of the re-release

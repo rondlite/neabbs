@@ -5,11 +5,17 @@ address: "rekencentrum.sara.nl"
 min_level: 1
 requires_flag: "found_modemlist"
 locked: true
-banner: |
-  SARA — STICHTING ACADEMISCH REKENCENTRUM AMSTERDAM
-  CDC CYBER 750 · NOS/BE
+banner:
+  nl: |
+    SARA — STICHTING ACADEMISCH REKENCENTRUM AMSTERDAM
+    CDC CYBER 750 · NOS/BE
 
-  LOGIN:
+    LOGIN:
+  en: |
+    SARA — ACADEMIC COMPUTING CENTRE FOUNDATION AMSTERDAM
+    CDC CYBER 750 · NOS/BE
+
+    LOGIN:
 crack:
   method: wordlist
   password_flag: "sara_testaccount"
@@ -18,79 +24,142 @@ crack:
 files:
   - name: "welkom.txt"
     min_level: 1
-    body: |
-      welkom op de CYBER. rekentijd is kostbaar, gedraag u.
-      dit account (TEST/GEMEENTE) had allang ingetrokken moeten
-      zijn. omdat niemand dat deed, leest u dit nu.
+    body:
+      nl: |
+        welkom op de CYBER. rekentijd is kostbaar, gedraag u.
+        dit account (TEST/GEMEENTE) had allang ingetrokken moeten
+        zijn. omdat niemand dat deed, leest u dit nu.
+      en: |
+        welcome to the CYBER. compute time is precious, behave.
+        this account (TEST/GEMEENTE) should have been revoked long
+        ago. because nobody did that, you're reading this now.
   - name: "gebruikers.dir"
     min_level: 2
     grants_flag: "sara_userlist"
-    body: |
-      ACTIEVE GEBRUIKERS (nachtdienst)
+    body:
+      nl: |
+        ACTIEVE GEBRUIKERS (nachtdienst)
 
-      SYSOP    - de beheerder. humeurig na 02:00.
-      PHANTOM  - laatst gezien 03-86. account nooit gesloten.
-                 wachtwoord staat nog op de fabrieksinstelling:
-                 zijn eigen naam achterstevoren. lui, tot het eind.
-      GAST     - u, waarschijnlijk.
+        SYSOP    - de beheerder. humeurig na 02:00.
+        PHANTOM  - laatst gezien 03-86. account nooit gesloten.
+                   wachtwoord staat nog op de fabrieksinstelling:
+                   zijn eigen naam achterstevoren. lui, tot het eind.
+        GAST     - u, waarschijnlijk.
 
-      wie met de beheerder wil praten: hij hangt rond op zijn
-      eigen machine, beheerder.sara.nl. neem koffie mee.
+        wie met de beheerder wil praten: hij hangt rond op zijn
+        eigen machine, beheerder.sara.nl. neem koffie mee.
+      en: |
+        ACTIVE USERS (night shift)
+
+        SYSOP    - the sysadmin. grumpy after 02:00.
+        PHANTOM  - last seen 03-86. account never closed.
+                   password is still on the factory default:
+                   his own name backwards. lazy, right to the end.
+        GAST     - you, probably.
+
+        whoever wants to talk to the sysadmin: he hangs around on his
+        own machine, beheerder.sara.nl. bring coffee.
   - name: "phantom-account.txt"
     min_level: 2
     grants_flag: "phantom_account"
-    body: |
-      [losse notitie bij de gebruikerslijst]
+    body:
+      nl: |
+        [losse notitie bij de gebruikerslijst]
 
-      PHANTOM's oude inlog werkt nog op hydra bij de UvA. zelfde
-      wachtwoord als hier. hij hergebruikte alles. dat werd zijn
-      probleem en nu jouw kans.
+        PHANTOM's oude inlog werkt nog op hydra bij de UvA. zelfde
+        wachtwoord als hier. hij hergebruikte alles. dat werd zijn
+        probleem en nu jouw kans.
+      en: |
+        [loose note attached to the user list]
+
+        PHANTOM's old login still works on hydra at the UvA. same
+        password as here. he reused everything. that became his
+        problem and now your chance.
   - name: "phreak-hint.txt"
     min_level: 2
     grants_flag: "phreak_invite"
-    body: |
-      [krabbel in de kantlijn van een uitdraai]
+    body:
+      nl: |
+        [krabbel in de kantlijn van een uitdraai]
 
-      "de jongens met de blauwe doosjes hebben een eigen hoek.
-       #phreak. je komt er als je op niveau bent. vraag niet,
-       lees. het staat er als je het mag zien."
+        "de jongens met de blauwe doosjes hebben een eigen hoek.
+         #phreak. je komt er als je op niveau bent. vraag niet,
+         lees. het staat er als je het mag zien."
+      en: |
+        [scribble in the margin of a printout]
+
+        "the boys with the blue boxes have their own corner.
+         #phreak. you get in when you're at the right level. don't
+         ask, read. it's there when you're allowed to see it."
   - name: ".hosts.equiv"
     min_level: 2
     grants_flag: "sara_trust"
-    body: |
-      # vertrouwde machines — geen wachtwoord nodig vanaf deze
-      rekencentrum.sara.nl
-      hydra.uva.nl
-      # beheerder.sara.nl  <- eruit gehaald, "te link" (druiventak)
-      #
-      # wie dit leest: ja, dit hoort hier niet zo. nee, niemand
-      # gaat het maken.
+    body:
+      nl: |
+        # vertrouwde machines — geen wachtwoord nodig vanaf deze
+        rekencentrum.sara.nl
+        hydra.uva.nl
+        # beheerder.sara.nl  <- eruit gehaald, "te link" (druiventak)
+        #
+        # wie dit leest: ja, dit hoort hier niet zo. nee, niemand
+        # gaat het maken.
+      en: |
+        # trusted machines — no password needed from these
+        rekencentrum.sara.nl
+        hydra.uva.nl
+        # beheerder.sara.nl  <- taken out, "too risky" (druiventak)
+        #
+        # whoever reads this: yes, it shouldn't be like this. no, nobody
+        # is going to fix it.
 mail:
   - from: "SYSTEM"
-    subject: "quota waarschuwing"
-    body: |
-      account TEST verbruikt bovengemiddeld rekentijd tussen
-      01:00 en 04:00. dit is een geautomatiseerd bericht.
-      niemand leest deze. duidelijk.
+    subject:
+      nl: "quota waarschuwing"
+      en: "quota warning"
+    body:
+      nl: |
+        account TEST verbruikt bovengemiddeld rekentijd tussen
+        01:00 en 04:00. dit is een geautomatiseerd bericht.
+        niemand leest deze. duidelijk.
+      en: |
+        account TEST is consuming above-average compute time between
+        01:00 and 04:00. this is an automated message.
+        nobody reads these. clearly.
   - from: "druiventak"
-    subject: "RE: dat account"
+    subject:
+      nl: "RE: dat account"
+      en: "RE: that account"
     min_level: 2
     grants_flag: "sara_sysop_lazy"
-    body: |
-      ik ga TEST NIET sluiten voor de kerst. de koppeling met de
-      gemeente valt anders om en dan heb ik iedereen aan de lijn.
-      na de jaarwisseling. beloofd. (— zie ook mijn vorige zes
-      mails met dezelfde belofte.)
+    body:
+      nl: |
+        ik ga TEST NIET sluiten voor de kerst. de koppeling met de
+        gemeente valt anders om en dan heb ik iedereen aan de lijn.
+        na de jaarwisseling. beloofd. (— zie ook mijn vorige zes
+        mails met dezelfde belofte.)
+      en: |
+        I am NOT closing TEST before christmas. the link with the
+        municipality would fall over otherwise and then I'd have
+        everyone on the phone. after new year. promised. (— see also
+        my previous six mails with the same promise.)
 netstat:
   min_level: 1
   grants_flag: "sara_netmap"
-  body: |
-    Proto  Lokaal                 Extern                 Status
-    tcp    rekencentrum.sara.nl   gemeente-vax:telnet    ESTABLISHED
-    tcp    rekencentrum.sara.nl   hydra.uva.nl:login     ESTABLISHED
-    x25    rekencentrum.sara.nl   *.pt t datanet-1       LISTEN
+  body:
+    nl: |
+      Proto  Lokaal                 Extern                 Status
+      tcp    rekencentrum.sara.nl   gemeente-vax:telnet    ESTABLISHED
+      tcp    rekencentrum.sara.nl   hydra.uva.nl:login     ESTABLISHED
+      x25    rekencentrum.sara.nl   *.pt t datanet-1       LISTEN
 
-    (de UvA-lijn staat dag en nacht open. iemand hergebruikt hem.)
+      (de UvA-lijn staat dag en nacht open. iemand hergebruikt hem.)
+    en: |
+      Proto  Local                  Remote                 State
+      tcp    rekencentrum.sara.nl   gemeente-vax:telnet    ESTABLISHED
+      tcp    rekencentrum.sara.nl   hydra.uva.nl:login     ESTABLISHED
+      x25    rekencentrum.sara.nl   *.pt t datanet-1       LISTEN
+
+      (the UvA line stays open day and night. someone reuses it.)
 effects:
   on_first_crack:
     grant_level: 2
