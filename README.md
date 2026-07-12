@@ -27,9 +27,9 @@ sleutels (`ssh -i andere_sleutel -p 2222 localhost`).
 | `LLM_BASE_URL`   | (leeg = uit) | OpenAI-compatible chat endpoint    |
 | `LLM_MODEL`      | (leeg)       | modelnaam voor de LLM              |
 | `LLM_API_KEY`    | (leeg)       | bearer-token voor de LLM           |
-| `NEABBS_WEB`       | (leeg = uit) | Website listen-adres; `:443` = Let's Encrypt |
-| `NEABBS_WEB_DOMAIN`| `neabbs.com` | Domein voor TLS-certificaten                 |
-| `NEABBS_CERTS`     | `./certs`    | Cache-map voor Let's Encrypt-certificaten    |
+| `NEABBS_WEB`     | (leeg = uit) | Website-adres; `:443` = Let's Encrypt |
+| `NEABBS_WEB_DOMAIN` | `neabbs.com` | Domein voor TLS-certificaten     |
+| `NEABBS_CERTS`   | `./certs`    | Cache-map Let's Encrypt-certificaten |
 
 ## Deployen (volume & rechten)
 
