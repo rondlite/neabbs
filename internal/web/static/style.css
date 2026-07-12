@@ -1,1 +1,126 @@
-body { background: #000; color: #ffb000; font-family: ui-monospace, monospace; }
+:root {
+  --phosphor: #ffb000;
+  --phosphor-dim: #8a5f00;
+  --bg: #0a0602;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { background: #000; }
+
+body {
+  font-family: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  color: var(--phosphor);
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 2rem 1rem;
+}
+
+.bezel {
+  background: #111;
+  border-radius: 18px;
+  padding: 14px;
+  max-width: 900px;
+  width: 100%;
+  box-shadow: 0 0 60px rgba(255, 176, 0, 0.08);
+}
+
+.crt {
+  position: relative;
+  background: radial-gradient(ellipse at center, #120b03 0%, var(--bg) 75%);
+  border-radius: 10px;
+  padding: 2rem 1.5rem 3rem;
+  overflow: hidden;
+  text-shadow: 0 0 6px rgba(255, 176, 0, 0.55);
+  animation: crt-flicker 8s infinite;
+}
+
+/* Scanlines: static overlay, always on. */
+.crt::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0) 0px,
+    rgba(0, 0, 0, 0) 2px,
+    rgba(0, 0, 0, 0.28) 3px,
+    rgba(0, 0, 0, 0.28) 4px
+  );
+}
+
+/* Vignette + faint curvature shading. */
+.crt::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center,
+    rgba(0, 0, 0, 0) 55%, rgba(0, 0, 0, 0.55) 100%);
+}
+
+pre {
+  font-family: inherit;
+  font-size: clamp(0.7rem, 2.2vw, 1rem);
+  line-height: 1.45;
+  white-space: pre;
+  overflow-x: auto;
+}
+
+.lang {
+  position: absolute;
+  top: 0.9rem;
+  right: 1.2rem;
+  z-index: 1;
+}
+
+.lang button {
+  background: none;
+  border: none;
+  color: var(--phosphor-dim);
+  font: inherit;
+  cursor: pointer;
+  padding: 0.1rem 0.25rem;
+  text-shadow: inherit;
+}
+
+.lang button[aria-pressed="true"] { color: var(--phosphor); text-decoration: underline; }
+.lang span { color: var(--phosphor-dim); }
+
+#boot { min-height: 16rem; }
+
+.cursor { animation: blink 1.05s steps(1) infinite; }
+
+.explain { max-width: 62ch; margin: 2.5rem auto 0; }
+.explain h1 { font-size: 1.15rem; margin-bottom: 0.9rem; text-transform: uppercase; letter-spacing: 0.12em; }
+.explain p { margin-bottom: 0.9rem; line-height: 1.55; }
+.connect-label { color: var(--phosphor-dim); }
+
+.connect {
+  border: 1px solid var(--phosphor-dim);
+  padding: 0.7rem 1rem;
+  margin-top: 0.4rem;
+  user-select: all;
+}
+
+.boards { margin-top: 2.5rem; }
+
+footer { margin-top: 2.5rem; color: var(--phosphor-dim); }
+footer pre { text-shadow: none; }
+
+@keyframes blink { 50% { opacity: 0; } }
+
+@keyframes crt-flicker {
+  0%, 96%, 100% { opacity: 1; }
+  97% { opacity: 0.92; }
+  98% { opacity: 1; }
+  99% { opacity: 0.96; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .crt { animation: none; }
+  .cursor { animation: none; }
+}
