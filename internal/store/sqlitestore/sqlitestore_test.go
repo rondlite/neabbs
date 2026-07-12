@@ -381,3 +381,33 @@ func TestDeletePost(t *testing.T) {
 		t.Fatalf("board should be empty after delete: %v %+v", err, posts)
 	}
 }
+
+func TestCountRegistered(t *testing.T) {
+	s, err := Open(filepath.Join(t.TempDir(), "test.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.Close()
+	ctx := context.Background()
+
+	n, err := s.CountRegistered(ctx)
+	if err != nil || n != 0 {
+		t.Fatalf("empty db: n=%d err=%v, want 0 nil", n, err)
+	}
+	if _, err := s.CreatePlayer(ctx, "fp-with-handle"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.CreatePlayer(ctx, "fp-no-handle"); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.SetHandle(ctx, "fp-with-handle", "tester"); err != nil {
+		t.Fatal(err)
+	}
+	n, err = s.CountRegistered(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n != 1 {
+		t.Errorf("CountRegistered = %d, want 1 (only players with a handle)", n)
+	}
+}

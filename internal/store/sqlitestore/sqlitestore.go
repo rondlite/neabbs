@@ -188,6 +188,15 @@ func (s *Store) TouchLastSeen(ctx context.Context, fp string) error {
 	return err
 }
 
+// CountRegistered counts players who completed signup (chose a handle).
+// Feeds the public website's stats endpoint; not part of store.Store.
+func (s *Store) CountRegistered(ctx context.Context) (int, error) {
+	var n int
+	err := s.db.QueryRowContext(ctx,
+		"SELECT COUNT(*) FROM players WHERE handle IS NOT NULL AND handle != ''").Scan(&n)
+	return n, err
+}
+
 func (s *Store) SetBanned(ctx context.Context, fp string, banned bool) error {
 	_, err := s.db.ExecContext(ctx, "UPDATE players SET banned = ? WHERE fingerprint = ?", banned, fp)
 	return err
