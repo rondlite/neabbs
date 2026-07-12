@@ -455,6 +455,27 @@ func (s *Store) SetHostCooldown(ctx context.Context, fp, hostID string, until ti
 	return err
 }
 
+func (s *Store) ResetProgress(ctx context.Context, fp, handle string) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err := tx.ExecContext(ctx,
+		"UPDATE players SET level = 0, flags = '[]', heat = 0, heat_at = 0 WHERE fingerprint = ?", fp); err != nil {
+		return err
+	}
+	if _, err := tx.ExecContext(ctx, "DELETE FROM host_state WHERE fingerprint = ?", fp); err != nil {
+		return err
+	}
+	if handle != "" {
+		if _, err := tx.ExecContext(ctx, "DELETE FROM breaches WHERE handle = ?", handle); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
 func (s *Store) RecordBreach(ctx context.Context, hostID, handle string, at time.Time) error {
 	if handle == "" {
 		return nil

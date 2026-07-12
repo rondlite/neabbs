@@ -31,6 +31,7 @@ const sysopHelp = `SYSOP — moderatie
   sysop wis <nr>         verwijder bericht <nr> in het huidige board
   sysop ban <handle>     verban een speler (verbreekt live sessies direct)
   sysop unban <handle>   hef een verbanning op
+  sysop reset <handle>   wis de THIS-voortgang (playtest; verbreekt sessies)
   sysop gen <board> [n]  laat de LLM n concepten schrijven (wachtrij)
   sysop pending          toon concepten die op review wachten
   sysop ok <id>          publiceer een concept
@@ -69,6 +70,12 @@ func (m *Model) sysopCmd(line string, fields []string) (tea.Model, tea.Cmd) {
 			arg = fields[2]
 		}
 		return m.sysopBan(arg, sub == "ban")
+	case "reset":
+		arg := ""
+		if len(fields) > 2 {
+			arg = fields[2]
+		}
+		return m.sysopReset(arg)
 	case "gen", "genereer":
 		board := ""
 		if len(fields) > 2 {
@@ -174,6 +181,30 @@ func (m *Model) sysopBan(handle string, ban bool) (tea.Model, tea.Cmd) {
 		}
 	}
 	return m, m.out(fmt.Sprintf("%s verbannen. %d live sessie(s) verbroken.", target.Handle, kicked))
+}
+
+// sysopReset wipes a player's THIS arc for replay (a playtest tool) and kicks
+// any live sessions on that fingerprint so they reconnect into the fresh
+// state. Membership is kept, so they land back at THIS-0.
+func (m *Model) sysopReset(handle string) (tea.Model, tea.Cmd) {
+	if handle == "" {
+		return m, m.out("Gebruik: sysop reset <handle>")
+	}
+	target, err := m.deps.Store.PlayerByHandle(context.Background(), handle)
+	if err != nil {
+		return m, m.out("Geen speler met die naam.")
+	}
+	if err := m.deps.Store.ResetProgress(context.Background(), target.Fingerprint, target.Handle); err != nil {
+		return m, m.out("Reset mislukt.")
+	}
+	kicked := 0
+	for _, s := range m.deps.Registry.All() {
+		if s.Fingerprint == target.Fingerprint {
+			s.SendMsg(KickMsg{Reason: "SESSIE GERESET DOOR DE SYSOP — log opnieuw in."})
+			kicked++
+		}
+	}
+	return m, m.out(fmt.Sprintf("%s: THIS-arc gereset (niveau 0, vlaggen/hosts/heat/sporen gewist). %d sessie(s) verbroken.", target.Handle, kicked))
 }
 
 // sysopDelete removes a player-authored post in the current board. YAML-seeded

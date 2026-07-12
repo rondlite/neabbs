@@ -23,6 +23,7 @@ commands:
   unban <handle>            lift a ban
   sysop <handle> on|off     grant/revoke sysop (in-game moderation)
   flag <handle> <flag>      grant a flag
+  reset <handle>            wipe a player's THIS arc for replay (keeps membership)
 `
 
 // runAdmin is the offline admin CLI, operating directly on the DB file.
@@ -140,6 +141,20 @@ func runAdmin(args []string) error {
 			return err
 		}
 		fmt.Printf("%s sysop=%s (reconnect to take effect in-game)\n", p.Handle, args[2])
+		return nil
+
+	case "reset":
+		if len(args) != 2 {
+			return fmt.Errorf("usage: neabbs admin reset <handle>")
+		}
+		p, err := byHandle(args[1])
+		if err != nil {
+			return err
+		}
+		if err := st.ResetProgress(ctx, p.Fingerprint, p.Handle); err != nil {
+			return err
+		}
+		fmt.Printf("%s: THIS-arc gereset (niveau 0, vlaggen/hosts/heat gewist, lidmaatschap behouden). Speler moet opnieuw inloggen.\n", p.Handle)
 		return nil
 
 	case "flag":

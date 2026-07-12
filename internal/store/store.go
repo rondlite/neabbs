@@ -107,6 +107,11 @@ type Store interface {
 	// AddHeat decays the stored heat to now, adds delta (clamped to
 	// [0, HeatMax]), persists it, and returns the new value.
 	AddHeat(ctx context.Context, fp string, delta int) (int, error)
+	// ResetProgress wipes a player's THIS arc for replay: level→0, flags
+	// cleared, heat→0, and all host_state and breach rows removed. THIS
+	// membership is preserved so they can re-enter and start over. handle is
+	// needed to clear the (handle-keyed) breach trail.
+	ResetProgress(ctx context.Context, fp, handle string) error
 	// GrantFlags adds flags to the player's flag set.
 	GrantFlags(ctx context.Context, fp string, flags ...string) error
 	// SetLevel sets the THIS clearance level (0-9).

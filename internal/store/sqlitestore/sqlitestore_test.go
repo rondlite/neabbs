@@ -186,6 +186,39 @@ func TestAddHeat(t *testing.T) {
 	}
 }
 
+func TestResetProgress(t *testing.T) {
+	s := open(t)
+	ctx := context.Background()
+	if _, err := s.CreatePlayer(ctx, "fp1"); err != nil {
+		t.Fatal(err)
+	}
+	_ = s.SetHandle(ctx, "fp1", "climber")
+	_ = s.SetThisMember(ctx, "fp1", true)
+	_ = s.SetLevel(ctx, "fp1", 7)
+	_ = s.GrantFlags(ctx, "fp1", "a", "b")
+	_, _ = s.AddHeat(ctx, "fp1", 30)
+	_, _ = s.SetHostCracked(ctx, "fp1", "host1", true)
+	_ = s.RecordBreach(ctx, "host1", "climber", time.Unix(1, 0))
+
+	if err := s.ResetProgress(ctx, "fp1", "climber"); err != nil {
+		t.Fatal(err)
+	}
+	p, _ := s.PlayerByFingerprint(ctx, "fp1")
+	if p.Level != 0 || len(p.Flags) != 0 || p.CurrentHeat(time.Now()) != 0 {
+		t.Fatalf("progress not cleared: %+v", p)
+	}
+	if !p.ThisMember {
+		t.Fatal("membership must be preserved across reset")
+	}
+	hs, _ := s.HostState(ctx, "fp1", "host1")
+	if hs.Cracked {
+		t.Fatal("host_state not cleared")
+	}
+	if bi, _ := s.BreachInfo(ctx, "host1"); bi.Count != 0 {
+		t.Fatalf("breaches not cleared: %+v", bi)
+	}
+}
+
 func TestBreaches(t *testing.T) {
 	s := open(t)
 	ctx := context.Background()
