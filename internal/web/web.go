@@ -72,6 +72,9 @@ func (s *Server) Serve() error {
 			Addr:              s.cfg.WebListen,
 			Handler:           h,
 			ReadHeaderTimeout: 5 * time.Second,
+			ReadTimeout:       10 * time.Second,
+			WriteTimeout:      30 * time.Second,
+			IdleTimeout:       60 * time.Second,
 		}
 		s.srvMu.Lock()
 		if s.closed {
@@ -86,14 +89,20 @@ func (s *Server) Serve() error {
 	m := s.certManager()
 	httpSrv := &http.Server{
 		Addr:              ":80",
-		Handler:           m.HTTPHandler(http.HandlerFunc(redirectHTTPS)),
+		Handler:           m.HTTPHandler(http.HandlerFunc(s.redirectHTTPS)),
 		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       10 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       60 * time.Second,
 	}
 	mainSrv := &http.Server{
 		Addr:              ":443",
 		Handler:           h,
 		TLSConfig:         m.TLSConfig(),
 		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       10 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       60 * time.Second,
 	}
 	s.srvMu.Lock()
 	if s.closed {
@@ -138,9 +147,10 @@ func (s *Server) certManager() *autocert.Manager {
 	}
 }
 
-// redirectHTTPS 301s everything that is not an ACME challenge to https.
-func redirectHTTPS(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, "https://"+hostOnly(r.Host)+r.URL.RequestURI(), http.StatusMovedPermanently)
+// redirectHTTPS 301s everything that is not an ACME challenge to https,
+// always to the configured domain — never to a client-supplied Host header.
+func (s *Server) redirectHTTPS(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "https://"+s.cfg.WebDomain+r.URL.RequestURI(), http.StatusMovedPermanently)
 }
 
 func (s *Server) handler() http.Handler {
@@ -149,6 +159,7 @@ func (s *Server) handler() http.Handler {
 		panic(err) // embedded FS: impossible unless the build is broken
 	}
 	files := http.FileServerFS(static)
+	cachedFiles := withCacheControl("public, max-age=3600", files)
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {
@@ -159,10 +170,35 @@ func (s *Server) handler() http.Handler {
 		}
 		http.ServeFileFS(w, r, static, "index.html")
 	})
-	mux.Handle("/style.css", files)
-	mux.Handle("/site.js", files)
+	mux.Handle("/style.css", cachedFiles)
+	mux.Handle("/site.js", cachedFiles)
 	mux.HandleFunc("/api/status", s.handleStatus)
-	return withApexHost(s.cfg.WebDomain, mux)
+	return withSecurityHeaders(withApexHost(s.cfg.WebDomain, mux))
+}
+
+// withSecurityHeaders sets baseline hardening headers on every response.
+// HSTS is only sent over an actual TLS connection — advertising it on a
+// plain-HTTP dev listener would be a lie the browser then enforces.
+func withSecurityHeaders(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		h := w.Header()
+		h.Set("X-Content-Type-Options", "nosniff")
+		h.Set("Content-Security-Policy", "default-src 'none'; style-src 'self'; script-src 'self'; connect-src 'self'")
+		if r.TLS != nil {
+			h.Set("Strict-Transport-Security", "max-age=31536000")
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+// withCacheControl adds a Cache-Control header to responses; used for the
+// embedded static assets, which carry no modtime and so emit no validators
+// (ETag/Last-Modified) on their own.
+func withCacheControl(value string, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", value)
+		next.ServeHTTP(w, r)
+	})
 }
 
 // withApexHost 301s www.<domain> to the apex so autocert only ever has to

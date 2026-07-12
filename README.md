@@ -49,6 +49,9 @@ schrijfbare mappen recht te zetten, en zakt daarna permanent naar uid/gid
   dan wordt de root-fase overgeslagen en draait alles direct als non-root.
 - Om de website mee te serveren: publiceer poorten 80 en 443 naast 22 en zet
   `NEABBS_WEB=:443`; certificaten komen in `/data/certs`.
+- Non-root binden aan poorten 80/443 werkt standaard onder Docker (≥20.10);
+  op k8s/podman kan `CAP_NET_BIND_SERVICE` of een sysctl
+  (`net.ipv4.ip_unprivileged_port_start`) nodig zijn.
 
 ## Ontwikkelen
 

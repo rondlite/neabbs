@@ -47,14 +47,38 @@ func TestIndex(t *testing.T) {
 	if !strings.Contains(rec.Body.String(), "ssh neabbs.com") {
 		t.Errorf("index must contain the connect command")
 	}
+	if got := rec.Header().Get("Cache-Control"); got != "" {
+		t.Errorf("Cache-Control = %q, want empty on /", got)
+	}
 }
 
 func TestStaticAssets(t *testing.T) {
 	h := testServer(fakeStats{}).handler()
 	for _, p := range []string{"/style.css", "/site.js"} {
-		if rec := get(t, h, p, "neabbs.com"); rec.Code != http.StatusOK {
+		rec := get(t, h, p, "neabbs.com")
+		if rec.Code != http.StatusOK {
 			t.Errorf("%s: status = %d, want 200", p, rec.Code)
 		}
+		if got := rec.Header().Get("Cache-Control"); got != "public, max-age=3600" {
+			t.Errorf("%s: Cache-Control = %q, want %q", p, got, "public, max-age=3600")
+		}
+	}
+}
+
+func TestSecurityHeaders(t *testing.T) {
+	rec := get(t, testServer(fakeStats{}).handler(), "/", "neabbs.com")
+	if got := rec.Header().Get("X-Content-Type-Options"); got != "nosniff" {
+		t.Errorf("X-Content-Type-Options = %q, want nosniff", got)
+	}
+	wantCSP := "default-src 'none'; style-src 'self'; script-src 'self'; connect-src 'self'"
+	if got := rec.Header().Get("Content-Security-Policy"); got != wantCSP {
+		t.Errorf("Content-Security-Policy = %q, want %q", got, wantCSP)
+	}
+	// httptest.NewRequest never sets r.TLS, so this is a plain-HTTP
+	// request: HSTS must be absent, or browsers would enforce it wrongly
+	// for a connection that was never actually secure.
+	if got := rec.Header().Get("Strict-Transport-Security"); got != "" {
+		t.Errorf("Strict-Transport-Security = %q, want empty on a non-TLS request", got)
 	}
 }
 
@@ -86,6 +110,9 @@ func TestStatusJSON(t *testing.T) {
 	}
 	if got["callers_online"] != float64(0) {
 		t.Errorf("callers_online = %v, want 0", got["callers_online"])
+	}
+	if got := rec.Header().Get("Cache-Control"); got != "" {
+		t.Errorf("Cache-Control = %q, want empty on /api/status", got)
 	}
 	for k := range got {
 		switch k {
@@ -147,10 +174,13 @@ func TestWWWRedirectsToApex(t *testing.T) {
 }
 
 func TestRedirectHTTPS(t *testing.T) {
+	s := testServer(fakeStats{})
 	req := httptest.NewRequest(http.MethodGet, "/pad?x=1", nil)
-	req.Host = "neabbs.com:80"
+	// A hostile or spoofed Host header must not influence the redirect
+	// target; it must always pin to the configured domain.
+	req.Host = "evil.example:80"
 	rec := httptest.NewRecorder()
-	redirectHTTPS(rec, req)
+	s.redirectHTTPS(rec, req)
 	if rec.Code != http.StatusMovedPermanently {
 		t.Fatalf("status = %d, want 301", rec.Code)
 	}
