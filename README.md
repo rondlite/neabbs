@@ -27,6 +27,9 @@ sleutels (`ssh -i andere_sleutel -p 2222 localhost`).
 | `LLM_BASE_URL`   | (leeg = uit) | OpenAI-compatible chat endpoint    |
 | `LLM_MODEL`      | (leeg)       | modelnaam voor de LLM              |
 | `LLM_API_KEY`    | (leeg)       | bearer-token voor de LLM           |
+| `NEABBS_WEB`       | (leeg = uit) | Website listen-adres; `:443` = Let's Encrypt |
+| `NEABBS_WEB_DOMAIN`| `neabbs.com` | Domein voor TLS-certificaten                 |
+| `NEABBS_CERTS`     | `./certs`    | Cache-map voor Let's Encrypt-certificaten    |
 
 ## Deployen (volume & rechten)
 
@@ -44,6 +47,8 @@ schrijfbare mappen recht te zetten, en zakt daarna permanent naar uid/gid
 - Doel-uid/gid overschrijven kan met `NEABBS_UID` / `NEABBS_GID`.
 - Draai je met `--user 65532` en is het volume al schrijfbaar voor die uid,
   dan wordt de root-fase overgeslagen en draait alles direct als non-root.
+- Om de website mee te serveren: publiceer poorten 80 en 443 naast 22 en zet
+  `NEABBS_WEB=:443`; certificaten komen in `/data/certs`.
 
 ## Ontwikkelen
 

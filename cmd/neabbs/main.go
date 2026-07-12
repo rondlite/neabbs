@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -28,6 +29,7 @@ import (
 	"github.com/rondlite/neabbs/internal/store"
 	"github.com/rondlite/neabbs/internal/store/sqlitestore"
 	"github.com/rondlite/neabbs/internal/tui"
+	"github.com/rondlite/neabbs/internal/web"
 	"github.com/rondlite/neabbs/internal/world"
 )
 
@@ -56,7 +58,7 @@ func run(args []string) error {
 	// If the container started as root (platforms often mount volumes
 	// root-owned), fix ownership of the writable dirs and drop to the
 	// unprivileged user before touching the DB.
-	if err := dropPrivileges(filepath.Dir(cfg.DBPath), filepath.Dir(cfg.HostKey)); err != nil {
+	if err := dropPrivileges(filepath.Dir(cfg.DBPath), filepath.Dir(cfg.HostKey), cfg.CertsDir); err != nil {
 		return fmt.Errorf("drop privileges: %w", err)
 	}
 
@@ -78,6 +80,23 @@ func run(args []string) error {
 	slog.Info("content loaded", "boards", len(cset.Boards))
 
 	registry := presence.NewRegistry()
+
+	// Landing site (optional). A web failure logs and never stops the game.
+	if cfg.WebListen != "" {
+		ws := web.New(cfg, registry, st)
+		go func() {
+			slog.Info("web listening", "addr", cfg.WebListen)
+			if err := ws.Serve(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+				slog.Error("web server", "err", err)
+			}
+		}()
+		defer func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			_ = ws.Shutdown(ctx)
+		}()
+	}
+
 	srv, err := newServer(cfg, st, registry, board.NewEngine(cset, st), cset, chat.NewRoom(), world.NewEngine(cset, st), llm.New(cfg))
 	if err != nil {
 		return err

@@ -19,7 +19,7 @@ import (
 // against an already-writable volume): the process simply serves as-is.
 // The target uid/gid default to the distroless nonroot user (65532) and are
 // overridable with NEABBS_UID / NEABBS_GID.
-func dropPrivileges(dbDir, keyDir string) error {
+func dropPrivileges(dirs ...string) error {
 	if syscall.Geteuid() != 0 {
 		return nil
 	}
@@ -27,7 +27,7 @@ func dropPrivileges(dbDir, keyDir string) error {
 	gid := envInt("NEABBS_GID", 65532)
 
 	seen := map[string]bool{}
-	for _, dir := range []string{dbDir, keyDir} {
+	for _, dir := range dirs {
 		if dir == "" || dir == "." || seen[dir] {
 			continue
 		}

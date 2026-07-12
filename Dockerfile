@@ -25,7 +25,8 @@ COPY --from=build --chown=65532:65532 /data /data
 ENV NEABBS_LISTEN=:2222 \
     NEABBS_DB=/data/neabbs.db \
     NEABBS_HOSTKEY=/data/hostkey \
-    NEABBS_CONTENT=/content
-EXPOSE 2222
+    NEABBS_CONTENT=/content \
+    NEABBS_CERTS=/data/certs
+EXPOSE 2222 80 443
 VOLUME /data
 ENTRYPOINT ["/neabbs"]
