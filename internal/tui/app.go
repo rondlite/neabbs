@@ -52,6 +52,7 @@ type state int
 
 const (
 	stateRitual state = iota
+	stateLang
 	stateHandle
 	stateMenu
 	stateBoards
@@ -70,6 +71,7 @@ type ritualStep int
 
 const (
 	ritConnect ritualStep = iota
+	ritLang
 	ritUsername
 	ritPassword
 	ritGranted
@@ -268,7 +270,14 @@ func (m *Model) ritual(step ritualStep) tea.Cmd {
 			m.logo(),
 			dimmed.Render(m.tr("        heropend na bijna 40 jaar stilte · Amsterdam · sinds 1984", "        reopened after nearly 40 years of silence · Amsterdam · since 1984")),
 			amberBright.Render(lineBar))
-		return tea.Batch(m.print(banner), delay(700*time.Millisecond, ritUsername))
+		return tea.Batch(m.print(banner), delay(700*time.Millisecond, nextAfterConnect(p.Handle)))
+	case ritLang:
+		// A caller with no language yet cannot read a prompt in one, so this
+		// one is bilingual. Only new callers ever see it.
+		m.state = stateLang
+		m.input.Prompt = "Keuze / Choice: "
+		return m.print(amberBright.Render("Taal / Language") +
+			"\n  [1] Nederlands\n  [2] English")
 	case ritUsername:
 		if p.Handle == "" {
 			m.state = stateHandle
@@ -312,7 +321,7 @@ func (m *Model) ritual(step ritualStep) tea.Cmd {
 		return tea.Batch(m.print(m.renderUnread()), delay(300*time.Millisecond, ritMenu))
 	case ritMenu:
 		m.state = stateMenu
-		m.input.Prompt = "Keuze: "
+		m.input.Prompt = m.tr("Keuze: ", "Choice: ")
 		return m.print(m.renderMenu())
 	}
 	return nil
@@ -429,6 +438,9 @@ func (m *Model) renderMenu() string {
 		m.tr(" [F] Bestanden            [C] Babbelbox", " [F] Files                [C] Chat box"),
 		m.tr(" [S] Sysop oproepen       [I] Colofon", " [S] Page sysop           [I] About"),
 		m.tr(" [Q] Quickscan nieuwe berichten", " [Q] Quickscan new messages"),
+		// Never translated: this is the row a caller stranded in the wrong
+		// language has to be able to read.
+		" [N] Nederlands            [E] English",
 		m.tr(" [U] Uitloggen", " [U] Log out"),
 	}
 	// The door stays discovered once found: members see the THIS entry.
@@ -462,7 +474,7 @@ func (m *Model) menuAction(key string) (tea.Model, tea.Cmd) {
 		return m, m.print(renderBoardList(m.deps.Boards.VisibleBoards(m.viewer()), m.lang()))
 	case "f", "2":
 		m.state = stateFiles
-		m.input.Prompt = "Bestand> "
+		m.input.Prompt = m.tr("Bestand> ", "File> ")
 		m.deps.Sess.SetArea("bestanden", false)
 		return m, m.print(renderFileList(m.visibleFiles(), m.lang()))
 	case "w", "3":
@@ -480,6 +492,10 @@ func (m *Model) menuAction(key string) (tea.Model, tea.Cmd) {
 		return m, m.print(col)
 	case "q", "7":
 		return m, m.print(m.quickscan())
+	case "n":
+		return m.toggleLang("nl")
+	case "e":
+		return m.toggleLang("en")
 	case "u", "8":
 		return m.quit()
 	case "t":
@@ -861,7 +877,7 @@ func (m *Model) key(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	// hotkeys, so multi-char commands remain typable.
 	if m.state == stateMenu && m.input.Value() == "" && len(msg.Runes) == 1 {
 		switch r := strings.ToLower(string(msg.Runes[0])); r {
-		case "b", "f", "w", "c", "s", "i", "q", "u":
+		case "b", "f", "w", "c", "s", "i", "q", "u", "n", "e":
 			return m.menuAction(r)
 		case "t":
 			// Hotkey only for members; for everyone else 't' buffers so a
@@ -900,7 +916,7 @@ func (m *Model) resetCompose() {
 func (m *Model) backToMenu() (tea.Model, tea.Cmd) {
 	m.state = stateMenu
 	m.boardID = ""
-	m.input.Prompt = "Keuze: "
+	m.input.Prompt = m.tr("Keuze: ", "Choice: ")
 	m.deps.Sess.SetArea("hoofdmenu", false)
 	return m, m.print(m.renderMenu())
 }
@@ -915,6 +931,8 @@ func (m *Model) handleLine(line string) (tea.Model, tea.Cmd) {
 		}
 	}
 	switch m.state {
+	case stateLang:
+		return m.pickLang(line)
 	case stateHandle:
 		return m.pickHandle(line)
 	case stateMenu:
@@ -965,9 +983,9 @@ func (m *Model) checkPromotion() (tea.Model, tea.Cmd) {
 	if m.state == stateDone {
 		return m, nil
 	}
-	if m.state != stateBoards && m.state != stateThis && !m.composing() {
-		return m, promoTick() // keep the single session ticker alive
-	}
+	// Refresh in every state: the THIS status bar renders the level on every
+	// frame, so any state that skipped this poll (talk, files, chat) would show
+	// a stale clearance until the player wandered back into a board.
 	fresh, err := m.deps.Store.PlayerByFingerprint(context.Background(), m.deps.Player.Fingerprint)
 	if err != nil {
 		return m, promoTick()
@@ -975,6 +993,8 @@ func (m *Model) checkPromotion() (tea.Model, tea.Cmd) {
 	oldLevel, oldMember := m.deps.Player.Level, m.deps.Player.ThisMember
 	changed := fresh.Level != oldLevel || fresh.ThisMember != oldMember
 	*m.deps.Player = *fresh
+	// The live board repaint (redacted posts resolving) only applies with a
+	// board open; the refresh above has already landed everywhere else.
 	if !changed || m.boardID == "" {
 		return m, promoTick()
 	}
@@ -999,6 +1019,35 @@ func (m *Model) checkPromotion() (tea.Model, tea.Cmd) {
 		return m, promoTick()
 	}
 	return m, tea.Batch(tea.Println(block), promoTick())
+}
+
+// ─── language picker ───────────────────────────────────────────────────────
+
+// nextAfterConnect is the ritual step following the connect banner. Brand-new
+// callers (no handle yet) pick a language first; returning callers already
+// have one stored and are never asked again.
+func nextAfterConnect(handle string) ritualStep {
+	if handle == "" {
+		return ritLang
+	}
+	return ritUsername
+}
+
+// pickLang answers the first-login language prompt, then hands off to the
+// username step — everything downstream renders in the chosen language.
+func (m *Model) pickLang(line string) (tea.Model, tea.Cmd) {
+	target, ok := parseLangChoice(line)
+	if !ok {
+		return m, m.print("Kies 1 of 2. / Choose 1 or 2.")
+	}
+	var notice tea.Cmd
+	if err := m.setLang(target); err != nil {
+		// A storage hiccup must never block registration: carry on in Dutch.
+		notice = m.print("Taal niet opgeslagen. / Language not saved.")
+	}
+	m.state = stateRitual
+	m.input.Prompt = "> "
+	return m, tea.Batch(notice, m.ritual(ritUsername))
 }
 
 // ─── handle picker ─────────────────────────────────────────────────────────
@@ -1331,7 +1380,7 @@ func (m *Model) exitThis() (tea.Model, tea.Cmd) {
 	m.traceUntil = time.Time{}
 	m.talk.host = ""
 	m.state = stateMenu
-	m.input.Prompt = "Keuze: "
+	m.input.Prompt = m.tr("Keuze: ", "Choice: ")
 	m.deps.Sess.SetArea("hoofdmenu", false)
 	return m, tea.Sequence(tea.ExitAltScreen, m.print(m.renderMenu()))
 }

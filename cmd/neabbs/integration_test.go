@@ -162,8 +162,13 @@ func (c *client) waitFor(substr string) {
 		}
 		// Answer pager prompts with Enter: continues paging, and if the
 		// prompt was already gone (repaint race) a stray Enter is harmless
-		// (it just re-prints the current menu/listing).
-		if idx := strings.LastIndex(got, "-- Meer?"); idx != -1 && idx >= c.answeredAt {
+		// (it just re-prints the current menu/listing). The prompt is
+		// localized, so watch for either language.
+		idx := strings.LastIndex(got, "-- Meer?")
+		if i := strings.LastIndex(got, "-- More?"); i > idx {
+			idx = i
+		}
+		if idx != -1 && idx >= c.answeredAt {
 			c.answeredAt = len(got)
 			c.send("\r")
 		}
@@ -173,6 +178,17 @@ func (c *client) waitFor(substr string) {
 	got := c.buf.String()
 	c.mu.Unlock()
 	c.t.Fatalf("timeout waiting for %q; output:\n%s", substr, got)
+}
+
+// register walks a brand-new caller through first login: the bilingual
+// language prompt (Dutch here; TestFirstLoginEnglish covers the other branch)
+// and then the handle picker.
+func (c *client) register(handle string) {
+	c.t.Helper()
+	c.waitFor("Taal / Language")
+	c.send("1\r")
+	c.waitFor("Nieuwe beller gedetecteerd")
+	c.send(handle + "\r")
 }
 
 // snapshot returns everything received so far.
@@ -188,8 +204,7 @@ func TestFullCallRitualAndInvisibility(t *testing.T) {
 
 	// Call ritual: connect banner → handle picker → theater → menu.
 	c.waitFor("CONNECT 2400")
-	c.waitFor("Nieuwe beller gedetecteerd")
-	c.send("tester\r")
+	c.register("tester")
 	c.waitFor("Aangenaam, tester")
 	c.waitFor("Toegang verleend")
 	c.waitFor("LAATSTE BELLERS")
@@ -226,17 +241,52 @@ func TestFullCallRitualAndInvisibility(t *testing.T) {
 	c.waitFor("NO CARRIER")
 }
 
+// TestFirstLoginEnglish: an English caller picks [2] at the bilingual prompt
+// and the rest of the ritual — and the menu — arrives in English, with the
+// [L] entry still readable in both languages.
+func TestFirstLoginEnglish(t *testing.T) {
+	addr := startServer(t)
+	c := dialBBS(t, addr)
+
+	c.waitFor("Taal / Language")
+	c.send("2\r")
+	c.waitFor("New caller detected")
+	c.send("brit\r")
+	c.waitFor("Pleased to meet you, brit")
+	c.waitFor("Access granted")
+	c.waitFor("MAIN MENU")
+	c.waitFor("[N] Nederlands")
+	c.waitFor("[E] English")
+
+	// The menu hotkeys switch either way, in either language.
+	c.send("n")
+	c.waitFor("Taal ingesteld op Nederlands")
+	c.waitFor("HOOFDMENU")
+	c.send("e")
+	c.waitFor("Language set to English")
+	c.waitFor("MAIN MENU")
+}
+
+// TestDutchCallerSeesEnglishEscapeHatch: the language row is the one thing a
+// caller stranded in the wrong language must be able to read, so it stays
+// bilingual even for a Dutch caller.
+func TestDutchCallerSeesEnglishEscapeHatch(t *testing.T) {
+	addr := startServer(t)
+	c := dialBBS(t, addr)
+	c.register("hollander")
+	c.waitFor("HOOFDMENU")
+	c.waitFor("[E] English")
+}
+
 func TestTwoCallersChatAndPraat(t *testing.T) {
 	addr := startServer(t)
 
 	a := dialBBS(t, addr)
-	a.waitFor("Nieuwe beller gedetecteerd")
-	a.send("alice\r")
+	a.register("alice")
 	a.waitFor("HOOFDMENU")
 
 	b := dialBBS(t, addr)
-	b.waitFor("Nieuwe beller gedetecteerd")
-	b.send("bob\r")
+	b.register("bob")
 	b.waitFor("HOOFDMENU")
 
 	// praat reaches the other line.
@@ -266,8 +316,7 @@ func TestBoardPostVisibleToOtherCaller(t *testing.T) {
 	addr := startServer(t)
 
 	a := dialBBS(t, addr)
-	a.waitFor("Nieuwe beller")
-	a.send("carol\r")
+	a.register("carol")
 	a.waitFor("HOOFDMENU")
 	a.send("b")
 	a.waitFor("Gebruik: board <id>")
@@ -282,8 +331,7 @@ func TestBoardPostVisibleToOtherCaller(t *testing.T) {
 	a.waitFor("Geplaatst als bericht #10000")
 
 	b := dialBBS(t, addr)
-	b.waitFor("Nieuwe beller")
-	b.send("dave\r")
+	b.register("dave")
 	b.waitFor("HOOFDMENU")
 	b.send("b")
 	b.waitFor("Gebruik: board <id>")
@@ -298,8 +346,7 @@ func TestBoardPostVisibleToOtherCaller(t *testing.T) {
 func TestDiscoveryChainIntoTHIS(t *testing.T) {
 	addr := startServer(t)
 	c := dialBBS(t, addr)
-	c.waitFor("Nieuwe beller")
-	c.send("hacker\r")
+	c.register("hacker")
 	c.waitFor("HOOFDMENU")
 
 	// Door without flag: identical to gibberish, and the gated file is
@@ -341,6 +388,11 @@ func TestDiscoveryChainIntoTHIS(t *testing.T) {
 	c.waitFor("DOORVERBINDEN NAAR: THIS")
 	c.waitFor("VERBINDING OMGELEGD")
 	c.waitFor("THIS-0")
+	// Crossing the threshold switches to the alt screen: THIS is a full-screen
+	// surface with a pinned status bar, not scrollback like the public BBS.
+	if !strings.Contains(c.snapshot(), "\x1b[?1049h") {
+		t.Fatal("THIS did not enter the alt screen: the status bar cannot stay pinned")
+	}
 
 	// THIS boards: iceberg visible from minute one.
 	c.send("boards\r")
@@ -358,8 +410,7 @@ func TestDiscoveryChainIntoTHIS(t *testing.T) {
 	// A second, fresh caller sees nothing: no THIS boards, and the member
 	// inside THIS shows only as a busy line.
 	d := dialBBS(t, addr)
-	d.waitFor("Nieuwe beller")
-	d.send("normaal\r")
+	d.register("normaal")
 	d.waitFor("HOOFDMENU")
 	d.send("w")
 	d.waitFor("WIE IS ER OP DE LIJNEN")
@@ -423,8 +474,7 @@ func TestDiscoveryChainIntoTHIS(t *testing.T) {
 func TestHackingArc(t *testing.T) {
 	addr := startServer(t)
 	c := dialBBS(t, addr)
-	c.waitFor("Nieuwe beller")
-	c.send("kraker\r")
+	c.register("kraker")
 	c.waitFor("HOOFDMENU")
 
 	// Shortcut into THIS: grant the invite via a synthetic run of the chain
@@ -472,6 +522,9 @@ func TestHackingArc(t *testing.T) {
 	c.send("crack\r")
 	c.waitFor("TOEGANG VERLEEND")
 	c.waitFor("PROMOTIE — THIS-1")
+	// The status bar is the always-visible clearance readout: it must track the
+	// promotion, not stay pinned at the level you entered with.
+	c.waitFor("kraker · THIS-1")
 	c.waitFor("TRACE ACTIEF")
 	c.send("ls\r")
 	c.waitFor("modemlijst.dat")
