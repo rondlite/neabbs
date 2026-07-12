@@ -10,4 +10,4 @@ doesn't matter. rules are the same:
   2. don't write down anything you don't want to lose.
   3. level is earned. asking for it works against you.
 
-access: THIS-0. type 'help'.
+access: THIS-{level}. type 'help'.

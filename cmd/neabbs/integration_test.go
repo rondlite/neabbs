@@ -570,6 +570,14 @@ func TestHackingArc(t *testing.T) {
 	c.send("disconnect\r")
 	c.waitFor("verbroken")
 
+	// Leaving and re-entering THIS greets the operator with their real
+	// clearance: the arrival banner used to hardcode THIS-0, which read as a
+	// demotion to anyone who had climbed.
+	c.send("exit\r")
+	c.waitFor("HOOFDMENU")
+	c.send("this\r")
+	c.waitFor("toegang: THIS-3.")
+
 	// #phreak now exists and is readable.
 	c.send("boards\r")
 	c.waitFor("phreak")

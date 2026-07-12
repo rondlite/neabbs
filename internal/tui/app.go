@@ -1366,6 +1366,10 @@ func (m *Model) enterThis() (tea.Model, tea.Cmd) {
 	if arrival == "" {
 		arrival = m.tr("THIS\n\ntik 'help'.", "THIS\n\ntype 'help'.")
 	}
+	// The banner states the caller's clearance, so it has to be their actual
+	// one — a returning THIS-2 operator greeted with "toegang: THIS-0" reads as
+	// a demotion.
+	arrival = strings.ReplaceAll(arrival, "{level}", strconv.Itoa(m.deps.Player.Level))
 	m.thisLines = nil
 	m.thisPrint(arrival)
 	return m, tea.EnterAltScreen

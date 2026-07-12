@@ -10,4 +10,4 @@ maakt niet uit. regels zijn hetzelfde:
   2. schrijf niets op dat je niet kwijt wil.
   3. niveau verdien je. vragen erom werkt averechts.
 
-toegang: THIS-0. tik 'help'.
+toegang: THIS-{level}. tik 'help'.
