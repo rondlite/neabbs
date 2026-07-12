@@ -1,23 +1,29 @@
 <!doctype html>
 <html lang="nl">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>NEABBS — heropend na 40 jaar stilte</title>
-<meta name="description" content="Een Nederlandse jaren-80 BBS, heropend na 40 jaar stilte. Bel in over echte SSH.">
-<link rel="stylesheet" href="/style.css">
-</head>
-<body>
-<div class="bezel">
-<main class="crt">
-<nav class="lang">
-  <button id="lang-nl" aria-pressed="true">NL</button><span aria-hidden="true">/</span><button id="lang-en" aria-pressed="false">EN</button>
-</nav>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>NEABBS — heropend na 40 jaar stilte</title>
+    <meta
+      name="description"
+      content="Een Nederlandse jaren-80 BBS, heropend na 40 jaar stilte. Bel in over echte SSH."
+    />
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <div class="bezel">
+      <main class="crt">
+        <nav class="lang">
+          <button id="lang-nl" aria-pressed="true">NL</button
+          ><span aria-hidden="true">/</span
+          ><button id="lang-en" aria-pressed="false">EN</button>
+        </nav>
 
-<section id="boot" aria-label="terminal">
-<pre id="boot-out" aria-live="off"></pre>
-<noscript>
-<pre>ATDT 020-621984
+        <section id="boot" aria-label="terminal">
+          <pre id="boot-out" aria-live="off"></pre>
+          <noscript>
+            <pre>
+ATDT 020-621984
 CONNECT 1200
 
  _   _ _____    _    ____  ____ ____
@@ -26,27 +32,48 @@ CONNECT 1200
 | |\  | |___ / ___ \| |_) | |_) |__) |
 |_| \_|_____/_/   \_\____/|____/____/
 
-Heropend na 40 jaar stilte.
+Heropend na bijna 40 jaar stilte.
 
-$ ssh neabbs.com</pre>
-</noscript>
-<pre id="prompt" hidden>$ ssh neabbs.com<span class="cursor">█</span></pre>
-</section>
+$ ssh neabbs.com</pre
+            >
+          </noscript>
+          <pre
+            id="prompt"
+            hidden
+          >$ ssh neabbs.com<span class="cursor">█</span></pre>
+        </section>
 
-<section class="explain">
-<h1 data-nl="Wat is dit?" data-en="What is this?">Wat is dit?</h1>
-<p data-nl="NEABBS is een Nederlandse bulletin board uit de jaren tachtig, na veertig jaar stilte heropend. Geen website, geen app: je belt in zoals toen — alleen gaat dat nu over SSH."
-   data-en="NEABBS is a Dutch 1980s bulletin board, reopened after forty years of silence. No website, no app: you dial in like back then — only now the line is SSH.">
-NEABBS is een Nederlandse bulletin board uit de jaren tachtig, na veertig jaar stilte heropend. Geen website, geen app: je belt in zoals toen — alleen gaat dat nu over SSH.</p>
-<p data-nl="Binnen vind je prikborden, een bestandenhoek, een babbelbox en de andere bellers. Je SSH-sleutel is je identiteit; bij de eerste keer inbellen kies je een naam. Het is een spel én een hangplek — hoe diep je graaft, bepaal je zelf."
-   data-en="Inside you'll find message boards, a file area, a chat line and the other callers. Your SSH key is your identity; you pick a handle the first time you dial in. It's a game and a hangout — how deep you dig is up to you.">
-Binnen vind je prikborden, een bestandenhoek, een babbelbox en de andere bellers. Je SSH-sleutel is je identiteit; bij de eerste keer inbellen kies je een naam. Het is een spel én een hangplek — hoe diep je graaft, bepaal je zelf.</p>
-<p class="connect-label" data-nl="Inbellen (Mac, Linux, Windows 10+):" data-en="Dial in (Mac, Linux, Windows 10+):">Inbellen (Mac, Linux, Windows 10+):</p>
-<pre class="connect">ssh neabbs.com</pre>
-</section>
+        <section class="explain">
+          <h1 data-nl="Wat is dit?" data-en="What is this?">Wat is dit?</h1>
+          <p
+            data-nl="NEABBS is een Nederlandse bulletin board uit de jaren tachtig, na veertig jaar stilte heropend. Geen website, geen app: je belt in zoals toen — alleen gaat dat nu over SSH."
+            data-en="NEABBS is a Dutch 1980s bulletin board, reopened after forty years of silence. No website, no app: you dial in like back then — only now the line is SSH."
+          >
+            NEABBS is een Nederlandse bulletin board uit de jaren tachtig, na
+            veertig jaar stilte heropend. Geen website, geen app: je belt in
+            zoals toen — alleen gaat dat nu over SSH.
+          </p>
+          <p
+            data-nl="Binnen vind je prikborden, een bestandenhoek, een babbelbox en de andere bellers. Je SSH-sleutel is je identiteit; bij de eerste keer inbellen kies je een naam. Het is een spel én een hangplek — hoe diep je graaft, bepaal je zelf."
+            data-en="Inside you'll find message boards, a file area, a chat line and the other callers. Your SSH key is your identity; you pick a handle the first time you dial in. It's a game and a hangout — how deep you dig is up to you."
+          >
+            Binnen vind je prikborden, een bestandenhoek, een babbelbox en de
+            andere bellers. Je SSH-sleutel is je identiteit; bij de eerste keer
+            inbellen kies je een naam. Het is een spel én een hangplek — hoe
+            diep je graaft, bepaal je zelf.
+          </p>
+          <p
+            class="connect-label"
+            data-nl="Inbellen (Mac, Linux, Windows 10+):"
+            data-en="Dial in (Mac, Linux, Windows 10+):"
+          >
+            Inbellen (Mac, Linux, Windows 10+):
+          </p>
+          <pre class="connect">ssh neabbs.com</pre>
+        </section>
 
-<section class="boards" aria-label="boards">
-<pre id="boardlist">
+        <section class="boards" aria-label="boards">
+          <pre id="boardlist">
  NR  BOARD            BERICHTEN
   1  ALGEMEEN              124
   2  COMPUTERS              87
@@ -54,16 +81,16 @@ Binnen vind je prikborden, een bestandenhoek, een babbelbox en de andere bellers
   4  MARKT                  56
   5  PHREAK                 43
   6  TESTKELDER             12<span id="glitch-row" hidden>
-  7  ▒▒▒▒▒▒▒▒▒▒  [VERWIJDERD DOOR SYSOP]</span>
+  7  ▒▒<b>THIS</b>▒▒  [VERWIJDERD DOOR SYSOP]</span>
 </pre>
-</section>
+        </section>
 
-<footer>
-<pre>NEABBS · Amsterdam · sinds 1984 · heropend 2026
+        <footer>
+          <pre>NEABBS/THIS · Amsterdam · sinds 1984 · heropend 2026
 sysop: de beheerder · <span data-nl="geen cookies, geen tracking" data-en="no cookies, no tracking">geen cookies, geen tracking</span></pre>
-</footer>
-</main>
-</div>
-<script src="/site.js"></script>
-</body>
+        </footer>
+      </main>
+    </div>
+    <script src="/site.js"></script>
+  </body>
 </html>
