@@ -292,6 +292,15 @@ func (s *Store) AddMinutes(ctx context.Context, fp string, day string, n int) (i
 	return used, err
 }
 
+// ResetMinutes clears today's used-minutes counter for fp. The day is stamped
+// too, so a reset made just before midnight can't be undone by the rollover
+// logic in AddMinutes.
+func (s *Store) ResetMinutes(ctx context.Context, fp string, day string) error {
+	_, err := s.db.ExecContext(ctx,
+		"UPDATE players SET minutes_used = 0, minutes_day = ? WHERE fingerprint = ?", day, fp)
+	return err
+}
+
 func (s *Store) AddNPCTurns(ctx context.Context, fp string, day string, n int) (int, error) {
 	_, err := s.db.ExecContext(ctx, `
 		UPDATE players SET

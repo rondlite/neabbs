@@ -104,6 +104,9 @@ type SysopMsg struct{ Line string }
 // KickMsg forces a session to disconnect (a sysop ban of a live caller).
 type KickMsg struct{ Reason string }
 
+// TimeRefillMsg tells a live session the sysop has topped up its call time.
+type TimeRefillMsg struct{}
+
 // WhisperMsg is a private line from one THIS operator to another.
 type WhisperMsg struct{ From, Line string }
 
@@ -122,6 +125,12 @@ type Model struct {
 	inThis    bool
 	thisLines []string
 	hostAddr  string // connected host address ("" = home node)
+
+	// THIS terminal manners: arrow-key history and Tab completion. knownVerbs
+	// is what the player has actually used, so Tab can never reveal a command
+	// they haven't discovered.
+	hist       history
+	knownVerbs map[string]bool
 
 	// trace timer: runs after cracking a traced host, until disconnect
 	traceHost  string // host id being traced ("" = no trace)
@@ -785,6 +794,15 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		return m, tea.Println(amberBright.Render(msg.Line))
+	case TimeRefillMsg:
+		m.minutesLeft = dailyMinutes
+		line := m.tr("De sysop tikt op de meter. Uw beltegoed staat weer vol.",
+			"The sysop taps the meter. Your call time is full again.")
+		if m.inThis {
+			m.thisPrint(green.Render(line))
+			return m, nil
+		}
+		return m, tea.Println(amberBright.Render(line))
 	case KickMsg:
 		// Translate the fixed sysop reasons in the recipient's language (the
 		// sysop who issued the kick can't know the target's language).
@@ -869,7 +887,34 @@ func (m *Model) key(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case tea.KeyEnter:
 		line := text.CleanLine(m.input.Value())
 		m.input.SetValue("")
+		if m.state == stateThis {
+			m.hist.push(line)
+		}
 		return m.handleLine(line)
+	}
+
+	// THIS is a terminal, so it behaves like one: history on the arrows, Tab
+	// completion. Only at the command prompt — composing a post or talking to
+	// an NPC is prose, where these keys belong to the text.
+	if m.state == stateThis {
+		switch msg.Type {
+		case tea.KeyUp:
+			m.input.SetValue(m.hist.prev())
+			m.input.CursorEnd()
+			return m, nil
+		case tea.KeyDown:
+			m.input.SetValue(m.hist.next())
+			m.input.CursorEnd()
+			return m, nil
+		case tea.KeyTab:
+			line, cands := completeLine(m.input.Value(), m.thisSources())
+			m.input.SetValue(line)
+			m.input.CursorEnd()
+			if len(cands) > 0 {
+				m.thisPrint(strings.Join(cands, "  "))
+			}
+			return m, nil
+		}
 	}
 
 	// Main menu: single-keystroke hotkeys when the buffer is empty.
@@ -1435,6 +1480,9 @@ func (m *Model) thisLine(line string) (tea.Model, tea.Cmd) {
 	if len(fields) > 1 {
 		arg = strings.ToLower(fields[1])
 	}
+	// Using a command is how you learn it: from here on Tab will complete it.
+	// Unknown words fall through to the snark and teach nothing.
+	m.learnVerb(cmd)
 	switch cmd {
 	case "help", "?":
 		return m, m.out(m.tr(thisHelp, thisHelpEN))

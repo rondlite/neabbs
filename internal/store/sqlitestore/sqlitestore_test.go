@@ -457,3 +457,32 @@ func TestResetProgressRelocksTHIS(t *testing.T) {
 		t.Errorf("Flags = %v, want empty", p.Flags)
 	}
 }
+
+func TestResetMinutes(t *testing.T) {
+	s, err := Open(filepath.Join(t.TempDir(), "test.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.Close()
+	ctx := context.Background()
+	day := "2026-07-12"
+
+	if _, err := s.CreatePlayer(ctx, "fp1"); err != nil {
+		t.Fatal(err)
+	}
+	used, err := s.AddMinutes(ctx, "fp1", day, 90)
+	if err != nil || used != 90 {
+		t.Fatalf("AddMinutes: used=%d err=%v, want 90 nil", used, err)
+	}
+
+	if err := s.ResetMinutes(ctx, "fp1", day); err != nil {
+		t.Fatal(err)
+	}
+	used, err = s.AddMinutes(ctx, "fp1", day, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if used != 0 {
+		t.Errorf("used = %d after reset, want 0 (a full budget again)", used)
+	}
+}

@@ -127,6 +127,9 @@ type Store interface {
 	// AddMinutes adds n to today's used-minutes counter and returns the new
 	// total for day (YYYY-MM-DD). A day rollover resets the counter.
 	AddMinutes(ctx context.Context, fp string, day string, n int) (int, error)
+	// ResetMinutes clears today's used-minutes counter, handing the player a
+	// full daily budget again (the sysop topping up someone's call time).
+	ResetMinutes(ctx context.Context, fp string, day string) error
 
 	// RecordCall appends to the callers log.
 	RecordCall(ctx context.Context, handle string, at time.Time) error

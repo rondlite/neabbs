@@ -32,6 +32,7 @@ const sysopHelp = `SYSOP — moderatie
   sysop ban <handle>     verban een speler (verbreekt live sessies direct)
   sysop unban <handle>   hef een verbanning op
   sysop reset <handle>   wis de THIS-voortgang (playtest; verbreekt sessies)
+  sysop tijd <handle>    vul het beltegoed van een speler weer aan
   sysop gen <board> [n]  laat de LLM n concepten schrijven (wachtrij)
   sysop pending          toon concepten die op review wachten
   sysop ok <id>          publiceer een concept
@@ -45,6 +46,7 @@ const sysopHelpEN = `SYSOP — moderation
   sysop ban <handle>     ban a player (drops live sessions at once)
   sysop unban <handle>   lift a ban
   sysop reset <handle>   wipe THIS-progress (playtest; drops sessions)
+  sysop tijd <handle>    top up a player's call time
   sysop gen <board> [n]  have the LLM write n drafts (queue)
   sysop pending          show drafts awaiting review
   sysop ok <id>          publish a draft
@@ -89,6 +91,12 @@ func (m *Model) sysopCmd(line string, fields []string) (tea.Model, tea.Cmd) {
 			arg = fields[2]
 		}
 		return m.sysopReset(arg)
+	case "tijd", "time":
+		arg := ""
+		if len(fields) > 2 {
+			arg = fields[2]
+		}
+		return m.sysopTime(arg)
 	case "gen", "genereer":
 		board := ""
 		if len(fields) > 2 {
@@ -219,6 +227,31 @@ func (m *Model) sysopReset(handle string) (tea.Model, tea.Cmd) {
 		}
 	}
 	return m, m.out(fmt.Sprintf(m.tr("%s: THIS-arc gereset (lidmaatschap ingetrokken, niveau 0, vlaggen/hosts/heat/sporen gewist). %d sessie(s) verbroken.", "%s: THIS-arc reset (membership revoked, level 0, flags/hosts/heat/traces wiped). %d session(s) dropped."), target.Handle, kicked))
+}
+
+// sysopTime hands a player their full daily call budget back. Live sessions are
+// topped up in place — no kick, no reconnect: the counter on their screen just
+// goes back up, as if the operator leaned over and reset the meter.
+func (m *Model) sysopTime(handle string) (tea.Model, tea.Cmd) {
+	if handle == "" {
+		return m, m.out(m.tr("Gebruik: sysop tijd <handle>", "Usage: sysop tijd <handle>"))
+	}
+	target, err := m.deps.Store.PlayerByHandle(context.Background(), handle)
+	if err != nil {
+		return m, m.out(m.tr("Geen speler met die naam.", "No player by that name."))
+	}
+	if err := m.deps.Store.ResetMinutes(context.Background(), target.Fingerprint, today()); err != nil {
+		return m, m.out(m.tr("Bijvullen mislukt.", "Top-up failed."))
+	}
+	live := 0
+	for _, s := range m.deps.Registry.All() {
+		if s.Fingerprint == target.Fingerprint {
+			s.SendMsg(TimeRefillMsg{})
+			live++
+		}
+	}
+	return m, m.out(fmt.Sprintf(m.tr("%s: beltegoed bijgevuld (%d minuten). %d live sessie(s) bijgewerkt.",
+		"%s: call time topped up (%d minutes). %d live session(s) updated."), target.Handle, dailyMinutes, live))
 }
 
 // sysopDelete removes a player-authored post in the current board. YAML-seeded

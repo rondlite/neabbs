@@ -180,6 +180,28 @@ func (c *client) waitFor(substr string) {
 	c.t.Fatalf("timeout waiting for %q; output:\n%s", substr, got)
 }
 
+// waitForCount blocks until substr has appeared at least n times. Needed where
+// a repeat is the whole point (arrow-up re-running a command): waitFor would be
+// satisfied by the first occurrence and prove nothing.
+func (c *client) waitForCount(substr string, n int) {
+	c.t.Helper()
+	deadline := time.Now().Add(15 * time.Second)
+	for time.Now().Before(deadline) {
+		c.mu.Lock()
+		got := strings.Count(c.buf.String(), substr)
+		c.mu.Unlock()
+		if got >= n {
+			return
+		}
+		time.Sleep(25 * time.Millisecond)
+	}
+	c.mu.Lock()
+	got := c.buf.String()
+	c.mu.Unlock()
+	c.t.Fatalf("timeout waiting for %d× %q (saw %d); output:\n%s",
+		n, substr, strings.Count(got, substr), got)
+}
+
 // register walks a brand-new caller through first login: the bilingual
 // language prompt (Dutch here; TestFirstLoginEnglish covers the other branch)
 // and then the handle picker.
@@ -393,6 +415,27 @@ func TestDiscoveryChainIntoTHIS(t *testing.T) {
 	if !strings.Contains(c.snapshot(), "\x1b[?1049h") {
 		t.Fatal("THIS did not enter the alt screen: the status bar cannot stay pinned")
 	}
+
+	// Terminal manners inside THIS: Tab completes, arrow-up recalls.
+	// Tab on a help-listed verb: "sc" → "scan", which then runs on Enter.
+	c.send("sc\t")
+	c.send("\r")
+	c.waitFor("SCAN — bereikbare hosts")
+
+	// Tab must NOT complete a command the player hasn't discovered. `wipe` is a
+	// real command, but unlearned: "wi" stays "wi" and Enter hits the snark. If
+	// Tab had leaked it, wipe would have run instead and this would never show.
+	// (thisSnark is a hash of the word, so "wi" always draws this same one.)
+	const wiSnark = "dat doet hier niks"
+	c.send("wi\t")
+	c.send("\r")
+	c.waitFor(wiSnark)
+
+	// Arrow-up recalls "wi" and Enter runs it again: the snark appears twice.
+	// Counting matters — waitFor alone would be satisfied by the first one.
+	c.send("\x1b[A")
+	c.send("\r")
+	c.waitForCount(wiSnark, 2)
 
 	// THIS boards: iceberg visible from minute one.
 	c.send("boards\r")

@@ -90,6 +90,7 @@ sysop who            alle lijnen: handle, vingerafdruk, en THIS-aanwezigheid
 sysop zeg <tekst>    omroep naar iedereen (publiek én THIS)
 sysop wis <nr>       verwijder bericht <nr> in het huidige board
 sysop ban <handle>   verban (verbreekt live sessies direct) · unban <handle>
+sysop tijd <handle>    vul het beltegoed van een speler weer aan
 sysop gen <board> [n]  laat de LLM n concepten schrijven (naar de wachtrij)
 sysop pending        toon concepten die op review wachten
 sysop ok <id>        publiceer een concept · sysop nee <id> verwerpt
