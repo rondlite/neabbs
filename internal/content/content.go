@@ -25,7 +25,7 @@ const MaxYAMLMessageID = 10000
 // Board is one message board as authored in content/boards/*.yaml.
 type Board struct {
 	ID       string    `yaml:"id"`
-	Name     string    `yaml:"name"`
+	Name     L         `yaml:"name"`
 	Area     string    `yaml:"area"`
 	MinLevel int       `yaml:"min_level"`
 	Writable bool      `yaml:"writable"`
@@ -79,7 +79,7 @@ type Host struct {
 	Address      string     `yaml:"address"` // what the player types after `connect`
 	MinLevel     int        `yaml:"min_level"`
 	RequiresFlag string     `yaml:"requires_flag"` // set: flag gates visibility instead of level
-	Banner       string     `yaml:"banner"`
+	Banner       L          `yaml:"banner"`
 	Locked       bool       `yaml:"locked"` // requires a successful `crack`
 	Crack        *CrackSpec `yaml:"crack"`
 	Files        []HostFile `yaml:"files"`
@@ -94,8 +94,8 @@ type Host struct {
 // MailMsg is one message in a host's spool, level-filtered like files.
 type MailMsg struct {
 	From       string `yaml:"from"`
-	Subject    string `yaml:"subject"`
-	Body       string `yaml:"body"`
+	Subject    L      `yaml:"subject"`
+	Body       L      `yaml:"body"`
 	MinLevel   int    `yaml:"min_level"`
 	GrantsFlag string `yaml:"grants_flag"` // reading it sets this flag
 }
@@ -105,18 +105,18 @@ type MailMsg struct {
 type HostView struct {
 	MinLevel   int    `yaml:"min_level"`
 	GrantsFlag string `yaml:"grants_flag"`
-	Body       string `yaml:"body"`
+	Body       L      `yaml:"body"`
 }
 
 // NPC is an optional LLM-backed character on a host, reachable via `talk`.
 // The NPC may hint toward flags the player holds; a deterministic path to
 // every flag must also exist (the LLM is never on the critical path).
 type NPC struct {
-	Name       string            `yaml:"name"`
-	Persona    string            `yaml:"persona"`     // persona prompt (or prompts/ ref via PersonaFile)
-	Greeting   string            `yaml:"greeting"`    // shown on `talk`, LLM-free
-	Fallback   string            `yaml:"fallback"`    // canned reply when the LLM is unavailable
-	KnowsFlags map[string]string `yaml:"knows_flags"` // flag → fact the NPC may reveal if the player holds it
+	Name       string       `yaml:"name"`
+	Persona    L            `yaml:"persona"`     // persona prompt (or prompts/ ref via PersonaFile)
+	Greeting   L            `yaml:"greeting"`    // shown on `talk`, LLM-free
+	Fallback   L            `yaml:"fallback"`    // canned reply when the LLM is unavailable
+	KnowsFlags map[string]L `yaml:"knows_flags"` // flag → fact the NPC may reveal if the player holds it
 }
 
 // CrackSpec describes how a locked host opens.
@@ -134,7 +134,7 @@ type HostFile struct {
 	Name       string `yaml:"name"`
 	MinLevel   int    `yaml:"min_level"`
 	GrantsFlag string `yaml:"grants_flag"`
-	Body       string `yaml:"body"`
+	Body       L      `yaml:"body"`
 }
 
 // HiddenCommand is a secret input at the main menu. Typing it without the
@@ -144,7 +144,7 @@ type HiddenCommand struct {
 	Input        string  `yaml:"input"`
 	RequiresFlag string  `yaml:"requires_flag"`
 	Effects      Effects `yaml:"effects"`
-	Response     string  `yaml:"response"`
+	Response     L       `yaml:"response"`
 }
 
 // SeedCaller is one fictional entry padding the "laatste bellers" list.
@@ -156,7 +156,7 @@ type SeedCaller struct {
 // Bulletin is one login news screen.
 type Bulletin struct {
 	Name string
-	Body string
+	Body L
 }
 
 // Set is all loaded content.
@@ -165,11 +165,11 @@ type Set struct {
 	Files          []File
 	SeedCallers    []SeedCaller
 	Bulletins      []Bulletin // sorted by filename
-	Colofon        string
-	Goodbye        string
-	LoginBanner    string            // content/login-banner.txt (optional ANSI/text wordmark)
+	Colofon        L
+	Goodbye        L
+	LoginBanner    string            // content/login-banner.txt (ANSI wordmark, language-neutral)
 	HiddenCommands []HiddenCommand   // content/areas/main.yaml
-	ThisArrival    string            // content/this-arrival.txt
+	ThisArrival    L                 // content/this-arrival.txt
 	Hosts          []Host            // content/hosts/*.yaml, sorted by min_level then id
 	Prompts        map[string]string // content/prompts/*.txt, keyed by basename without extension
 }
@@ -249,7 +249,8 @@ func Load(dir string) (*Set, error) {
 	if entries, err := os.ReadDir(bulletinsDir); err == nil {
 		names := []string{}
 		for _, e := range entries {
-			if !e.IsDir() && strings.HasSuffix(e.Name(), ".txt") {
+			// Skip the .en.txt siblings; they're paired with their NL base below.
+			if !e.IsDir() && strings.HasSuffix(e.Name(), ".txt") && !strings.HasSuffix(e.Name(), ".en.txt") {
 				names = append(names, e.Name())
 			}
 		}
@@ -259,7 +260,13 @@ func Load(dir string) (*Set, error) {
 			if err != nil {
 				return nil, err
 			}
-			set.Bulletins = append(set.Bulletins, Bulletin{Name: n, Body: string(buf)})
+			body := L{NL: string(buf)}
+			// content/bulletins/foo.en.txt is the English translation of foo.txt.
+			enName := strings.TrimSuffix(n, ".txt") + ".en.txt"
+			if enBuf, err := os.ReadFile(filepath.Join(bulletinsDir, enName)); err == nil {
+				body.EN = string(enBuf)
+			}
+			set.Bulletins = append(set.Bulletins, Bulletin{Name: n, Body: body})
 		}
 	} else if !os.IsNotExist(err) {
 		return nil, err
@@ -326,21 +333,38 @@ func Load(dir string) (*Set, error) {
 		return nil, err
 	}
 
-	// Single-text screens.
+	// Single-text screens. Localized ones read a foo.en.txt sibling for EN.
+	loadL := func(base string, dst *L) error {
+		buf, err := os.ReadFile(filepath.Join(dir, base+".txt"))
+		if err != nil {
+			if os.IsNotExist(err) {
+				return nil
+			}
+			return err
+		}
+		dst.NL = string(buf)
+		if enBuf, err := os.ReadFile(filepath.Join(dir, base+".en.txt")); err == nil {
+			dst.EN = string(enBuf)
+		}
+		return nil
+	}
 	for _, t := range []struct {
-		file string
-		dst  *string
+		base string
+		dst  *L
 	}{
-		{"colofon.txt", &set.Colofon},
-		{"goodbye.txt", &set.Goodbye},
-		{"this-arrival.txt", &set.ThisArrival},
-		{"login-banner.txt", &set.LoginBanner},
+		{"colofon", &set.Colofon},
+		{"goodbye", &set.Goodbye},
+		{"this-arrival", &set.ThisArrival},
 	} {
-		if buf, err := os.ReadFile(filepath.Join(dir, t.file)); err == nil {
-			*t.dst = string(buf)
-		} else if !os.IsNotExist(err) {
+		if err := loadL(t.base, t.dst); err != nil {
 			return nil, err
 		}
+	}
+	// The login banner is a language-neutral ANSI wordmark.
+	if buf, err := os.ReadFile(filepath.Join(dir, "login-banner.txt")); err == nil {
+		set.LoginBanner = string(buf)
+	} else if !os.IsNotExist(err) {
+		return nil, err
 	}
 
 	sort.Slice(set.Boards, func(i, j int) bool {

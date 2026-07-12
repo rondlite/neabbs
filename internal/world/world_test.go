@@ -41,10 +41,10 @@ func testSet() *content.Set {
 					{Name: ".secret", MinLevel: 0, GrantsFlag: "saw_secret"},
 				},
 				Mail: []content.MailMsg{
-					{From: "root", Subject: "hallo", MinLevel: 0},
-					{From: "chef", Subject: "geheim", MinLevel: 3, GrantsFlag: "mail_flag"},
+					{From: "root", Subject: content.L{NL: "hallo"}, MinLevel: 0},
+					{From: "chef", Subject: content.L{NL: "geheim"}, MinLevel: 3, GrantsFlag: "mail_flag"},
 				},
-				Netstat: &content.HostView{MinLevel: 0, GrantsFlag: "net_flag", Body: "conn"}},
+				Netstat: &content.HostView{MinLevel: 0, GrantsFlag: "net_flag", Body: content.L{NL: "conn"}}},
 			{ID: "multi", Address: "multi.this.nl", MinLevel: 0, Locked: true,
 				Crack: &content.CrackSpec{Method: "password", PasswordFlag: "pw",
 					RequiresFlags: []string{"hash", "wordlist"}, HintOnFail: "meer nodig"}},

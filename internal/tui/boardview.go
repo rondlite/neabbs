@@ -17,14 +17,14 @@ var redactStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
 var headerStyle = lipgloss.NewStyle().Bold(true)
 
 // renderBoardList formats the visible boards for the `boards` command.
-func renderBoardList(boards []*content.Board) string {
+func renderBoardList(boards []*content.Board, lang string) string {
 	if len(boards) == 0 {
 		return "Geen boards beschikbaar."
 	}
 	var b strings.Builder
 	b.WriteString(headerStyle.Render("BOARDS") + "\n")
 	for _, bd := range boards {
-		b.WriteString(fmt.Sprintf("  %-12s %s\n", bd.ID, bd.Name))
+		b.WriteString(fmt.Sprintf("  %-12s %s\n", bd.ID, bd.Name.Get(lang)))
 	}
 	b.WriteString("Gebruik: board <id>")
 	return b.String()
@@ -32,9 +32,9 @@ func renderBoardList(boards []*content.Board) string {
 
 // renderListing formats one board's clearance-filtered message list.
 // 80-column friendly. Redacted rows carry the [THIS-N] clearance tag.
-func renderListing(l *board.Listing) string {
+func renderListing(l *board.Listing, lang string) string {
 	var b strings.Builder
-	b.WriteString(headerStyle.Render(fmt.Sprintf("%s — %s", strings.ToUpper(l.Board.ID), l.Board.Name)) + "\n")
+	b.WriteString(headerStyle.Render(fmt.Sprintf("%s — %s", strings.ToUpper(l.Board.ID), l.Board.Name.Get(lang))) + "\n")
 	b.WriteString(strings.Repeat("─", 78) + "\n")
 	if len(l.Rows) == 0 {
 		b.WriteString("(geen berichten)\n")

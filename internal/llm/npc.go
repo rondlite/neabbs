@@ -18,13 +18,13 @@ const (
 // BuildSystemPrompt assembles an NPC's system prompt from a base template,
 // the persona, and the facts the NPC may reveal for flags the player holds.
 // base may be empty (the persona alone is enough).
-func BuildSystemPrompt(base string, npc *content.NPC, hasFlag func(string) bool) string {
+func BuildSystemPrompt(base string, npc *content.NPC, hasFlag func(string) bool, lang string) string {
 	var b strings.Builder
 	if base != "" {
 		b.WriteString(strings.TrimRight(base, "\n"))
 		b.WriteString("\n\n")
 	}
-	fmt.Fprintf(&b, "Je bent %s.\n%s\n", npc.Name, strings.TrimRight(npc.Persona, "\n"))
+	fmt.Fprintf(&b, "Je bent %s.\n%s\n", npc.Name, strings.TrimRight(npc.Persona.Get(lang), "\n"))
 
 	// Only reveal facts gated by flags the player actually holds. Sorted for
 	// deterministic prompts.
@@ -36,7 +36,7 @@ func BuildSystemPrompt(base string, npc *content.NPC, hasFlag func(string) bool)
 	sort.Strings(keys)
 	for _, f := range keys {
 		if hasFlag(f) {
-			facts = append(facts, "- "+npc.KnowsFlags[f])
+			facts = append(facts, "- "+npc.KnowsFlags[f].Get(lang))
 		}
 	}
 	if len(facts) > 0 {
@@ -46,7 +46,11 @@ func BuildSystemPrompt(base string, npc *content.NPC, hasFlag func(string) bool)
 	} else {
 		b.WriteString("\nDe beller heeft nog niets waarmee jij hem verder kunt helpen. Blijf vaag.\n")
 	}
-	b.WriteString("\nAntwoord kort, in het Nederlands, in karakter. Nooit meer dan een paar zinnen.")
+	if lang == content.LangEN {
+		b.WriteString("\nAntwoord kort, in het ENGELS, in karakter. Nooit meer dan een paar zinnen.")
+	} else {
+		b.WriteString("\nAntwoord kort, in het Nederlands, in karakter. Nooit meer dan een paar zinnen.")
+	}
 	return b.String()
 }
 

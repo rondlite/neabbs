@@ -17,9 +17,9 @@ func TestDisabledClient(t *testing.T) {
 		t.Fatal("client with no base URL reports enabled")
 	}
 	// Nil-safe: fallback path returns the fallback and false.
-	npc := &content.NPC{Name: "x", Fallback: "canned"}
-	sys := BuildSystemPrompt("", npc, func(string) bool { return false })
-	reply, viaLLM := c.Reply(context.Background(), sys, nil, "hoi", npc.Fallback)
+	npc := &content.NPC{Name: "x", Fallback: content.L{NL: "canned"}}
+	sys := BuildSystemPrompt("", npc, func(string) bool { return false }, "nl")
+	reply, viaLLM := c.Reply(context.Background(), sys, nil, "hoi", npc.Fallback.Get("nl"))
 	if viaLLM || reply != "canned" {
 		t.Fatalf("disabled reply = %q, %v", reply, viaLLM)
 	}
@@ -64,14 +64,14 @@ func TestChatServerErrorFallsBack(t *testing.T) {
 func TestSystemPromptGatesFacts(t *testing.T) {
 	npc := &content.NPC{
 		Name:    "beheerder",
-		Persona: "humeurig",
-		KnowsFlags: map[string]string{
-			"heeft_pas": "het wachtwoord is koffie86",
-			"nooit":     "dit mag nooit lekken",
+		Persona: content.L{NL: "humeurig"},
+		KnowsFlags: map[string]content.L{
+			"heeft_pas": {NL: "het wachtwoord is koffie86"},
+			"nooit":     {NL: "dit mag nooit lekken"},
 		},
 	}
 	// Player holds heeft_pas but not nooit.
-	sys := BuildSystemPrompt("basis", npc, func(f string) bool { return f == "heeft_pas" })
+	sys := BuildSystemPrompt("basis", npc, func(f string) bool { return f == "heeft_pas" }, "nl")
 	if !contains(sys, "koffie86") {
 		t.Fatal("held-flag fact missing from prompt")
 	}

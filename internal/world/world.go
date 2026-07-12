@@ -221,7 +221,7 @@ func (e *Engine) Mail(ctx context.Context, h *content.Host, v board.Viewer) ([]M
 		rows = append(rows, MailRow{
 			Index:    i + 1,
 			From:     msg.From,
-			Subject:  msg.Subject,
+			Subject:  msg.Subject.Get(v.Lang),
 			Level:    msg.MinLevel,
 			Redacted: msg.MinLevel > v.Level,
 		})

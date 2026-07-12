@@ -231,7 +231,7 @@ func (m *Model) sysopDelete(arg string) (tea.Model, tea.Cmd) {
 	l, lerr := m.deps.Boards.Listing(context.Background(), m.boardID, m.viewer())
 	out := fmt.Sprintf("Bericht #%d verwijderd.\n", nr)
 	if lerr == nil {
-		out += "\n" + renderListing(l)
+		out += "\n" + renderListing(l, m.lang())
 	}
 	return m, m.out(out)
 }
@@ -263,8 +263,8 @@ func (m *Model) sysopGen(board string, n int) (tea.Model, tea.Cmd) {
 	}
 	base := m.deps.Content.Prompts["genposts"]
 	lc, st := m.deps.LLM, m.deps.Store
-	boardID, boardName := b.ID, b.Name
 	lang := m.lang() // captured before the async closure to avoid a data race
+	boardID, boardName := b.ID, b.Name.Get(lang)
 	gen := func() tea.Msg {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()

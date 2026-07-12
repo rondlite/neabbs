@@ -302,7 +302,7 @@ func (m *Model) ritual(step ritualStep) tea.Cmd {
 			if i > 0 {
 				b.WriteString("\n")
 			}
-			b.WriteString(strings.TrimRight(bl.Body, "\n") + "\n")
+			b.WriteString(strings.TrimRight(bl.Body.Get(m.lang()), "\n") + "\n")
 		}
 		return tea.Batch(m.print(b.String()), delay(300*time.Millisecond, ritCallers))
 	case ritCallers:
@@ -458,7 +458,7 @@ func (m *Model) menuAction(key string) (tea.Model, tea.Cmd) {
 		m.state = stateBoards
 		m.input.Prompt = "Board> "
 		m.deps.Sess.SetArea("berichtenboards", false)
-		return m, m.print(renderBoardList(m.deps.Boards.VisibleBoards(m.viewer())))
+		return m, m.print(renderBoardList(m.deps.Boards.VisibleBoards(m.viewer()), m.lang()))
 	case "f", "2":
 		m.state = stateFiles
 		m.input.Prompt = "Bestand> "
@@ -471,9 +471,10 @@ func (m *Model) menuAction(key string) (tea.Model, tea.Cmd) {
 	case "s", "5":
 		return m.pageSysop()
 	case "i", "6":
-		col := m.deps.Content.Colofon
+		col := m.deps.Content.Colofon.Get(m.lang())
 		if col == "" {
-			col = "NEABBS — een eerbetoon. Geen enkele band met het origineel."
+			col = m.tr("NEABBS — een eerbetoon. Geen enkele band met het origineel.",
+				"NEABBS — a tribute. No affiliation with the original.")
 		}
 		return m, m.print(col)
 	case "q", "7":
@@ -536,8 +537,8 @@ func (m *Model) menuLine(line string) (tea.Model, tea.Cmd) {
 		if err := m.applyEffects(hc.Effects); err != nil {
 			return m, m.print("Er knettert iets op de lijn. Probeer later opnieuw.")
 		}
-		if hc.Response != "" {
-			cmds = append(cmds, m.print(hc.Response))
+		if r := hc.Response.Get(m.lang()); r != "" {
+			cmds = append(cmds, m.print(r))
 		}
 		if hc.Effects.SetThisMember {
 			cmds = append(cmds, tea.Tick(1200*time.Millisecond,
@@ -680,7 +681,7 @@ func (m *Model) quickscan() string {
 	b.WriteString("QUICKSCAN — alle nieuwe berichten\n")
 	for _, c := range counts {
 		b.WriteString("\n" + strings.Repeat("=", 62) + "\n")
-		b.WriteString(fmt.Sprintf("%s — %s\n", strings.ToUpper(c.Board.ID), c.Board.Name))
+		b.WriteString(fmt.Sprintf("%s — %s\n", strings.ToUpper(c.Board.ID), c.Board.Name.Get(m.lang())))
 		for i := range c.Unread {
 			msg := &c.Unread[i]
 			b.WriteString(strings.Repeat("-", 62) + "\n")
@@ -982,7 +983,7 @@ func (m *Model) checkPromotion() (tea.Model, tea.Cmd) {
 		m.boardID = ""
 		return m, promoTick()
 	}
-	lines = append(lines, renderListing(l))
+	lines = append(lines, renderListing(l, m.lang()))
 	block := strings.Join(lines, "\n")
 	if m.inThis {
 		m.thisPrint(block)
@@ -1019,10 +1020,10 @@ func (m *Model) boardsLine(line string) (tea.Model, tea.Cmd) {
 		if m.boardID != "" {
 			l, err := m.deps.Boards.Listing(context.Background(), m.boardID, m.viewer())
 			if err == nil {
-				return m, m.print(renderListing(l))
+				return m, m.print(renderListing(l, m.lang()))
 			}
 		}
-		return m, m.print(renderBoardList(m.deps.Boards.VisibleBoards(m.viewer())))
+		return m, m.print(renderBoardList(m.deps.Boards.VisibleBoards(m.viewer()), m.lang()))
 	}
 	cmd := strings.ToLower(fields[0])
 	arg := ""
@@ -1033,7 +1034,7 @@ func (m *Model) boardsLine(line string) (tea.Model, tea.Cmd) {
 	case "terug", "menu":
 		return m.backToMenu()
 	case "boards":
-		return m, m.print(renderBoardList(m.deps.Boards.VisibleBoards(m.viewer())))
+		return m, m.print(renderBoardList(m.deps.Boards.VisibleBoards(m.viewer()), m.lang()))
 	case "board":
 		return m.openBoard(arg)
 	case "read", "lees":
@@ -1073,7 +1074,7 @@ func (m *Model) openBoard(id string) (tea.Model, tea.Cmd) {
 	} else {
 		m.deps.Sess.SetArea("board "+strings.ToUpper(id), l.Board.Area == content.AreaThis)
 	}
-	return m, m.out(renderListing(l))
+	return m, m.out(renderListing(l, m.lang()))
 }
 
 func (m *Model) renderStatus() string {
@@ -1303,9 +1304,9 @@ func (m *Model) enterThis() (tea.Model, tea.Cmd) {
 	m.routeVia = ""
 	m.input.Prompt = "> "
 	m.deps.Sess.SetArea("", true) // public user list shows only "lijn bezet"
-	arrival := m.deps.Content.ThisArrival
+	arrival := m.deps.Content.ThisArrival.Get(m.lang())
 	if arrival == "" {
-		arrival = "THIS\n\ntik 'help'."
+		arrival = m.tr("THIS\n\ntik 'help'.", "THIS\n\ntype 'help'.")
 	}
 	m.thisLines = nil
 	m.thisPrint(arrival)
@@ -1478,8 +1479,8 @@ func (m *Model) connectHost(addr string) (tea.Model, tea.Cmd) {
 	}
 	m.hostAddr = h.Address
 	out := []string{fmt.Sprintf("VERBONDEN MET %s", strings.ToUpper(h.Address))}
-	if h.Banner != "" {
-		out = append(out, "", strings.TrimRight(h.Banner, "\n"))
+	if banner := h.Banner.Get(m.lang()); banner != "" {
+		out = append(out, "", strings.TrimRight(banner, "\n"))
 	}
 	if ok, err := m.deps.World.Unlocked(context.Background(), h, m.deps.Player.Fingerprint); err == nil && !ok {
 		out = append(out, "", m.lockedHint(h))
@@ -1708,7 +1709,7 @@ func (m *Model) mailHost(arg string) (tea.Model, tea.Cmd) {
 			m.refreshPlayer()
 		}
 		return m, m.out(fmt.Sprintf("Van      : %s\nOnderwerp: %s\n%s\n%s",
-			msg.From, msg.Subject, strings.Repeat("-", 40), strings.TrimRight(msg.Body, "\n")))
+			msg.From, msg.Subject.Get(m.lang()), strings.Repeat("-", 40), strings.TrimRight(msg.Body.Get(m.lang()), "\n")))
 	}
 	rows, err := m.deps.World.Mail(context.Background(), h, m.viewer())
 	if err != nil {
@@ -1749,7 +1750,7 @@ func (m *Model) netstatHost() (tea.Model, tea.Cmd) {
 	if view.GrantsFlag != "" {
 		m.refreshPlayer()
 	}
-	return m, m.out("ACTIEVE VERBINDINGEN\n" + strings.Repeat("-", 40) + "\n" + strings.TrimRight(view.Body, "\n"))
+	return m, m.out("ACTIEVE VERBINDINGEN\n" + strings.Repeat("-", 40) + "\n" + strings.TrimRight(view.Body.Get(m.lang()), "\n"))
 }
 
 // routeHost launders the next crack's trace through a host you already own,
@@ -1797,7 +1798,7 @@ func (m *Model) catHost(name string) (tea.Model, tea.Cmd) {
 	if f.GrantsFlag != "" {
 		m.refreshPlayer()
 	}
-	return m, m.out(fmt.Sprintf("=== %s ===\n%s", f.Name, strings.TrimRight(f.Body, "\n")))
+	return m, m.out(fmt.Sprintf("=== %s ===\n%s", f.Name, strings.TrimRight(f.Body.Get(m.lang()), "\n")))
 }
 
 // lockedHint names what a locked host wants — locked things respond
@@ -1885,7 +1886,7 @@ func (m *Model) startTalk() (tea.Model, tea.Cmd) {
 	m.talk.history = nil
 	m.talk.sessTurns = 0
 	m.talk.fallbackOn = !m.deps.LLM.Enabled()
-	m.talk.system = llm.BuildSystemPrompt(m.deps.Content.Prompts["npc"], npc, m.hasFlag)
+	m.talk.system = llm.BuildSystemPrompt(m.deps.Content.Prompts["npc"], npc, m.hasFlag, m.lang())
 	// A hot player draws wary NPCs — beveiliging has been asking around.
 	if m.currentHeat() >= store.HeatHot {
 		m.talk.system += "\n\nLET OP: deze beller heeft recent veel alarm veroorzaakt; beveiliging is naar hem op zoek. Wees achterdochtig en waarschuw hem, maar blijf in karakter."
@@ -1893,11 +1894,11 @@ func (m *Model) startTalk() (tea.Model, tea.Cmd) {
 	m.state = stateTalk
 	m.input.Prompt = fmt.Sprintf("%s> ", npc.Name)
 
-	greeting := npc.Greeting
+	greeting := npc.Greeting.Get(m.lang())
 	if greeting == "" {
-		greeting = fmt.Sprintf("%s kijkt op.", npc.Name)
+		greeting = fmt.Sprintf(m.tr("%s kijkt op.", "%s looks up."), npc.Name)
 	}
-	return m, m.out(fmt.Sprintf("[gesprek met %s — 'weg' beeindigt]\n%s: %s",
+	return m, m.out(fmt.Sprintf(m.tr("[gesprek met %s — 'weg' beeindigt]\n%s: %s", "[talking to %s — 'weg' ends it]\n%s: %s"),
 		npc.Name, npc.Name, greeting))
 }
 
@@ -1931,12 +1932,12 @@ func (m *Model) talkLine(line string) (tea.Model, tea.Cmd) {
 
 	// If the LLM is disabled, answer immediately with the canned fallback.
 	if !m.deps.LLM.Enabled() {
-		return m, m.deliverNPC(npc, npc.Fallback, false)
+		return m, m.deliverNPC(npc, npc.Fallback.Get(m.lang()), false)
 	}
 	// Otherwise run the call off the Update goroutine (10 s timeout inside).
 	// history already includes this user turn.
 	system, history, host := m.talk.system, append([]llm.Message(nil), m.talk.history...), m.talk.host
-	fallback := npc.Fallback
+	fallback := npc.Fallback.Get(m.lang())
 	return m, func() tea.Msg {
 		reply, viaLLM := m.deps.LLM.Reply(context.Background(), system, history[:len(history)-1], user, fallback)
 		return npcReplyMsg{host: host, reply: reply, viaLLM: viaLLM}
@@ -1997,7 +1998,7 @@ func (m *Model) renderThisBoards() string {
 		if bd.Area != content.AreaThis {
 			continue
 		}
-		b.WriteString(fmt.Sprintf("  %-14s %s\n", bd.ID, bd.Name))
+		b.WriteString(fmt.Sprintf("  %-14s %s\n", bd.ID, bd.Name.Get(m.lang())))
 		n++
 	}
 	if n == 0 {
@@ -2076,9 +2077,9 @@ func (m *Model) quit() (tea.Model, tea.Cmd) {
 	wasThis := m.inThis
 	m.inThis = false
 	m.state = stateDone
-	bye := m.deps.Content.Goodbye
+	bye := m.deps.Content.Goodbye.Get(m.lang())
 	if bye == "" {
-		bye = "Tot ziens. NEABBS wacht wel weer even."
+		bye = m.tr("Tot ziens. NEABBS wacht wel weer even.", "Goodbye. NEABBS will be here.")
 	}
 	goodbye := tea.Sequence(tea.Println("\n"+strings.TrimRight(bye, "\n")+"\n\nNO CARRIER"), tea.Quit)
 	if wasThis {

@@ -18,14 +18,14 @@ func testContent() *content.Set {
 	set := &content.Set{
 		Boards: []content.Board{
 			{
-				ID: "algemeen", Name: "ALGEMEEN", Area: content.AreaPublic, Writable: true,
+				ID: "algemeen", Name: content.L{NL: "ALGEMEEN"}, Area: content.AreaPublic, Writable: true,
 				Messages: []content.Message{
 					{ID: 1, Author: "sysop", Level: 0, Subject: content.L{NL: "welkom", EN: "welcome"}, Body: content.L{NL: "hallo", EN: "hi there"}},
 					{ID: 2, Author: "sysop", Level: 0, Subject: content.L{NL: "regels"}, Body: content.L{NL: "wees aardig"}},
 				},
 			},
 			{
-				ID: "this-board", Name: "THIS BOARD", Area: content.AreaThis, MinLevel: 0, Writable: true,
+				ID: "this-board", Name: content.L{NL: "THIS BOARD"}, Area: content.AreaThis, MinLevel: 0, Writable: true,
 				Messages: []content.Message{
 					{ID: 142, Author: "sysop", Level: 0, Subject: content.L{NL: "welkom nieuwe leden"}, Body: content.L{NL: "dit is this"}},
 					{ID: 150, Author: "route66", Level: 2, Subject: content.L{NL: "modempool"}, Body: content.L{NL: "geheim-2"}, GrantsFlag: "saw_modempool"},
@@ -36,7 +36,7 @@ func testContent() *content.Set {
 				},
 			},
 			{
-				ID: "phreak", Name: "#PHREAK", Area: content.AreaThis, MinLevel: 3, Writable: true,
+				ID: "phreak", Name: content.L{NL: "#PHREAK"}, Area: content.AreaThis, MinLevel: 3, Writable: true,
 				Messages: []content.Message{
 					{ID: 300, Author: "blueboxer", Level: 3, Subject: content.L{NL: "toonfrequenties"}, Body: content.L{NL: "2600Hz"}},
 				},

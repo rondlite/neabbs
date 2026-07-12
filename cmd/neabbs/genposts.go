@@ -43,7 +43,7 @@ func runGenposts(args []string) error {
 		return fmt.Errorf("genposts: no board %q", *boardID)
 	}
 
-	system := llm.GenpostSystemPrompt(cset.Prompts["genposts"], b.ID, b.Name, *level, *count)
+	system := llm.GenpostSystemPrompt(cset.Prompts["genposts"], b.ID, b.Name.NL, *level, *count)
 
 	out, err := client.Chat(context.Background(), []llm.Message{
 		{Role: "system", Content: system},
