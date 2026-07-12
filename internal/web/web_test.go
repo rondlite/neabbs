@@ -145,3 +145,29 @@ func TestWWWRedirectsToApex(t *testing.T) {
 		t.Errorf("Location = %q, want https://neabbs.com/", loc)
 	}
 }
+
+func TestRedirectHTTPS(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/pad?x=1", nil)
+	req.Host = "neabbs.com:80"
+	rec := httptest.NewRecorder()
+	redirectHTTPS(rec, req)
+	if rec.Code != http.StatusMovedPermanently {
+		t.Fatalf("status = %d, want 301", rec.Code)
+	}
+	if loc := rec.Header().Get("Location"); loc != "https://neabbs.com/pad?x=1" {
+		t.Errorf("Location = %q, want https://neabbs.com/pad?x=1", loc)
+	}
+}
+
+func TestCertManagerHostPolicy(t *testing.T) {
+	m := testServer(fakeStats{}).certManager()
+	ctx := context.Background()
+	for _, ok := range []string{"neabbs.com", "www.neabbs.com"} {
+		if err := m.HostPolicy(ctx, ok); err != nil {
+			t.Errorf("HostPolicy(%q) = %v, want allowed", ok, err)
+		}
+	}
+	if err := m.HostPolicy(ctx, "evil.example"); err == nil {
+		t.Error("HostPolicy(evil.example) allowed, want rejected")
+	}
+}

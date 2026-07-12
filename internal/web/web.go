@@ -6,6 +6,7 @@ import (
 	"context"
 	"embed"
 	"encoding/json"
+	"errors"
 	"io/fs"
 	"log/slog"
 	"net/http"
@@ -15,6 +16,7 @@ import (
 
 	"github.com/rondlite/neabbs/internal/config"
 	"github.com/rondlite/neabbs/internal/presence"
+	"golang.org/x/crypto/acme/autocert"
 )
 
 //go:embed static
@@ -60,22 +62,55 @@ func New(cfg config.Config, registry *presence.Registry, stats Stats) *Server {
 	return &Server{cfg: cfg, registry: registry, stats: stats}
 }
 
-// Serve blocks until Shutdown or a listener error. Plain HTTP for any
-// listen address except ":443" (Task 5 adds the autocert path there).
+// Serve blocks until Shutdown or a listener error. ":443" enables
+// autocert (Let's Encrypt) with an :80 sidecar for the ACME http-01
+// challenge and https redirect; any other address serves plain HTTP (dev).
 func (s *Server) Serve() error {
-	srv := &http.Server{
-		Addr:              s.cfg.WebListen,
-		Handler:           s.handler(),
+	h := s.handler()
+	if s.cfg.WebListen != ":443" {
+		srv := &http.Server{
+			Addr:              s.cfg.WebListen,
+			Handler:           h,
+			ReadHeaderTimeout: 5 * time.Second,
+		}
+		s.srvMu.Lock()
+		if s.closed {
+			s.srvMu.Unlock()
+			return http.ErrServerClosed
+		}
+		s.mainSrv = srv
+		s.srvMu.Unlock()
+		return srv.ListenAndServe()
+	}
+
+	m := s.certManager()
+	httpSrv := &http.Server{
+		Addr:              ":80",
+		Handler:           m.HTTPHandler(http.HandlerFunc(redirectHTTPS)),
+		ReadHeaderTimeout: 5 * time.Second,
+	}
+	go func() {
+		if err := httpSrv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			slog.Error("web: :80 listener", "err", err)
+		}
+	}()
+	mainSrv := &http.Server{
+		Addr:              ":443",
+		Handler:           h,
+		TLSConfig:         m.TLSConfig(),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 	s.srvMu.Lock()
 	if s.closed {
 		s.srvMu.Unlock()
+		// Clean up the goroutine we just started
+		_ = httpSrv.Close()
 		return http.ErrServerClosed
 	}
-	s.mainSrv = srv
+	s.httpSrv = httpSrv
+	s.mainSrv = mainSrv
 	s.srvMu.Unlock()
-	return srv.ListenAndServe()
+	return mainSrv.ListenAndServeTLS("", "")
 }
 
 // Shutdown gracefully stops all listeners.
@@ -94,6 +129,20 @@ func (s *Server) Shutdown(ctx context.Context) error {
 		}
 	}
 	return err
+}
+
+// certManager builds the Let's Encrypt manager; certs cache under CertsDir.
+func (s *Server) certManager() *autocert.Manager {
+	return &autocert.Manager{
+		Prompt:     autocert.AcceptTOS,
+		Cache:      autocert.DirCache(s.cfg.CertsDir),
+		HostPolicy: autocert.HostWhitelist(s.cfg.WebDomain, "www."+s.cfg.WebDomain),
+	}
+}
+
+// redirectHTTPS 301s everything that is not an ACME challenge to https.
+func redirectHTTPS(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "https://"+hostOnly(r.Host)+r.URL.RequestURI(), http.StatusMovedPermanently)
 }
 
 func (s *Server) handler() http.Handler {
