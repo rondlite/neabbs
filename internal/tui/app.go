@@ -770,9 +770,16 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, tea.Println(amberBright.Render(msg.Line))
 	case KickMsg:
+		// Translate the fixed sysop reasons in the recipient's language (the
+		// sysop who issued the kick can't know the target's language).
 		reason := msg.Reason
-		if reason == "" {
+		switch reason {
+		case "":
 			reason = m.tr("TOEGANG INGETROKKEN.", "ACCESS REVOKED.")
+		case "TOEGANG INGETROKKEN DOOR DE SYSOP.":
+			reason = m.tr(reason, "ACCESS REVOKED BY THE SYSOP.")
+		case "SESSIE GERESET DOOR DE SYSOP — log opnieuw in.":
+			reason = m.tr(reason, "SESSION RESET BY THE SYSOP — log in again.")
 		}
 		return m, tea.Sequence(tea.Println(reason), tea.Quit)
 	case WhisperMsg:
@@ -1340,13 +1347,22 @@ const thisHelp = `THIS commando's (onvolledig — vraag niet waarom):
   read <nr>        lees een bericht
   exit             terug naar de babbelaars`
 
+const thisHelpEN = `THIS commands (incomplete — don't ask why):
+
+  help             this overview
+  scan             hosts reachable at your level
+  connect <adres>  connect to a host
+  boards           available boards
+  read <nr>        read a message
+  exit             back to the chatters`
+
 // thisSnark returns a period-appropriate error for unknown THIS commands.
-func thisSnark(cmd string) string {
+func thisSnark(cmd, lang string) string {
 	snark := []string{
 		"?SYNTAX ERROR",
-		"onbekend commando. nog wel.",
-		"dat doet hier niks. tik 'help' als je durft.",
-		"nee.",
+		trl(lang, "onbekend commando. nog wel.", "unknown command. for now."),
+		trl(lang, "dat doet hier niks. tik 'help' als je durft.", "that does nothing here. type 'help' if you dare."),
+		trl(lang, "nee.", "no."),
 	}
 	h := 0
 	for _, r := range cmd {
@@ -1368,7 +1384,7 @@ func (m *Model) thisLine(line string) (tea.Model, tea.Cmd) {
 	}
 	switch cmd {
 	case "help", "?":
-		return m, m.out(thisHelp)
+		return m, m.out(m.tr(thisHelp, thisHelpEN))
 	case "scan":
 		return m, m.out(m.renderScan())
 	case "connect":
@@ -1436,7 +1452,7 @@ func (m *Model) thisLine(line string) (tea.Model, tea.Cmd) {
 	case "logout":
 		return m.quit()
 	}
-	return m, m.out(thisSnark(cmd))
+	return m, m.out(thisSnark(cmd, m.lang()))
 }
 
 // hasFlag adapts the player's flag set for the world engine.
