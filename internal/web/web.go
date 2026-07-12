@@ -47,6 +47,10 @@ type Server struct {
 	cached   status
 	cachedAt time.Time
 
+	// srvMu guards the listener lifecycle (closed/httpSrv/mainSrv) against
+	// concurrent Serve/Shutdown. Distinct from mu, which guards the status cache.
+	srvMu   sync.Mutex
+	closed  bool
 	httpSrv *http.Server // :80 challenge/redirect listener (autocert mode only)
 	mainSrv *http.Server
 }
@@ -59,18 +63,30 @@ func New(cfg config.Config, registry *presence.Registry, stats Stats) *Server {
 // Serve blocks until Shutdown or a listener error. Plain HTTP for any
 // listen address except ":443" (Task 5 adds the autocert path there).
 func (s *Server) Serve() error {
-	s.mainSrv = &http.Server{
+	srv := &http.Server{
 		Addr:              s.cfg.WebListen,
 		Handler:           s.handler(),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
-	return s.mainSrv.ListenAndServe()
+	s.srvMu.Lock()
+	if s.closed {
+		s.srvMu.Unlock()
+		return http.ErrServerClosed
+	}
+	s.mainSrv = srv
+	s.srvMu.Unlock()
+	return srv.ListenAndServe()
 }
 
 // Shutdown gracefully stops all listeners.
 func (s *Server) Shutdown(ctx context.Context) error {
+	s.srvMu.Lock()
+	s.closed = true
+	servers := []*http.Server{s.httpSrv, s.mainSrv}
+	s.srvMu.Unlock()
+
 	var err error
-	for _, srv := range []*http.Server{s.httpSrv, s.mainSrv} {
+	for _, srv := range servers {
 		if srv != nil {
 			if e := srv.Shutdown(ctx); e != nil && err == nil {
 				err = e

@@ -99,6 +99,29 @@ func TestUnknownPath404(t *testing.T) {
 	}
 }
 
+func TestShutdownBeforeServe(t *testing.T) {
+	s := testServer(fakeStats{})
+	if err := s.Shutdown(context.Background()); err != nil {
+		t.Fatalf("Shutdown() = %v, want nil", err)
+	}
+	if err := s.Serve(); !errors.Is(err, http.ErrServerClosed) {
+		t.Fatalf("Serve() after Shutdown = %v, want http.ErrServerClosed", err)
+	}
+}
+
+func TestServeShutdownConcurrent(t *testing.T) {
+	cfg := config.Config{WebListen: "127.0.0.1:0", WebDomain: "neabbs.com"}
+	s := New(cfg, presence.NewRegistry(), fakeStats{})
+	done := make(chan error, 1)
+	go func() { done <- s.Serve() }()
+	if err := s.Shutdown(context.Background()); err != nil {
+		t.Fatalf("Shutdown() = %v, want nil", err)
+	}
+	if err := <-done; !errors.Is(err, http.ErrServerClosed) {
+		t.Fatalf("Serve() = %v, want http.ErrServerClosed", err)
+	}
+}
+
 func TestWWWRedirectsToApex(t *testing.T) {
 	rec := get(t, testServer(fakeStats{}).handler(), "/", "www.neabbs.com")
 	if rec.Code != http.StatusMovedPermanently {
