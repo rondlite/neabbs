@@ -89,11 +89,6 @@ func (s *Server) Serve() error {
 		Handler:           m.HTTPHandler(http.HandlerFunc(redirectHTTPS)),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
-	go func() {
-		if err := httpSrv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			slog.Error("web: :80 listener", "err", err)
-		}
-	}()
 	mainSrv := &http.Server{
 		Addr:              ":443",
 		Handler:           h,
@@ -103,13 +98,16 @@ func (s *Server) Serve() error {
 	s.srvMu.Lock()
 	if s.closed {
 		s.srvMu.Unlock()
-		// Clean up the goroutine we just started
-		_ = httpSrv.Close()
 		return http.ErrServerClosed
 	}
 	s.httpSrv = httpSrv
 	s.mainSrv = mainSrv
 	s.srvMu.Unlock()
+	go func() {
+		if err := httpSrv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			slog.Error("web: :80 listener", "err", err)
+		}
+	}()
 	return mainSrv.ListenAndServeTLS("", "")
 }
 

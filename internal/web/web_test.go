@@ -159,6 +159,35 @@ func TestRedirectHTTPS(t *testing.T) {
 	}
 }
 
+func TestShutdownBeforeServeTLS(t *testing.T) {
+	cfg := config.Config{WebListen: ":443", WebDomain: "neabbs.com", CertsDir: t.TempDir()}
+	s := New(cfg, presence.NewRegistry(), fakeStats{})
+	if err := s.Shutdown(context.Background()); err != nil {
+		t.Fatalf("Shutdown() = %v, want nil", err)
+	}
+	// The closed gate fires before any listener binds, so this is
+	// deterministic even though :80/:443 are privileged ports.
+	if err := s.Serve(); !errors.Is(err, http.ErrServerClosed) {
+		t.Fatalf("Serve() after Shutdown = %v, want http.ErrServerClosed", err)
+	}
+}
+
+func TestServeShutdownConcurrentTLS(t *testing.T) {
+	cfg := config.Config{WebListen: ":443", WebDomain: "neabbs.com", CertsDir: t.TempDir()}
+	s := New(cfg, presence.NewRegistry(), fakeStats{})
+	done := make(chan error, 1)
+	go func() { done <- s.Serve() }()
+	if err := s.Shutdown(context.Background()); err != nil {
+		t.Fatalf("Shutdown() = %v, want nil", err)
+	}
+	// Serve must terminate without panic or race. The exact error varies:
+	// http.ErrServerClosed from the closed gate or from Shutdown, or a bind
+	// error since :443 is privileged in test environments.
+	if err := <-done; err == nil {
+		t.Fatal("Serve() = nil, want non-nil error after Shutdown")
+	}
+}
+
 func TestCertManagerHostPolicy(t *testing.T) {
 	m := testServer(fakeStats{}).certManager()
 	ctx := context.Background()
