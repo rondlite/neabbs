@@ -11,6 +11,10 @@ type Config struct {
 	ContentDir string // NEABBS_CONTENT
 	BaudOff    bool   // NEABBS_BAUD=0 disables baud emulation (dev)
 
+	WebListen string // NEABBS_WEB; empty = website disabled; ":443" enables autocert
+	WebDomain string // NEABBS_WEB_DOMAIN
+	CertsDir  string // NEABBS_CERTS: autocert cache dir
+
 	LLMBaseURL string // LLM_BASE_URL; empty = LLM disabled
 	LLMModel   string // LLM_MODEL
 	LLMAPIKey  string // LLM_API_KEY
@@ -24,6 +28,9 @@ func FromEnv() Config {
 		HostKey:    envOr("NEABBS_HOSTKEY", "./hostkey"),
 		ContentDir: envOr("NEABBS_CONTENT", "./content"),
 		BaudOff:    os.Getenv("NEABBS_BAUD") == "0",
+		WebListen: os.Getenv("NEABBS_WEB"),
+		WebDomain: envOr("NEABBS_WEB_DOMAIN", "neabbs.com"),
+		CertsDir:  envOr("NEABBS_CERTS", "./certs"),
 		LLMBaseURL: os.Getenv("LLM_BASE_URL"),
 		LLMModel:   os.Getenv("LLM_MODEL"),
 		LLMAPIKey:  os.Getenv("LLM_API_KEY"),
