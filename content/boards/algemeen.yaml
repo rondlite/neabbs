@@ -8,121 +8,214 @@ messages:
     author: "sysop"
     level: 0
     date: "02-05-26"
-    subject: "NEABBS is terug"
-    body: |
-      Beste bellers,
+    subject:
+      nl: "NEABBS is terug"
+      en: "NEABBS is back"
+    body:
+      nl: |
+        Beste bellers,
 
-      Na bijna veertig jaar stilte draait de oude bak weer. Het heeft
-      maanden werk gekost om de bewaarde banden leesbaar te krijgen en
-      een "modem-emulatie" aan de praat te krijgen op dat moderne
-      internet van jullie, maar: NEABBS leeft.
+        Na bijna veertig jaar stilte draait de oude bak weer. Het heeft
+        maanden werk gekost om de bewaarde banden leesbaar te krijgen en
+        een "modem-emulatie" aan de praat te krijgen op dat moderne
+        internet van jullie, maar: NEABBS leeft.
 
-      Deze heruitgave is een eerbetoon aan Max Keizer, die NEABBS
-      begon en in 2010 overleed, en aan iedereen die hier ooit
-      inbelde. Alles is zo gelaten als het was, waar dat kon.
+        Deze heruitgave is een eerbetoon aan Max Keizer, die NEABBS
+        begon en in 2010 overleed, en aan iedereen die hier ooit
+        inbelde. Alles is zo gelaten als het was, waar dat kon.
 
-      Gedraag u een beetje, dan blijft het gezellig.
+        Gedraag u een beetje, dan blijft het gezellig.
 
-      -- de beheerders (waarnemend sysop)
+        -- de beheerders (waarnemend sysop)
+      en: |
+        Dear callers,
+
+        After almost forty years of silence the old machine is humming
+        again. It took months of work to get the archived tapes readable
+        and a "modem emulation" running on that modern internet of yours,
+        but here it is: NEABBS lives.
+
+        This reissue is a tribute to Max Keizer, who started NEABBS and
+        passed away in 2010, and to everyone who ever dialled in here.
+        Everything has been left as it was, wherever that was possible.
+
+        Behave yourselves a little and it stays pleasant.
+
+        -- the caretakers (acting sysop)
   - id: 2
     author: "sysop"
     level: 0
     date: "02-05-26"
-    subject: "huisregels (lees dit even)"
-    body: |
-      1. Geen geschreeuw (HOOFDLETTERS) op de boards.
-      2. Handel op MARKT, niet hier.
-      3. De sysop leest mee. De sysop leest ALTIJD mee.
-      4. Wat u hier niet vindt, bestaat niet. Vragen ernaar helpt niet.
+    subject:
+      nl: "huisregels (lees dit even)"
+      en: "house rules (do read this)"
+    body:
+      nl: |
+        1. Geen geschreeuw (HOOFDLETTERS) op de boards.
+        2. Handel op MARKT, niet hier.
+        3. De sysop leest mee. De sysop leest ALTIJD mee.
+        4. Wat u hier niet vindt, bestaat niet. Vragen ernaar helpt niet.
+      en: |
+        1. No shouting (CAPITALS) on the boards.
+        2. Trade on MARKT, not here.
+        3. The sysop is reading along. The sysop is ALWAYS reading along.
+        4. What you don't find here doesn't exist. Asking about it won't help.
   - id: 3
     author: "wodan_86"
     level: 0
     date: "03-05-26"
-    subject: "ben ik nou gek..."
-    body: |
-      In 1985 belde ik hier elke nacht in. Nu vind ik dit via via terug
-      en het WERKT nog. Zelfde trage letters en alles. Wie is hier nog
-      meer van de oude garde?
+    subject:
+      nl: "ben ik nou gek..."
+      en: "am I going crazy..."
+    body:
+      nl: |
+        In 1985 belde ik hier elke nacht in. Nu vind ik dit via via terug
+        en het WERKT nog. Zelfde trage letters en alles. Wie is hier nog
+        meer van de oude garde?
+      en: |
+        Back in 1985 I dialled in here every night. Now I stumble across it
+        again through a friend of a friend and it STILL works. Same slow
+        letters and everything. Who else here is old guard?
   - id: 4
     author: "mieke"
     level: 0
     date: "04-05-26"
-    subject: "re: ben ik nou gek..."
+    subject:
+      nl: "re: ben ik nou gek..."
+      en: "re: am I going crazy..."
     reply_to: 3
-    body: |
-      Mijn vader had het altijd over "de nacht-bbs met de 24 lijnen".
-      Hij gelooft me niet dat het weer bestaat. Groeten van de tweede
-      generatie.
+    body:
+      nl: |
+        Mijn vader had het altijd over "de nacht-bbs met de 24 lijnen".
+        Hij gelooft me niet dat het weer bestaat. Groeten van de tweede
+        generatie.
+      en: |
+        My father always went on about "the night BBS with the 24 lines".
+        He doesn't believe me that it exists again. Regards from the second
+        generation.
   - id: 5
     author: "cpm_fan"
     level: 0
     date: "05-05-26"
-    subject: "de wachtwoord-vraag doet niks?"
-    body: |
-      Valt het iemand op dat je bij het inloggen alles kan intikken bij
-      "Wachtwoord"? Typisch sysop-houtje-touwtje werk :-)
+    subject:
+      nl: "de wachtwoord-vraag doet niks?"
+      en: "the password prompt does nothing?"
+    body:
+      nl: |
+        Valt het iemand op dat je bij het inloggen alles kan intikken bij
+        "Wachtwoord"? Typisch sysop-houtje-touwtje werk :-)
+      en: |
+        Does anyone else notice you can type anything at the "Password"
+        prompt when logging in? Classic sysop duct-tape work :-)
   - id: 6
     author: "sysop"
     level: 0
     date: "05-05-26"
-    subject: "re: de wachtwoord-vraag doet niks?"
+    subject:
+      nl: "re: de wachtwoord-vraag doet niks?"
+      en: "re: the password prompt does nothing?"
     reply_to: 5
-    body: |
-      Uw sleutel is uw wachtwoord, meneer de kritische beller. Dat ding
-      dat uw computer aan de lijn laat zien voordat u ook maar iets
-      intikt. De vraag staat er voor de sfeer. Sfeer is belangrijk.
+    body:
+      nl: |
+        Uw sleutel is uw wachtwoord, meneer de kritische beller. Dat ding
+        dat uw computer aan de lijn laat zien voordat u ook maar iets
+        intikt. De vraag staat er voor de sfeer. Sfeer is belangrijk.
+      en: |
+        Your key is your password, mister critical caller. That thing your
+        computer presents on the line before you type anything at all. The
+        prompt is there for the atmosphere. Atmosphere matters.
   - id: 7
     author: "nachtuil"
     level: 0
     date: "07-05-26"
-    subject: "wie zit er om 03:00 nog op?"
-    body: |
-      Vroeger was de nacht de enige tijd dat je erbij kwam. Oude
-      gewoontes slijten niet. Meld u in de babbelbox als u dit leest
-      terwijl normale mensen slapen.
+    subject:
+      nl: "wie zit er om 03:00 nog op?"
+      en: "who's still on at 03:00?"
+    body:
+      nl: |
+        Vroeger was de nacht de enige tijd dat je erbij kwam. Oude
+        gewoontes slijten niet. Meld u in de babbelbox als u dit leest
+        terwijl normale mensen slapen.
+      en: |
+        Back then the night was the only time you could get a line. Old
+        habits don't wear off. Show up in the chat box if you're reading
+        this while normal people sleep.
   - id: 8
     author: "wodan_86"
     level: 0
     date: "09-05-26"
-    subject: "gevonden: mijn oude logboek"
-    body: |
-      Zolder opgeruimd. Doos gevonden: "NEABBS 1985". Uitdraaien van
-      boards die ik blijkbaar belangrijk vond, en een schriftje met
-      telefoonnummers. De helft doorgestreept. Wat een tijd.
+    subject:
+      nl: "gevonden: mijn oude logboek"
+      en: "found: my old logbook"
+    body:
+      nl: |
+        Zolder opgeruimd. Doos gevonden: "NEABBS 1985". Uitdraaien van
+        boards die ik blijkbaar belangrijk vond, en een schriftje met
+        telefoonnummers. De helft doorgestreept. Wat een tijd.
+      en: |
+        Cleared out the attic. Found a box: "NEABBS 1985". Printouts of
+        boards I apparently thought were important, and a notebook of phone
+        numbers. Half of them crossed out. What a time.
   - id: 9
     author: "sysop"
     level: 0
     date: "12-05-26"
-    subject: "storing verholpen"
-    body: |
-      Vannacht viel lijn 9 t/m 16 weg. Oorzaak: ondergetekende die over
-      een kabel struikelde. Alles draait weer. Er is verder niets aan
-      de hand en dat blijft zo.
+    subject:
+      nl: "storing verholpen"
+      en: "outage fixed"
+    body:
+      nl: |
+        Vannacht viel lijn 9 t/m 16 weg. Oorzaak: ondergetekende die over
+        een kabel struikelde. Alles draait weer. Er is verder niets aan
+        de hand en dat blijft zo.
+      en: |
+        Last night lines 9 through 16 dropped. Cause: the undersigned
+        tripping over a cable. Everything's running again. Nothing else is
+        going on, and it stays that way.
 
   # ── discovery chain, beat 2: de naam uit de notities post één keer ──
   - id: 10
     author: "phantom"
     level: 0
     date: "13-05-26"
-    subject: "40 jaar is niks"
-    body: |
-      de klok hier loopt weer. mooi.
+    subject:
+      nl: "40 jaar is niks"
+      en: "40 years is nothing"
+    body:
+      nl: |
+        de klok hier loopt weer. mooi.
 
-      band 7 draait mee, wat de beheerder ook beweert. wie het
-      logboek van die nacht vindt, weet genoeg. de rest slaapt lekker
-      verder.
+        band 7 draait mee, wat de beheerder ook beweert. wie het
+        logboek van die nacht vindt, weet genoeg. de rest slaapt lekker
+        verder.
 
-      ik post dit één keer.
+        ik post dit één keer.
+      en: |
+        the clock here is ticking again. good.
+
+        tape 7 is running too, whatever the sysop claims. whoever finds the
+        logbook from that night knows enough. the rest can sleep on.
+
+        i'm posting this once.
   - id: 11
     author: "phantom"
     level: 0
     date: "13-05-26"
-    subject: "re: 40 jaar is niks"
+    subject:
+      nl: "re: 40 jaar is niks"
+      en: "re: 40 years is nothing"
     reply_to: 10
     grants_flag: "phantom_spoor"
-    body: |
-      en voor de ene die dit wél leest in plaats van erover heen
-      scrollt: het herstel-logboek staat gewoon tussen de bestanden.
-      het heet wat het is. de sysop archiveert slordig als hij moe is.
+    body:
+      nl: |
+        en voor de ene die dit wél leest in plaats van erover heen
+        scrollt: het herstel-logboek staat gewoon tussen de bestanden.
+        het heet wat het is. de sysop archiveert slordig als hij moe is.
 
-      succes. of niet. maakt mij niet uit.
+        succes. of niet. maakt mij niet uit.
+      en: |
+        and for the one who actually reads this instead of scrolling past:
+        the recovery logbook is sitting right there among the files. it's
+        named what it is. the sysop archives sloppily when he's tired.
+
+        good luck. or not. makes no difference to me.

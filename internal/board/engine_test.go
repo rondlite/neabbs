@@ -20,7 +20,7 @@ func testContent() *content.Set {
 			{
 				ID: "algemeen", Name: "ALGEMEEN", Area: content.AreaPublic, Writable: true,
 				Messages: []content.Message{
-					{ID: 1, Author: "sysop", Level: 0, Subject: content.L{NL: "welkom"}, Body: content.L{NL: "hallo"}},
+					{ID: 1, Author: "sysop", Level: 0, Subject: content.L{NL: "welkom", EN: "welcome"}, Body: content.L{NL: "hallo", EN: "hi there"}},
 					{ID: 2, Author: "sysop", Level: 0, Subject: content.L{NL: "regels"}, Body: content.L{NL: "wees aardig"}},
 				},
 			},
@@ -47,6 +47,28 @@ func testContent() *content.Set {
 		panic(err)
 	}
 	return set
+}
+
+func TestLanguageResolution(t *testing.T) {
+	e, _ := newEngine(t)
+	ctx := context.Background()
+
+	// Dutch viewer gets the NL text; English viewer gets EN.
+	nl := Viewer{Fingerprint: "fp-nl", Handle: "jan", Lang: "nl"}
+	en := Viewer{Fingerprint: "fp-en", Handle: "john", Lang: "en"}
+	mnl, err := e.Read(ctx, "algemeen", 1, nl)
+	if err != nil || mnl.Subject != "welkom" || mnl.Body != "hallo" {
+		t.Fatalf("nl: %+v err=%v", mnl, err)
+	}
+	men, err := e.Read(ctx, "algemeen", 1, en)
+	if err != nil || men.Subject != "welcome" || men.Body != "hi there" {
+		t.Fatalf("en: %+v err=%v", men, err)
+	}
+	// A message without an EN translation falls back to NL for English viewers.
+	m2, err := e.Read(ctx, "algemeen", 2, en)
+	if err != nil || m2.Subject != "regels" {
+		t.Fatalf("en fallback: %+v err=%v", m2, err)
+	}
 }
 
 func newEngine(t *testing.T) (*Engine, store.Store) {

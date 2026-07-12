@@ -264,6 +264,7 @@ func (m *Model) sysopGen(board string, n int) (tea.Model, tea.Cmd) {
 	base := m.deps.Content.Prompts["genposts"]
 	lc, st := m.deps.LLM, m.deps.Store
 	boardID, boardName := b.ID, b.Name
+	lang := m.lang() // captured before the async closure to avoid a data race
 	gen := func() tea.Msg {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
@@ -285,12 +286,13 @@ func (m *Model) sysopGen(board string, n int) (tea.Model, tea.Cmd) {
 			if author == "" {
 				author = "anoniem"
 			}
+			// Player posts are single-language; store the sysop's active one.
 			_, e := st.SavePost(ctx, &store.SavedMessage{
 				BoardID:  boardID,
 				Author:   author,
 				Level:    0, // filler is board texture; review before raising
-				Subject:  text.CleanLine(d.Subject),
-				Body:     text.Clean(d.Body),
+				Subject:  text.CleanLine(d.Subject.Get(lang)),
+				Body:     text.Clean(d.Body.Get(lang)),
 				Pending:  true,
 				PostedAt: time.Now(),
 			})

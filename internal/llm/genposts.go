@@ -5,14 +5,18 @@ import (
 	"strings"
 
 	"gopkg.in/yaml.v3"
+
+	"github.com/rondlite/neabbs/internal/content"
 )
 
-// Draft is one LLM-generated filler post, before any review.
+// Draft is one LLM-generated filler post, before any review. Subject and Body
+// are localized: the model is asked for both Dutch and English, and each
+// field parses from a {nl, en} mapping (or a bare scalar, treated as NL).
 type Draft struct {
-	Author  string `yaml:"author"`
-	Level   int    `yaml:"level"`
-	Subject string `yaml:"subject"`
-	Body    string `yaml:"body"`
+	Author  string    `yaml:"author"`
+	Level   int       `yaml:"level"`
+	Subject content.L `yaml:"subject"`
+	Body    content.L `yaml:"body"`
 }
 
 // GenpostSystemPrompt builds the shared system prompt for board filler drafts,
@@ -26,14 +30,22 @@ func GenpostSystemPrompt(base, boardID, boardName string, level, count int) stri
 
 Board: %s (%s)
 Niveau: THIS-%d
-Schrijf %d korte berichten. Antwoord UITSLUITEND als YAML in dit formaat, niets eromheen:
+Schrijf %d korte berichten. Schrijf elk bericht in het Nederlands EN een
+getrouwe Engelse vertaling met dezelfde betekenis en toon (periode-echt, geen
+anachronismen; eigennamen als Max Keizer, Amsterdam, PTT blijven staan).
+Antwoord UITSLUITEND als YAML in dit formaat, niets eromheen:
 
 messages:
   - author: "handle"
     level: %d
-    subject: "onderwerp"
-    body: |
-      tekst
+    subject:
+      nl: "onderwerp"
+      en: "subject"
+    body:
+      nl: |
+        tekst
+      en: |
+        text
 `, strings.TrimRight(base, "\n"), boardID, boardName, level, count, level)
 }
 
