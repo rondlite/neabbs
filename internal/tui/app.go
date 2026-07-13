@@ -594,6 +594,12 @@ type traceTickMsg struct{}
 // crackRunMsg fires after the wordlist animation beat and runs the crack.
 type crackRunMsg struct{ hostAddr string }
 
+// blueboxRunMsg fires after the seize animation and runs the bluebox attempt.
+type blueboxRunMsg struct {
+	hostAddr string
+	input    string
+}
+
 func traceTick() tea.Cmd {
 	return tea.Tick(time.Second, func(time.Time) tea.Msg { return traceTickMsg{} })
 }
@@ -763,6 +769,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case crackRunMsg:
 		if h := m.currentHost(); h != nil && strings.EqualFold(h.Address, msg.hostAddr) {
 			return m.runCrack(h)
+		}
+		return m, nil
+	case blueboxRunMsg:
+		if h := m.currentHost(); h != nil && strings.EqualFold(h.Address, msg.hostAddr) {
+			return m.runBluebox(h, msg.input)
 		}
 		return m, nil
 	case npcReplyMsg:
@@ -1515,6 +1526,12 @@ func (m *Model) thisLine(line string) (tea.Model, tea.Cmd) {
 		return m.routeHost(arg)
 	case "crack", "kraak":
 		return m.crackHost()
+	case "bluebox", "blauwedoos":
+		rest := ""
+		if idx := strings.Index(line, " "); idx > 0 {
+			rest = strings.TrimSpace(line[idx:])
+		}
+		return m.blueboxHost(rest)
 	case "wipe", "wis":
 		return m.wipeTracks()
 	case "talk", "praat":
@@ -1688,6 +1705,71 @@ func (m *Model) runCrack(h *content.Host) (tea.Model, tea.Cmd) {
 		routed := m.routeVia != "" && m.routeVia != h.Address
 		if routed {
 			secs *= 2 // laundering through an owned host buys time
+		}
+		m.traceHost = h.ID
+		m.traceUntil = time.Now().Add(time.Duration(secs) * time.Second)
+		warn := fmt.Sprintf(m.tr("waarschuwing: traceerpoging gestart. je hebt %d seconden. 'disconnect' verbreekt schoon, 'wipe' wist ook je sporen.", "warning: trace attempt started. you have %d seconds. 'disconnect' breaks clean, 'wipe' also erases your tracks."), secs)
+		if routed {
+			warn += m.tr("\n(trace loopt om via ", "\n(trace rerouted via ") + m.routeVia + ".)"
+		}
+		out = append(out, warn)
+		cmd = traceTick()
+	}
+	out = append(out, m.tr("tik 'ls' voor de inhoud.", "type 'ls' for the contents."))
+	m.thisPrint(strings.Join(out, "\n"))
+	return m, cmd
+}
+
+// blueboxHost dials a phone-exchange host: seize animation first, outcome
+// via blueboxRunMsg.
+func (m *Model) blueboxHost(input string) (tea.Model, tea.Cmd) {
+	h := m.currentHost()
+	if h == nil {
+		return m, m.out(m.tr("bluebox: niet verbonden. eerst connect <adres>.", "bluebox: not connected. connect <address> first."))
+	}
+	if strings.TrimSpace(input) == "" {
+		return m, m.out(m.tr("bluebox: draai een toonreeks. bv. bluebox 2600 1700+1100 ...", "bluebox: dial a tone sequence. e.g. bluebox 2600 1700+1100 ..."))
+	}
+	if h.Locked && h.Crack != nil && h.Crack.Method == "bluebox" {
+		m.thisPrint(m.tr("trunk grijpen... 2600Hz\nMF toetsen...", "seizing trunk... 2600Hz\nkeying MF...") + "\n[########________________________]")
+		return m, tea.Tick(1500*time.Millisecond, func(time.Time) tea.Msg {
+			return blueboxRunMsg{hostAddr: h.Address, input: input}
+		})
+	}
+	return m.runBluebox(h, input)
+}
+
+// runBluebox executes the bluebox attempt and applies its consequences.
+// The success path mirrors runCrack (breach record, effects, trace timer).
+func (m *Model) runBluebox(h *content.Host, input string) (tea.Model, tea.Cmd) {
+	ctx := context.Background()
+	res, err := m.deps.World.Bluebox(ctx, h, m.viewer(), m.hasFlag, input)
+	if err != nil {
+		return m, m.out(m.tr("bluebox: er knettert iets. probeer opnieuw.", "bluebox: something's crackling. try again."))
+	}
+	if !res.Success {
+		return m, m.out(res.Msg)
+	}
+	_ = m.deps.Store.RecordBreach(ctx, h.ID, m.deps.Player.Handle, time.Now())
+	out := []string{green.Render(m.tr("*** TRUNK OVERGENOMEN — nachtingang open ***", "*** TRUNK SEIZED — night entrance open ***"))}
+	if res.First && res.Effects != nil {
+		oldLevel := m.deps.Player.Level
+		if err := m.applyEffects(*res.Effects); err == nil {
+			if m.deps.Player.Level > oldLevel {
+				out = append(out, green.Render(fmt.Sprintf(m.tr("*** PROMOTIE — THIS-%d toegekend ***", "*** PROMOTION — THIS-%d granted ***"), m.deps.Player.Level)))
+			}
+			if bc := res.Effects.Broadcast.Get(m.lang()); bc != "" {
+				line := strings.ReplaceAll(bc, "{handle}", m.deps.Player.Handle)
+				m.deps.Registry.Broadcast(WallMsg{Line: "*** " + line}, m.deps.Sess)
+			}
+		}
+	}
+	var cmd tea.Cmd
+	if res.TraceSeconds > 0 {
+		secs := res.TraceSeconds
+		routed := m.routeVia != "" && m.routeVia != h.Address
+		if routed {
+			secs *= 2
 		}
 		m.traceHost = h.ID
 		m.traceUntil = time.Now().Add(time.Duration(secs) * time.Second)
