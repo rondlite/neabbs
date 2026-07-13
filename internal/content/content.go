@@ -121,12 +121,13 @@ type NPC struct {
 
 // CrackSpec describes how a locked host opens.
 type CrackSpec struct {
-	Method        string   `yaml:"method"`         // password | wordlist | none
+	Method        string   `yaml:"method"`         // password | wordlist | bluebox | none
 	PasswordFlag  string   `yaml:"password_flag"`  // crack succeeds iff player holds this flag
 	RequiresFlags []string `yaml:"requires_flags"` // multi-stage: ALL must be held too
 	MinLevel      int      `yaml:"min_level"`      // below this: crack refused, names the clearance
 	HintOnFail    L        `yaml:"hint_on_fail"`
 	TraceSeconds  int      `yaml:"trace_seconds"` // trace timer starts on successful crack
+	Sequence      string   `yaml:"sequence"`      // bluebox: canonical MF tone sequence to dial
 }
 
 // HostFile is one readable file on a host, level-filtered like messages.
@@ -487,12 +488,18 @@ func Lint(s *Set) error {
 		}
 		if h.Crack != nil {
 			switch h.Crack.Method {
-			case "password", "wordlist", "none":
+			case "password", "wordlist", "bluebox", "none":
 			default:
-				fail("host %s: crack method %q (want password|wordlist|none)", h.ID, h.Crack.Method)
+				fail("host %s: crack method %q (want password|wordlist|bluebox|none)", h.ID, h.Crack.Method)
 			}
 			if h.Crack.Method == "password" && h.Crack.PasswordFlag == "" {
 				fail("host %s: password crack without password_flag", h.ID)
+			}
+			if h.Crack.Method == "bluebox" && h.Crack.Sequence == "" {
+				fail("host %s: bluebox crack without sequence", h.ID)
+			}
+			if h.Crack.Method != "bluebox" && h.Crack.Sequence != "" {
+				fail("host %s: sequence set on non-bluebox crack method %q", h.ID, h.Crack.Method)
 			}
 			if h.Crack.MinLevel < 0 || h.Crack.MinLevel > 9 {
 				fail("host %s: crack min_level %d out of range", h.ID, h.Crack.MinLevel)
