@@ -13,12 +13,15 @@ import (
 	"testing"
 	"time"
 
+	mathrand "math/rand"
+
 	gossh "golang.org/x/crypto/ssh"
 
 	"github.com/rondlite/neabbs/internal/board"
 	"github.com/rondlite/neabbs/internal/chat"
 	"github.com/rondlite/neabbs/internal/config"
 	"github.com/rondlite/neabbs/internal/content"
+	"github.com/rondlite/neabbs/internal/ghosts"
 	"github.com/rondlite/neabbs/internal/llm"
 	"github.com/rondlite/neabbs/internal/presence"
 	"github.com/rondlite/neabbs/internal/store/sqlitestore"
@@ -54,7 +57,8 @@ func startServerWithStore(t *testing.T) (string, *sqlitestore.Store) {
 		t.Fatal(err)
 	}
 	registry := presence.NewRegistry()
-	srv, err := newServer(cfg, st, registry, board.NewEngine(cset, st), cset, chat.NewRoom(), world.NewEngine(cset, st), llm.New(cfg))
+	roster := ghosts.New(nil, time.Now(), mathrand.New(mathrand.NewSource(1))) // no ghosts in tests: the caller list stays predictable
+	srv, err := newServer(cfg, st, registry, board.NewEngine(cset, st), cset, chat.NewRoom(), world.NewEngine(cset, st), llm.New(cfg), roster)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -19,6 +19,7 @@ import (
 	"github.com/rondlite/neabbs/internal/chat"
 	"github.com/rondlite/neabbs/internal/config"
 	"github.com/rondlite/neabbs/internal/content"
+	"github.com/rondlite/neabbs/internal/ghosts"
 	"github.com/rondlite/neabbs/internal/llm"
 	"github.com/rondlite/neabbs/internal/presence"
 	"github.com/rondlite/neabbs/internal/store"
@@ -46,6 +47,7 @@ type Deps struct {
 	Chat     *chat.Room
 	World    *world.Engine
 	LLM      *llm.Client
+	Ghosts   *ghosts.Roster // may be nil: the board simply looks quieter
 }
 
 type state int
@@ -336,23 +338,28 @@ func (m *Model) ritual(step ritualStep) tea.Cmd {
 	return nil
 }
 
-// renderCallers merges real calls (newest first) with the seeded 1980s list.
+// renderCallers merges real calls and ghost calls (newest first) above the
+// frozen 1986 list, whose bottom rows are always kept — see mergeCallers.
 func (m *Model) renderCallers() string {
 	var b strings.Builder
 	b.WriteString(m.tr("LAATSTE BELLERS\n", "LATEST CALLERS\n"))
 	b.WriteString(strings.Repeat("-", 40) + "\n")
-	n := 0
-	real, _ := m.deps.Store.LastCallers(context.Background(), 10)
-	for _, c := range real {
-		b.WriteString(fmt.Sprintf("  %-16s %s\n", c.Handle, c.At.Format("02-01-06 15:04")))
-		n++
+
+	real, _ := m.deps.Store.LastCallers(context.Background(), callerRows)
+	var ghost []store.Caller
+	if m.deps.Ghosts != nil {
+		ghost = m.deps.Ghosts.Recent(callerRows)
 	}
-	for _, c := range m.deps.Content.SeedCallers {
-		if n >= 10 {
-			break
+	rows := mergeCallers(real, ghost, m.deps.Content.SeedCallers)
+
+	// A rule where the decades change: the silence made visible.
+	drawn := false
+	for _, r := range rows {
+		if r.old && !drawn {
+			b.WriteString(dimmed.Render("  "+strings.Repeat("─", 34)) + "\n")
+			drawn = true
 		}
-		b.WriteString(fmt.Sprintf("  %-16s %s\n", c.Handle, c.Date))
-		n++
+		b.WriteString(fmt.Sprintf("  %-16s %s\n", r.handle, r.when))
 	}
 	return b.String()
 }

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"math/rand"
 	"net/http"
 	"os"
 	"os/signal"
@@ -23,6 +24,7 @@ import (
 	"github.com/rondlite/neabbs/internal/chat"
 	"github.com/rondlite/neabbs/internal/config"
 	"github.com/rondlite/neabbs/internal/content"
+	"github.com/rondlite/neabbs/internal/ghosts"
 	"github.com/rondlite/neabbs/internal/llm"
 	"github.com/rondlite/neabbs/internal/presence"
 	"github.com/rondlite/neabbs/internal/sshd"
@@ -81,6 +83,18 @@ func run(args []string) error {
 
 	registry := presence.NewRegistry()
 
+	// The old crowd trickles back: seeded 1980s callers dial in now and then so
+	// the "laatste bellers" list looks like a board in use. Pure fiction — it
+	// never touches the DB or the public stats.
+	handles := make([]string, 0, len(cset.SeedCallers))
+	for _, c := range cset.SeedCallers {
+		handles = append(handles, c.Handle)
+	}
+	roster := ghosts.New(handles, time.Now(), rand.New(rand.NewSource(time.Now().UnixNano())))
+	ghostsDone := make(chan struct{})
+	go roster.Run(ghostsDone)
+	defer close(ghostsDone)
+
 	// Landing site (optional). A web failure logs and never stops the game.
 	if cfg.WebListen != "" {
 		ws := web.New(cfg, registry, st)
@@ -97,7 +111,7 @@ func run(args []string) error {
 		}()
 	}
 
-	srv, err := newServer(cfg, st, registry, board.NewEngine(cset, st), cset, chat.NewRoom(), world.NewEngine(cset, st), llm.New(cfg))
+	srv, err := newServer(cfg, st, registry, board.NewEngine(cset, st), cset, chat.NewRoom(), world.NewEngine(cset, st), llm.New(cfg), roster)
 	if err != nil {
 		return err
 	}
@@ -126,7 +140,7 @@ const (
 	ctxPlayer  ctxKey = "neabbs-player"
 )
 
-func newServer(cfg config.Config, st store.Store, registry *presence.Registry, engine *board.Engine, cset *content.Set, room *chat.Room, w *world.Engine, lc *llm.Client) (*ssh.Server, error) {
+func newServer(cfg config.Config, st store.Store, registry *presence.Registry, engine *board.Engine, cset *content.Set, room *chat.Room, w *world.Engine, lc *llm.Client, gr *ghosts.Roster) (*ssh.Server, error) {
 	teaMW := bm.MiddlewareWithProgramHandler(func(s ssh.Session) *tea.Program {
 		sess, _ := s.Context().Value(ctxSession).(*presence.Session)
 		player, _ := s.Context().Value(ctxPlayer).(*store.Player)
@@ -144,6 +158,7 @@ func newServer(cfg config.Config, st store.Store, registry *presence.Registry, e
 			Chat:     room,
 			World:    w,
 			LLM:      lc,
+			Ghosts:   gr,
 		})
 		p := tea.NewProgram(m, append(bm.MakeOptions(s), tea.WithoutSignalHandler())...)
 		sess.SetSend(func(msg any) { p.Send(msg) })
