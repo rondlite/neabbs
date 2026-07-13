@@ -644,6 +644,8 @@ func TestHackingArc(t *testing.T) {
 	c.waitFor("PHANTOM")
 	c.send("cat phantom-account.txt\r") // grants phantom_account
 	c.waitFor("hydra")
+	c.send("cat phreak-hint.txt\r") // grants phreak_invite → #phreak + wijkcentrale
+	c.waitFor("blauwe doosjes")
 	c.send("disconnect\r")
 	c.waitFor("verbroken")
 
@@ -671,6 +673,25 @@ func TestHackingArc(t *testing.T) {
 	c.waitFor("je bent er")
 	c.send("read 201\r")
 	c.waitFor("de hele keten gelopen")
+	c.send("terug\r")
+	c.waitFor("HOOFDMENU")
+	c.send("this\r")
+	c.waitFor("toegang: THIS-3.")
+
+	// THIS-4: the phreak line is a phone switch, not a computer. `crack` is
+	// refused; the MF tone sequence from #phreak seizes the trunk → THIS-4.
+	c.send("connect wijk.centrale.ptt.nl\r")
+	c.waitFor("WIJKCENTRALE WEST")
+	c.send("crack\r")
+	c.waitFor("blue box") // redirect: this is a phone switch, not a computer
+	c.send("bluebox 2600 700+900 2600\r")
+	c.waitFor("GEEN ANTWOORD") // wrong sequence
+	c.send("bluebox 2600 1700+1100 700+900 pauze 2600\r")
+	c.waitFor("TRUNK OVERGENOMEN")
+	c.waitFor("PROMOTIE — THIS-4")
+	c.waitFor("kraker · THIS-4")
+	c.send("disconnect\r")
+	c.waitFor("verbroken")
 
 	c.send("logout\r")
 	c.waitFor("NO CARRIER")
