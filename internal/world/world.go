@@ -158,6 +158,8 @@ func (e *Engine) Crack(ctx context.Context, h *content.Host, v board.Viewer, has
 	switch spec.Method {
 	case "none":
 		return fail(), nil
+	case "bluebox":
+		return CrackResult{Msg: tr("crack: dit is een telefoonschakelaar, geen computer. probeer een blue box.", "crack: this is a phone switch, not a computer. try a blue box.")}, nil
 	case "password", "wordlist":
 		if spec.PasswordFlag != "" && !has(spec.PasswordFlag) {
 			return fail(), nil
@@ -181,6 +183,79 @@ func (e *Engine) Crack(ctx context.Context, h *content.Host, v board.Viewer, has
 		First:        first,
 		TraceSeconds: spec.TraceSeconds,
 	}
+	if first {
+		res.Effects = h.Effects.OnFirstCrack
+	}
+	return res, nil
+}
+
+// normalizeTones canonicalises a typed tone sequence for comparison:
+// lowercase, "·" and any whitespace collapse to single spaces between
+// tokens, "pauze" and "pause" are equivalent, and "+" is kept as the
+// intra-pair joiner (1700+1100).
+func normalizeTones(s string) string {
+	s = strings.ToLower(s)
+	s = strings.ReplaceAll(s, "·", " ")
+	fields := strings.Fields(s)
+	for i, f := range fields {
+		if f == "pauze" {
+			fields[i] = "pause"
+		}
+	}
+	return strings.Join(fields, " ")
+}
+
+// Bluebox opens a phone-exchange host by dialing its MF tone sequence.
+// The player must type the sequence learned on #phreak; holding it in your
+// head (or on the board) IS the key. Guards mirror Crack; success fires the
+// same trace timer and on_first_crack effects.
+func (e *Engine) Bluebox(ctx context.Context, h *content.Host, v board.Viewer, has func(string) bool, input string) (CrackResult, error) {
+	tr := func(nl, en string) string {
+		if content.NormalizeLang(v.Lang) == content.LangEN && en != "" {
+			return en
+		}
+		return nl
+	}
+	if !h.Locked || h.Crack == nil || h.Crack.Method != "bluebox" {
+		return CrackResult{Msg: tr("bluebox: geen trunk om over te nemen hier.", "bluebox: no trunk to seize here.")}, nil
+	}
+	hs, err := e.store.HostState(ctx, v.Fingerprint, h.ID)
+	if err != nil {
+		return CrackResult{}, err
+	}
+	if hs.Cracked {
+		return CrackResult{Msg: tr("bluebox: lijn ligt al open. rustig maar.", "bluebox: line's already open. easy now.")}, nil
+	}
+	if until := hs.CooldownUntil; !until.IsZero() && time.Now().Before(until) {
+		rem := time.Until(until).Round(time.Minute)
+		if rem < time.Minute {
+			rem = time.Minute
+		}
+		return CrackResult{Msg: fmt.Sprintf(tr("bluebox: de centrale herkent je nog van daarnet. probeer het over %s weer.", "bluebox: the exchange still recognises you from earlier. try again in %s."), rem)}, nil
+	}
+	spec := h.Crack
+	fail := func() CrackResult {
+		if hint := spec.HintOnFail.Get(v.Lang); hint != "" {
+			return CrackResult{Msg: hint}
+		}
+		return CrackResult{Msg: tr("GEEN ANTWOORD.", "NO ANSWER.")}
+	}
+	if v.Level < spec.MinLevel {
+		return fail(), nil
+	}
+	for _, f := range spec.RequiresFlags {
+		if !has(f) {
+			return fail(), nil
+		}
+	}
+	if normalizeTones(input) != normalizeTones(spec.Sequence) {
+		return fail(), nil
+	}
+	first, err := e.store.SetHostCracked(ctx, v.Fingerprint, h.ID, true)
+	if err != nil {
+		return CrackResult{}, err
+	}
+	res := CrackResult{Success: true, First: first, TraceSeconds: spec.TraceSeconds}
 	if first {
 		res.Effects = h.Effects.OnFirstCrack
 	}

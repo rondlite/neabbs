@@ -48,6 +48,11 @@ func testSet() *content.Set {
 			{ID: "multi", Address: "multi.this.nl", MinLevel: 0, Locked: true,
 				Crack: &content.CrackSpec{Method: "password", PasswordFlag: "pw",
 					RequiresFlags: []string{"hash", "wordlist"}, HintOnFail: content.L{NL: "meer nodig"}}},
+			{ID: "exch", Address: "exch.this.nl", MinLevel: 3, Locked: true,
+				Crack: &content.CrackSpec{Method: "bluebox",
+					Sequence:     "2600 1700+1100 700+900 pauze 2600",
+					HintOnFail:   content.L{NL: "GEEN ANTWOORD."},
+					TraceSeconds: 75}},
 			*pw,
 		},
 	}
@@ -304,5 +309,66 @@ func TestCatGrantsFlag(t *testing.T) {
 	p, _ := e.store.PlayerByFingerprint(ctx, "fp")
 	if !p.HasFlag("saw_geheim") {
 		t.Fatal("grants_flag not applied on cat")
+	}
+}
+
+func TestNormalizeTones(t *testing.T) {
+	cases := map[string]string{
+		"2600 1700+1100 700+900 pauze 2600":         "2600 1700+1100 700+900 pause 2600",
+		"2600 · 1700+1100 · 700+900 · pause · 2600": "2600 1700+1100 700+900 pause 2600",
+		"  2600   1700+1100  700+900 PAUZE 2600 ":   "2600 1700+1100 700+900 pause 2600",
+	}
+	for in, want := range cases {
+		if got := normalizeTones(in); got != want {
+			t.Errorf("normalizeTones(%q) = %q, want %q", in, got, want)
+		}
+	}
+}
+
+func TestBlueboxSuccess(t *testing.T) {
+	ctx := context.Background()
+	e := newEngine(t)
+	e.store.(*sqlitestore.Store).CreatePlayer(ctx, "fp")
+	h := e.content.HostByAddress("exch.this.nl")
+	v, _ := viewer(3)
+	res, err := e.Bluebox(ctx, h, v, func(string) bool { return false }, "2600 · 1700+1100 · 700+900 · pauze · 2600")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !res.Success || !res.First || res.TraceSeconds != 75 {
+		t.Fatalf("bad result: %+v", res)
+	}
+}
+
+func TestBlueboxWrongSequence(t *testing.T) {
+	ctx := context.Background()
+	e := newEngine(t)
+	e.store.(*sqlitestore.Store).CreatePlayer(ctx, "fp")
+	h := e.content.HostByAddress("exch.this.nl")
+	v, has := viewer(3)
+	res, err := e.Bluebox(ctx, h, v, has, "2600 700+900 2600")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Success {
+		t.Fatal("wrong sequence should not succeed")
+	}
+	if res.Msg == "" {
+		t.Fatal("expected hint_on_fail message")
+	}
+}
+
+func TestCrackOnBlueboxHostRedirects(t *testing.T) {
+	ctx := context.Background()
+	e := newEngine(t)
+	e.store.(*sqlitestore.Store).CreatePlayer(ctx, "fp")
+	h := e.content.HostByAddress("exch.this.nl")
+	v, has := viewer(3)
+	res, err := e.Crack(ctx, h, v, has)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Success || !strings.Contains(res.Msg, "blue box") {
+		t.Fatalf("expected blue-box redirect, got %+v", res)
 	}
 }
