@@ -1,7 +1,8 @@
 # Arc host 4 (THIS-3 → THIS-4). The phreak line: the PTT district exchange.
-# Visible once you hold the #phreak invite; the crack password is a blue-box
-# tone sequence posted on #phreak. Netstat here reveals the regional exchange
-# (dynamic graph growth); a file hands you the map that cracks it.
+# Visible once you hold the #phreak invite; opened not by cracking a password
+# but by `bluebox` — dialing the MF tone sequence posted on #phreak (seize the
+# trunk with 2600 Hz, key the routing pairs). Netstat here reveals the regional
+# exchange (dynamic graph growth); a file hands you the map that cracks it.
 id: ptt-wijkcentrale
 address: "wijk.centrale.ptt.nl"
 min_level: 3
@@ -19,8 +20,8 @@ banner:
 
     TONE DIALLER ACTIVE —
 crack:
-  method: wordlist
-  password_flag: "toon_reeks"
+  method: bluebox
+  sequence: "2600 1700+1100 700+900 pauze 2600"
   hint_on_fail:
     nl: "GEEN ANTWOORD. de centrale luistert wel, maar niet naar jou. de juiste toonreeks staat op #phreak, voor wie hem mag zien."
     en: "NO ANSWER. the exchange is listening, but not to you. the right tone sequence is on #phreak, for those allowed to see it."
